@@ -1,0 +1,18 @@
+$ bun run --bun scripts/test.ts scripts/demo-test.ts
+🚀 Starting preview server...
+⏳ Waiting for server at http://localhost:4173...
+[preview] $ vite preview
+[preview] ➜  Local:   http://localhost:4173/
+[preview] ➜  Network: use --host to expose
+✅ Server is ready!
+
+🧪 [demo-test           ] Starting
+[demo-test           ] 🧪 Running: Demo Test
+
+❌ Test failed: scripts/demo-test.ts
+
+🛑 Stopping preview server...
+[preview] error: script "preview" exited with code 143
+
+❌ Some tests failed
+error: script "test" exited with code 1
