@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BarChart3, AlertTriangle, Plus, Loader2, Info, ShieldCheck, CheckCircle2, Circle, Search, Filter } from "lucide-react";
+import { BarChart3, AlertTriangle, Plus, Loader2, ShieldCheck, CheckCircle2, Circle, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -77,7 +77,7 @@ export function AnalysisPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState<"all" | "discrepancy" | "inquiry" | "clean">("all");
   
-  const user = useQuery(api.auth.currentUser);
+  const user = useQuery(api.auth.currentUser) as any;
   const createDispute = useMutation(api.disputes.create);
 
   const isSubscribed = user?.plan === "unlimited" || user?.plan === "pro";
@@ -90,8 +90,6 @@ export function AnalysisPage() {
   });
 
   const toggleSelection = (index: number) => {
-    const item = sampleData[index];
-    
     if (selected.includes(index)) {
       setSelected(selected.filter(i => i !== index));
       return;
