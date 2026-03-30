@@ -1,164 +1,140 @@
 import { useQuery } from "convex/react";
 import {
-  ArrowUpRight,
-  Settings,
-  Sparkles,
-  TrendingUp,
-  Upload,
   BarChart3,
   Mail,
-  CheckCircle2,
-  AlertTriangle,
   Zap,
   ShieldCheck,
-  Clock,
+  Settings,
+  Upload,
   ChevronRight,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { api } from "../../convex/_generated/api";
 
 export function DashboardPage() {
   const user = useQuery(api.auth.currentUser);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white font-sans selection:bg-blue-500/30 p-8">
+    <div style={{ minHeight: '100vh', backgroundColor: '#020617', color: 'white', padding: '2rem', fontFamily: 'sans-serif' }}>
       {/* Header */}
-      <header className="flex justify-between items-center mb-12 max-w-7xl mx-auto">
-        <div className="flex items-center gap-2">
-          <div className="size-8 bg-emerald-400/20 rounded-lg flex items-center justify-center">
-            <Zap className="size-5 text-emerald-400 fill-emerald-400" />
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem', maxWidth: '80rem', marginLeft: 'auto', marginRight: 'auto' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div style={{ width: '2rem', height: '2rem', backgroundColor: 'rgba(52, 211, 153, 0.2)', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Zap style={{ width: '1.25rem', height: '1.25rem', color: '#34d399' }} />
           </div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">
+          <h1 style={{ fontSize: '1.875rem', fontWeight: 'bold', background: 'linear-gradient(to right, #60a5fa, #34d399)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
             CreditRepairAI v2.0
           </h1>
         </div>
-        <Button 
-          className="px-6 py-2 bg-blue-600 hover:bg-blue-500 rounded-full transition-all shadow-lg shadow-blue-500/20 border-none h-auto text-sm font-bold"
-          asChild
+        <Link 
+          to="/dashboard"
+          style={{ paddingLeft: '1.5rem', paddingRight: '1.5rem', paddingTop: '0.5rem', paddingBottom: '0.5rem', backgroundColor: '#2563eb', borderRadius: '9999px', color: 'white', fontWeight: 'bold', textDecoration: 'none', fontSize: '0.875rem' }}
         >
-          <Link to="/dashboard">Dashboard</Link>
-        </Button>
+          Dashboard
+        </Link>
       </header>
 
-      {/* Visual Dashboard (Matching the Screenshot) */}
-      <section className="max-w-7xl mx-auto p-10 bg-slate-900/30 border border-slate-800/50 rounded-[3rem] backdrop-blur-xl relative overflow-hidden">
-        <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-emerald-500/10 blur-[100px]" />
-        
-        <div className="text-center mb-12">
-          <h3 className="text-2xl font-bold text-slate-300 mb-1">
-            {user?.name || "Nano Banana"}
+      {/* Visual Dashboard */}
+      <section style={{ maxWidth: '80rem', marginLeft: 'auto', marginRight: 'auto', backgroundColor: 'rgba(15, 23, 42, 0.3)', border: '1px solid rgba(30, 41, 59, 0.5)', borderRadius: '3rem', padding: '2.5rem', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+          <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#cbd5e1', marginBottom: '0.25rem' }}>
+            {user?.name || "CreditRepairAI User"}
           </h3>
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em]">AI Progress Meter</p>
+          <p style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.2em' }}>AI Progress Meter</p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-          {/* Left Card: How It Works */}
-          <div className="lg:col-span-3 space-y-4">
-            <div className="p-8 bg-slate-800/40 border border-slate-700/50 rounded-[2rem] backdrop-blur-md">
-              <h4 className="text-xl font-bold mb-8">How It Works</h4>
-              <div className="space-y-6">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '2rem', alignItems: 'center' }}>
+          {/* Left Card */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div style={{ padding: '2rem', backgroundColor: 'rgba(30, 41, 59, 0.4)', border: '1px solid rgba(51, 65, 85, 0.5)', borderRadius: '2rem' }}>
+              <h4 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '2rem' }}>How It Works</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                 {[
-                  { icon: Upload, title: "Upload", desc: "Upload your from and from credit assets.", href: "/upload" },
-                  { icon: BarChart3, title: "Analysis", desc: "Analyse and plant your credit analysis.", href: "/analysis" },
-                  { icon: Mail, title: "Dispute", desc: "Dispute your credit your dispute process.", href: "/disputes" }
+                  { icon: Upload, title: "Upload", desc: "Upload your credit assets.", href: "/upload" },
+                  { icon: BarChart3, title: "Analysis", desc: "Analyse your credit.", href: "/analysis" },
+                  { icon: Mail, title: "Dispute", desc: "Start your dispute process.", href: "/disputes" }
                 ].map((item, i) => (
-                  <Link key={i} to={item.href} className="flex gap-4 group">
-                    <div className="size-10 rounded-xl bg-slate-700/50 flex items-center justify-center shrink-0 group-hover:bg-blue-500/20 transition-colors">
-                      <item.icon className="size-5 text-slate-300 group-hover:text-blue-400 transition-colors" />
+                  <Link key={i} to={item.href} style={{ display: 'flex', gap: '1rem', textDecoration: 'none', color: 'inherit' }}>
+                    <div style={{ width: '2.5rem', height: '2.5rem', borderRadius: '0.75rem', backgroundColor: 'rgba(51, 65, 85, 0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <item.icon style={{ width: '1.25rem', height: '1.25rem', color: '#cbd5e1' }} />
                     </div>
                     <div>
-                      <p className="font-bold text-sm group-hover:text-white transition-colors">{item.title}</p>
-                      <p className="text-[10px] text-slate-500 leading-tight">{item.desc}</p>
+                      <p style={{ fontWeight: 'bold', fontSize: '0.875rem', margin: 0 }}>{item.title}</p>
+                      <p style={{ fontSize: '0.625rem', color: '#64748b', margin: 0 }}>{item.desc}</p>
                     </div>
                   </Link>
                 ))}
               </div>
             </div>
-            <Button 
-              className="w-full py-6 rounded-2xl bg-gradient-to-r from-blue-500 to-emerald-400 text-white font-bold shadow-lg shadow-emerald-500/20 border-none"
-              asChild
-            >
-              <Link to="/analysis">Start Dispute Process</Link>
-            </Button>
+            <Link to="/analysis" style={{ width: '100%', padding: '1.5rem', borderRadius: '1rem', background: 'linear-gradient(to right, #3b82f6, #34d399)', color: 'white', fontWeight: 'bold', textAlign: 'center', textDecoration: 'none', border: 'none' }}>
+              Start Dispute Process
+            </Link>
           </div>
 
-          {/* Center Meter: Credit Score */}
-          <div className="lg:col-span-6 flex flex-col items-center justify-center relative">
-            <div className="size-80 rounded-full border-[16px] border-slate-800 flex flex-col items-center justify-center relative">
-              <div className="absolute inset-0 rounded-full border-[16px] border-t-emerald-400 border-r-emerald-400 border-b-transparent border-l-transparent rotate-45 shadow-[0_0_30px_rgba(52,211,153,0.3)]" />
-              <Zap className="size-10 text-emerald-400 fill-emerald-400 mb-4" />
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Credit Score</p>
-              <p className="text-7xl font-black tracking-tighter">618</p>
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-2">Equifax Analysis</p>
+          {/* Center Meter */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: '20rem', height: '20rem', borderRadius: '50%', border: '16px solid #1e293b', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+              <div style={{ position: 'absolute', inset: '-16px', borderRadius: '50%', border: '16px solid transparent', borderTopColor: '#34d399', borderRightColor: '#34d399', transform: 'rotate(45deg)' }} />
+              <Zap style={{ width: '2.5rem', height: '2.5rem', color: '#34d399', marginBottom: '1rem' }} />
+              <p style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>Credit Score</p>
+              <p style={{ fontSize: '4.5rem', fontWeight: 900, letterSpacing: '-0.05em', margin: 0 }}>618</p>
+              <p style={{ fontSize: '0.625rem', fontWeight: 'bold', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: '0.5rem', margin: 0 }}>Equifax Analysis</p>
             </div>
-            <Button 
-              className="mt-12 px-12 py-6 rounded-2xl bg-gradient-to-r from-blue-500 to-emerald-400 text-white font-bold shadow-lg shadow-emerald-500/20 border-none"
-              asChild
-            >
-              <Link to="/analysis">Start Dispute Process</Link>
-            </Button>
+            <Link to="/analysis" style={{ marginTop: '3rem', padding: '1.5rem 3rem', borderRadius: '1rem', background: 'linear-gradient(to right, #3b82f6, #34d399)', color: 'white', fontWeight: 'bold', textDecoration: 'none' }}>
+              Start Dispute Process
+            </Link>
           </div>
 
-          {/* Right Cards: Bureau Scores */}
-          <div className="lg:col-span-3 space-y-4">
+          {/* Right Cards */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {[
               { name: "TransUnion", score: "618", bureau: "76" },
               { name: "Experian", score: "603", bureau: "72" }
             ].map((bureau, i) => (
-              <div key={i} className="p-6 bg-slate-800/40 border border-slate-700/50 rounded-[2rem] backdrop-blur-md relative group cursor-pointer hover:border-blue-500/50 transition-all">
-                <div className="flex justify-between items-center mb-4">
-                  <span className="font-bold text-slate-300">{bureau.name}</span>
-                  <ChevronRight className="size-4 text-slate-500 group-hover:text-white transition-colors" />
+              <div key={i} style={{ padding: '1.5rem', backgroundColor: 'rgba(30, 41, 59, 0.4)', border: '1px solid rgba(51, 65, 85, 0.5)', borderRadius: '2rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                  <span style={{ fontWeight: 'bold', color: '#cbd5e1' }}>{bureau.name}</span>
+                  <ChevronRight style={{ width: '1rem', height: '1rem', color: '#64748b' }} />
                 </div>
-                <div className="flex items-end justify-between">
+                <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
                   <div>
-                    <p className="text-3xl font-black">{bureau.score}</p>
-                    <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Credit Score</p>
+                    <p style={{ fontSize: '1.875rem', fontWeight: 900, margin: 0 }}>{bureau.score}</p>
+                    <p style={{ fontSize: '0.5rem', fontWeight: 'bold', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>Credit Score</p>
                   </div>
-                  <div className="text-right">
-                    <div className="size-12 rounded-full border-4 border-slate-700 border-t-emerald-400 flex items-center justify-center mb-1">
-                      <span className="text-xs font-bold">{bureau.bureau}</span>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ width: '3rem', height: '3rem', borderRadius: '50%', border: '4px solid #334155', borderTopColor: '#34d399', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.25rem' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 'bold' }}>{bureau.bureau}</span>
                     </div>
-                    <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Bureau Score</p>
+                    <p style={{ fontSize: '0.5rem', fontWeight: 'bold', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>Bureau Score</p>
                   </div>
                 </div>
               </div>
             ))}
-            <Button 
-              variant="outline" 
-              className="w-full py-6 rounded-2xl border-slate-700 bg-slate-800/50 text-slate-300 font-bold hover:bg-slate-800"
-              asChild
-            >
-              <Link to="/upload">View Reports</Link>
-            </Button>
+            <Link to="/upload" style={{ width: '100%', padding: '1.5rem', borderRadius: '1rem', border: '1px solid #334155', backgroundColor: 'rgba(30, 41, 59, 0.5)', color: '#cbd5e1', fontWeight: 'bold', textAlign: 'center', textDecoration: 'none' }}>
+              View Reports
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* Quick Actions Grid */}
-      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-6 mt-10">
+      {/* Quick Actions */}
+      <div style={{ maxWidth: '80rem', marginLeft: 'auto', marginRight: 'auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginTop: '2.5rem' }}>
         {[
-          { label: "CFPB Assistant", href: "/cfpb", icon: Zap, color: "blue" },
-          { label: "Bureau Freezes", href: "/freezes", icon: ShieldCheck, color: "emerald" },
-          { label: "AI Analysis", href: "/analysis", icon: BarChart3, color: "indigo" },
-          { label: "Settings", href: "/settings", icon: Settings, color: "slate" }
+          { label: "CFPB Assistant", href: "/cfpb", icon: Zap },
+          { label: "Bureau Freezes", href: "/freezes", icon: ShieldCheck },
+          { label: "AI Analysis", href: "/analysis", icon: BarChart3 },
+          { label: "Settings", href: "/settings", icon: Settings }
         ].map((action, i) => (
-          <Button
+          <Link
             key={i}
-            variant="outline"
-            className="h-auto py-6 px-6 rounded-2xl border-slate-800 bg-slate-900/50 hover:bg-slate-800 hover:border-blue-500/50 group transition-all duration-300 justify-start"
-            asChild
+            to={action.href}
+            style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1.5rem', borderRadius: '1rem', border: '1px solid #1e293b', backgroundColor: 'rgba(15, 23, 42, 0.5)', textDecoration: 'none', color: 'inherit' }}
           >
-            <Link to={action.href}>
-              <div className="flex items-center gap-4">
-                <div className="rounded-xl bg-slate-800 p-3 transition-colors group-hover:bg-blue-500/20">
-                  <action.icon className="size-5 text-slate-300 transition-colors group-hover:text-blue-400" />
-                </div>
-                <span className="font-bold text-slate-200 group-hover:text-white">{action.label}</span>
-              </div>
-            </Link>
-          </Button>
+            <div style={{ borderRadius: '0.75rem', backgroundColor: '#1e293b', padding: '0.75rem' }}>
+              <action.icon style={{ width: '1.25rem', height: '1.25rem', color: '#cbd5e1' }} />
+            </div>
+            <span style={{ fontWeight: 'bold', color: '#e2e8f0' }}>{action.label}</span>
+          </Link>
         ))}
       </div>
     </div>

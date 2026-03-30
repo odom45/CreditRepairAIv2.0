@@ -4,13 +4,13 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from "./ui/sidebar";
 
 export function AppLayout() {
   return (
-    <SidebarProvider className="bg-slate-950">
+    <SidebarProvider style={{ backgroundColor: '#020617' }}>
       <AppSidebar />
-      <SidebarInset className="bg-slate-950 border-none">
-        <header className="flex h-16 items-center px-6 md:hidden border-b border-slate-900">
-          <SidebarTrigger className="text-white" />
+      <SidebarInset style={{ backgroundColor: '#020617', border: 'none' }}>
+        <header style={{ display: 'flex', height: '4rem', alignItems: 'center', paddingLeft: '1.5rem', paddingRight: '1.5rem', borderBottom: '1px solid #0f172a' }}>
+          <SidebarTrigger style={{ color: 'white' }} />
         </header>
-        <main className="flex-1 p-6 lg:p-10 overflow-y-auto">
+        <main style={{ flex: 1, padding: '1.5rem', overflowY: 'auto' }}>
           <Outlet />
         </main>
       </SidebarInset>

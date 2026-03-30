@@ -1,7 +1,7 @@
 import { useQuery, useMutation } from "convex/react";
 import { Mail, Plus, ChevronRight, Trash2, Send, FileText, ShieldCheck, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { api } from "../../convex/_generated/api";
 import { toast } from "sonner";
