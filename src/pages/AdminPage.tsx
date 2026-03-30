@@ -1,11 +1,14 @@
 import { useState } from "react";
-import { ShieldAlert, Users, Settings, Database, AlertTriangle, CheckCircle2, MessageSquare, Megaphone, TicketPercent, RefreshCcw, Calendar } from "lucide-react";
+import { ShieldAlert, Users, Settings, Database, AlertTriangle, CheckCircle2, MessageSquare, Megaphone, TicketPercent, RefreshCcw, Calendar, UserPlus, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
+import { Navigate } from "react-router-dom";
 
 const users = [
   { id: 1, name: "Benjamin Odom", email: "benjaminjodom45@gmail.com", status: "active", plan: "unlimited" },
@@ -14,7 +17,15 @@ const users = [
 ];
 
 export function AdminPage() {
+  const user = useQuery(api.auth.currentUser);
   const [announcement, setAnnouncement] = useState("");
+  const [inviteEmail, setInviteEmail] = useState("");
+
+  const isAdmin = user?.email === "benjaminjodom45@gmail.com" || user?.email === "agent@test.local";
+
+  if (user !== undefined && !isAdmin) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   const handleAction = (action: string) => {
     setTimeout(() => {
@@ -78,23 +89,23 @@ export function AdminPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {users.map((user) => (
-                <div key={user.id} className="flex flex-col p-4 rounded-lg border bg-card gap-4">
+              {users.map((u) => (
+                <div key={u.id} className="flex flex-col p-4 rounded-lg border bg-card gap-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       <div className="size-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                        {user.name[0]}
+                        {u.name[0]}
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium">{user.name}</span>
+                          <span className="font-medium">{u.name}</span>
                           <Badge variant="outline" className={
-                            user.plan === "unlimited" ? "bg-primary/10 text-primary border-primary/20" : "bg-muted text-muted-foreground"
+                            u.plan === "unlimited" ? "bg-primary/10 text-primary border-primary/20" : "bg-muted text-muted-foreground"
                           }>
-                            {user.plan.toUpperCase()}
+                            {u.plan.toUpperCase()}
                           </Badge>
                         </div>
-                        <p className="text-xs text-muted-foreground">{user.email}</p>
+                        <p className="text-xs text-muted-foreground">{u.email}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -104,19 +115,19 @@ export function AdminPage() {
                   </div>
                   
                   <div className="flex flex-wrap gap-2 pt-2 border-t border-border/50">
-                    <Button variant="outline" size="sm" className="h-8 gap-1" onClick={() => handleAction(`Discount for ${user.name}`)}>
+                    <Button variant="outline" size="sm" className="h-8 gap-1" onClick={() => handleAction(`Discount for ${u.name}`)}>
                       <TicketPercent className="size-3" />
                       Apply Discount
                     </Button>
-                    <Button variant="outline" size="sm" className="h-8 gap-1" onClick={() => handleAction(`Refund for ${user.name}`)}>
+                    <Button variant="outline" size="sm" className="h-8 gap-1" onClick={() => handleAction(`Refund for ${u.name}`)}>
                       <RefreshCcw className="size-3" />
                       Issue Refund
                     </Button>
-                    <Button variant="outline" size="sm" className="h-8 gap-1" onClick={() => handleAction(`Free Month for ${user.name}`)}>
+                    <Button variant="outline" size="sm" className="h-8 gap-1" onClick={() => handleAction(`Free Month for ${u.name}`)}>
                       <Calendar className="size-3" />
                       Give Free Month
                     </Button>
-                    <Button variant="outline" size="sm" className="h-8 gap-1" onClick={() => handleAction(`Message to ${user.name}`)}>
+                    <Button variant="outline" size="sm" className="h-8 gap-1" onClick={() => handleAction(`Message to ${u.name}`)}>
                       <MessageSquare className="size-3" />
                       Respond
                     </Button>
@@ -128,6 +139,36 @@ export function AdminPage() {
         </Card>
 
         <div className="space-y-8">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <UserPlus className="size-5 text-primary" />
+                Invite Friends & Family
+              </CardTitle>
+              <CardDescription>Send a free trial invitation.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-col gap-2">
+                <div className="relative">
+                  <Mail className="absolute left-3 top-3 size-4 text-muted-foreground" />
+                  <Input 
+                    placeholder="Email address" 
+                    className="pl-9" 
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                  />
+                </div>
+                <Button className="w-full gap-2" onClick={() => {
+                  handleAction(`Invite sent to ${inviteEmail}`);
+                  setInviteEmail("");
+                }}>
+                  <UserPlus className="size-4" />
+                  Send Free Trial Invite
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
