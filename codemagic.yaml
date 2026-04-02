@@ -9,7 +9,7 @@ workflows:
     scripts:
       - name: Install dependencies
         script: |
-          npm install --legacy-peer-deps
+          npm install --legacy-peer-deps || npm install --force
       - name: Build Web App
         script: |
           npm run build
