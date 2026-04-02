@@ -10,6 +10,9 @@ workflows:
       - name: Install dependencies
         script: |
           npm install --legacy-peer-deps || npm install --force
+      - name: Generate Convex types
+        script: |
+          npx convex dev --once
       - name: Build Web App
         script: |
           npm run build
