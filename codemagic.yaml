@@ -4,8 +4,6 @@ workflows:
     max_build_duration: 60
     instance_type: mac_mini_m2
     environment:
-      groups:
-        - google_play # We'll need to set this up in Codemagic UI
       vars:
         PACKAGE_NAME: "com.creditrepairai.v2"
     scripts:
@@ -23,7 +21,3 @@ workflows:
           cd android && ./gradlew bundleRelease
     artifacts:
       - android/app/build/outputs/bundle/release/*.aab
-    publishing:
-      google_play:
-        credentials: $GPC_JSON
-        track: internal
