@@ -1,0 +1,1 @@
+{"build":{"android":{"appBundle":"true","release":{"keystore":"keystore.jks","alias":"my-key-alias","keystorePassword":"keystore-password","keyPassword":"key-password"}}}}}
