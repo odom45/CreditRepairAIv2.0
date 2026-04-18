@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { api } from "../../convex/_generated/api";
+import type { Id } from "../../convex/_generated/dataModel";
 import { toast } from "sonner";
 import { useState } from "react";
 
@@ -13,7 +14,7 @@ export function DisputesPage() {
   const updateStatus = useMutation(api.disputes.updateStatus);
   const [sendingId, setSendingId] = useState<string | null>(null);
 
-  const handleDelete = async (id: any) => {
+  const handleDelete = async (id: Id<"disputes">) => {
     try {
       await removeDispute({ id });
       toast.success("Dispute deleted");
@@ -22,7 +23,7 @@ export function DisputesPage() {
     }
   };
 
-  const handleSend = async (id: any) => {
+  const handleSend = async (id: Id<"disputes">) => {
     setSendingId(id);
     try {
       await updateStatus({ id, status: "sent" });
@@ -78,7 +79,7 @@ export function DisputesPage() {
             </CardContent>
           </Card>
         ) : (
-          disputes?.map((dispute) => (
+          disputes?.map((dispute: { _id: Id<"disputes">; accountName: string; bureau: string; reason: string; status: string; createdAt: string }) => (
             <Card key={dispute._id} className="group overflow-hidden border-l-4 border-l-primary/20 hover:border-l-primary transition-all">
               <CardContent className="p-6 flex items-center justify-between">
                 <div className="flex items-center gap-4">

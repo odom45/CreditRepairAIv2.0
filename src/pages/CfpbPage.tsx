@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
-import { Globe, ExternalLink, Info, CheckCircle2, AlertCircle, Loader2, Copy, Check, ShieldAlert, HelpCircle } from "lucide-react";
+import { useState } from "react";
+import { Globe, ExternalLink, Info, CheckCircle2, Loader2, Copy, Check, ShieldAlert, HelpCircle, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
+import type { Id } from "../../convex/_generated/dataModel";
 import { toast } from "sonner";
 
 const steps = [
@@ -207,7 +208,7 @@ export function CfpbPage() {
                     </p>
                     <div className="space-y-3 text-left max-h-64 overflow-y-auto pr-2">
                       {disputes && disputes.length > 0 ? (
-                        disputes.map((dispute) => (
+                        disputes.map((dispute: { _id: Id<"disputes">; accountName: string; reason: string; bureau: string; status: string; createdAt: string }) => (
                           <div 
                             key={dispute._id} 
                             className="p-4 rounded-2xl bg-slate-950 border border-slate-800 hover:border-blue-500/50 transition-all group cursor-pointer"
