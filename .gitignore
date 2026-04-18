@@ -28,4 +28,7 @@ bun.lockb
 # Temp/test output
 tmp/
 test-results/
-playwright-report/
+playwright-report/node_modules/
+dist/
+android-build/
+twa-project/

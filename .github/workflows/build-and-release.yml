@@ -1,0 +1,275 @@
+name: Build PWA + Android AAB/APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  NODE_VERSION: "20"
+  JAVA_VERSION: "17"
+  APP_PACKAGE_NAME: "com.creditrepairai.app"
+  APP_NAME: "CreditRepairAI"
+  APP_VERSION_NAME: "2.0.0"
+  APP_VERSION_CODE: "1"
+  KEY_ALIAS: "creditrepairai"
+  KEYSTORE_PASSWORD: "CreditRepairAI2024!"
+  KEY_PASSWORD: "CreditRepairAI2024!"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      # ── 1. Checkout ──────────────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── 2. Setup Node.js ────────────────────────────────────────────────────
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      # ── 3. Install dependencies & Build PWA ──────────────────────────────────
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Build PWA (Vite)
+        run: npx vite build
+        env:
+          NODE_ENV: production
+
+      # ── 4. Deploy to Vercel (to get an HTTPS URL for TWA) ────────────────────
+      - name: Deploy to Vercel
+        id: vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: "--prod"
+        continue-on-error: true
+
+      - name: Set app URL
+        id: app_url
+        run: |
+          if [ -n "${{ steps.vercel.outputs.preview-url }}" ]; then
+            echo "url=https://${{ steps.vercel.outputs.preview-url }}" >> $GITHUB_OUTPUT
+          else
+            echo "url=https://credit-repair-ai-v2.vercel.app" >> $GITHUB_OUTPUT
+          fi
+
+      # ── 5. Setup Java ────────────────────────────────────────────────────────
+      - name: Setup Java ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: ${{ env.JAVA_VERSION }}
+
+      # ── 6. Generate Keystore ─────────────────────────────────────────────────
+      - name: Generate or restore keystore
+        run: |
+          mkdir -p android-build
+          if [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+            echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android-build/keystore.jks
+            echo "✅ Restored keystore from secret"
+          else
+            keytool -genkey -v \
+              -keystore android-build/keystore.jks \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -alias ${{ env.KEY_ALIAS }} \
+              -storepass "${{ env.KEYSTORE_PASSWORD }}" \
+              -keypass "${{ env.KEY_PASSWORD }}" \
+              -dname "CN=CreditRepairAI, OU=App, O=CreditRepairAI, L=US, S=US, C=US"
+            echo "✅ New keystore generated"
+            # Save for future use
+            KEYSTORE_B64=$(base64 -w 0 android-build/keystore.jks)
+            echo "::notice title=KEYSTORE_BASE64::Save this as a GitHub secret named KEYSTORE_BASE64: ${KEYSTORE_B64:0:20}..."
+          fi
+
+      # ── 7. Get SHA-256 fingerprint for assetlinks.json ────────────────────────
+      - name: Get SHA-256 fingerprint
+        id: fingerprint
+        run: |
+          FP=$(keytool -list -v \
+            -keystore android-build/keystore.jks \
+            -alias ${{ env.KEY_ALIAS }} \
+            -storepass "${{ env.KEYSTORE_PASSWORD }}" 2>/dev/null \
+            | grep "SHA256:" | awk '{print $2}')
+          echo "sha256=$FP" >> $GITHUB_OUTPUT
+          echo "SHA-256 fingerprint: $FP"
+
+      # ── 8. Install Bubblewrap ─────────────────────────────────────────────────
+      - name: Install Bubblewrap CLI
+        run: npm install -g @bubblewrap/cli
+
+      # ── 9. Create TWA project ─────────────────────────────────────────────────
+      - name: Create TWA project with Bubblewrap
+        run: |
+          APP_URL="${{ steps.app_url.outputs.url }}"
+          echo "Building TWA for: $APP_URL"
+          mkdir -p twa-project
+          cd twa-project
+
+          bubblewrap init \
+            --manifest "${APP_URL}/manifest.json" \
+            --directory . \
+            --packageId "${{ env.APP_PACKAGE_NAME }}" \
+            --name "${{ env.APP_NAME }}" \
+            --launcherName "${{ env.APP_NAME }}" \
+            --themeColor "#0f172a" \
+            --navigationColor "#0f172a" \
+            --backgroundColor "#0f172a" \
+            --startUrl "/" \
+            --iconUrl "${APP_URL}/icon-512x512.png" \
+            --maskableIconUrl "${APP_URL}/icon-512x512.png" \
+            --display standalone \
+            --signingKeyPath "../android-build/keystore.jks" \
+            --signingKeyAlias "${{ env.KEY_ALIAS }}" \
+            --signingKeyStorePassword "${{ env.KEYSTORE_PASSWORD }}" \
+            --signingKeyPassword "${{ env.KEY_PASSWORD }}" \
+            --versionCode "${{ env.APP_VERSION_CODE }}" \
+            --versionName "${{ env.APP_VERSION_NAME }}" \
+            --skipPwaValidation \
+            --yes || true
+
+      # ── 10. Build AAB ─────────────────────────────────────────────────────────
+      - name: Build AAB
+        run: |
+          cd twa-project
+          bubblewrap build \
+            --signingKeyPath "../android-build/keystore.jks" \
+            --signingKeyAlias "${{ env.KEY_ALIAS }}" \
+            --signingKeyStorePassword "${{ env.KEYSTORE_PASSWORD }}" \
+            --signingKeyPassword "${{ env.KEY_PASSWORD }}" \
+            --skipPwaValidation \
+            --yes
+
+      # ── 11. Locate & rename artifacts ──────────────────────────────────────────
+      - name: Locate build artifacts
+        run: |
+          echo "=== Looking for AAB ==="
+          find twa-project -name "*.aab" 2>/dev/null
+          echo "=== Looking for APK ==="
+          find twa-project -name "*.apk" 2>/dev/null
+
+          mkdir -p releases
+
+          AAB=$(find twa-project -name "*.aab" | head -1)
+          APK=$(find twa-project -name "*.apk" | head -1)
+
+          if [ -n "$AAB" ]; then
+            cp "$AAB" "releases/CreditRepairAI-v${{ env.APP_VERSION_NAME }}.aab"
+            echo "✅ AAB copied"
+          fi
+
+          if [ -n "$APK" ]; then
+            cp "$APK" "releases/CreditRepairAI-v${{ env.APP_VERSION_NAME }}.apk"
+            echo "✅ APK copied"
+          else
+            echo "ℹ️ No APK found — building APK from AAB using bundletool"
+            wget -q https://github.com/google/bundletool/releases/download/1.17.2/bundletool-all-1.17.2.jar -O bundletool.jar
+            java -jar bundletool.jar build-apks \
+              --bundle="$AAB" \
+              --output=releases/app.apks \
+              --ks=android-build/keystore.jks \
+              --ks-pass="pass:${{ env.KEYSTORE_PASSWORD }}" \
+              --ks-key-alias="${{ env.KEY_ALIAS }}" \
+              --key-pass="pass:${{ env.KEY_PASSWORD }}" \
+              --mode=universal || true
+
+            if [ -f releases/app.apks ]; then
+              cd releases && unzip -o app.apks universal.apk 2>/dev/null && mv universal.apk "CreditRepairAI-v${{ env.APP_VERSION_NAME }}.apk" && rm -f app.apks && cd ..
+              echo "✅ Universal APK extracted"
+            fi
+          fi
+
+          ls -lh releases/
+
+      # ── 12. Write assetlinks.json into dist/ ───────────────────────────────────
+      - name: Write assetlinks.json
+        run: |
+          mkdir -p dist/.well-known
+          cat > dist/.well-known/assetlinks.json << EOF
+          [{
+            "relation": ["delegate_permission/common.handle_all_urls"],
+            "target": {
+              "namespace": "android_app",
+              "package_name": "${{ env.APP_PACKAGE_NAME }}",
+              "sha256_cert_fingerprints": ["${{ steps.fingerprint.outputs.sha256 }}"]
+            }
+          }]
+          EOF
+          echo "✅ assetlinks.json written"
+          cat dist/.well-known/assetlinks.json
+
+      # ── 13. Commit releases back to repo ──────────────────────────────────────
+      - name: Commit releases to repo
+        run: |
+          git config user.email "benjaminjodom45@gmail.com"
+          git config user.name "odom45"
+
+          git add releases/ dist/.well-known/ public/ || true
+          git status
+
+          if git diff --staged --quiet; then
+            echo "Nothing new to commit"
+          else
+            git commit -m "ci: add signed AAB + APK v${{ env.APP_VERSION_NAME }} [skip ci]"
+            git push origin main
+            echo "✅ Releases pushed to repo"
+          fi
+
+      # ── 14. Upload as GitHub Actions artifacts too ────────────────────────────
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CreditRepairAI-AAB
+          path: releases/*.aab
+          if-no-files-found: warn
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CreditRepairAI-APK
+          path: releases/*.apk
+          if-no-files-found: warn
+
+      # ── 15. Create GitHub Release ────────────────────────────────────────────
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ env.APP_VERSION_NAME }}
+          name: CreditRepairAI v${{ env.APP_VERSION_NAME }}
+          body: |
+            ## CreditRepairAI v${{ env.APP_VERSION_NAME }}
+
+            Built from commit ${{ github.sha }}
+
+            ### Files
+            - **AAB** — upload this to Google Play Console
+            - **APK** — install directly on Android for testing
+
+            ### App URL
+            ${{ steps.app_url.outputs.url }}
+
+            ### Features
+            - AI-powered credit dispute generation
+            - Credit report upload & analysis
+            - CFPB complaint assistant
+            - Dispute tracking dashboard
+            - Credit freeze management
+          files: |
+            releases/*.aab
+            releases/*.apk
+          fail_on_unmatched_files: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
