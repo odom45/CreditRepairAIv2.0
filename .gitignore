@@ -32,3 +32,8 @@ playwright-report/node_modules/
 dist/
 android-build/
 twa-project/
+
+# Native Android build output and machine-local SDK paths
+native-android/.gradle/
+native-android/local.properties
+native-android/**/build/
