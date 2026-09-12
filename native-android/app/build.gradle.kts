@@ -52,7 +52,9 @@ android {
 }
 
 dependencies {
-    val composeBom = platform("androidx.compose:compose-bom:2026.09.00")
+    // Compose 1.12+ requires compileSdk 37 and AGP 9.1+. Keep this Android 36
+    // build on the final Compose 1.11 BOM until the toolchain is upgraded.
+    val composeBom = platform("androidx.compose:compose-bom:2026.06.01")
     implementation(composeBom)
     androidTestImplementation(composeBom)
 
@@ -61,7 +63,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.10.0")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.10.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")
-    implementation("androidx.navigation:navigation-compose:2.10.1")
+    implementation("androidx.navigation:navigation-compose:2.9.8")
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")

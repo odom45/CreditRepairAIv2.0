@@ -244,7 +244,7 @@ fun CreditRepairApp(viewModel: MainViewModel) {
 }
 
 @Composable
-private fun ScreenList(content: @Composable androidx.compose.foundation.lazy.LazyListScope.() -> Unit) {
+private fun ScreenList(content: androidx.compose.foundation.lazy.LazyListScope.() -> Unit) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp, 18.dp, 16.dp, 32.dp),
