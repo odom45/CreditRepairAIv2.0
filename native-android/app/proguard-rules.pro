@@ -1,3 +1,4 @@
 -keep class com.tom_roush.pdfbox.** { *; }
 -dontwarn org.bouncycastle.**
 -dontwarn org.apache.**
+-dontwarn com.gemalto.jp2.**
