@@ -4,7 +4,7 @@
   "reviewIntervalDays": 30,
   "defaultCoverageStatus": "SOURCE_REGISTRY_ONLY",
   "jurisdictions": [
-    {"code":"AL","name":"Alabama","officialCodePortal":"https://legislature.state.al.us/aliswww/CodeOfAlabama/1975/Coatoc.htm","coverageStatus":"SOURCE_REGISTRY_ONLY"},
+    {"code":"AL","name":"Alabama","officialCodePortal":"https://alison.legislature.state.al.us/code-of-alabama","coverageStatus":"SOURCE_REGISTRY_ONLY"},
     {"code":"AK","name":"Alaska","officialCodePortal":"https://www.akleg.gov/basis/statutes.asp","coverageStatus":"SOURCE_REGISTRY_ONLY"},
     {"code":"AZ","name":"Arizona","officialCodePortal":"https://www.azleg.gov/arstitle/","coverageStatus":"SOURCE_REGISTRY_ONLY"},
     {"code":"AR","name":"Arkansas","officialCodePortal":"https://www.arkleg.state.ar.us/ArkansasLaw","coverageStatus":"SOURCE_REGISTRY_ONLY"},
