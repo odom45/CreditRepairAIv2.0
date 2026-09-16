@@ -97,6 +97,7 @@ data class ChatMessage(
 )
 
 data class AppState(
+    val jurisdictionCode: String = "",
     val reports: List<CreditReport> = emptyList(),
     val accounts: List<CreditAccount> = emptyList(),
     val findings: List<Finding> = emptyList(),

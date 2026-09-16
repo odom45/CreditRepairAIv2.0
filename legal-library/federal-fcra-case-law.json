@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 1,
+  "reviewedOn": "2026-09-16",
+  "reviewIntervalDays": 30,
+  "usePolicy": "EDUCATIONAL_PRECEDENT_WITH_SCOPE_CHECK",
+  "treatmentStatus": "ATTORNEY_REVIEW_PENDING",
+  "cases": [
+    {
+      "id": "safeco-v-burr-2007",
+      "caseName": "Safeco Insurance Co. of America v. Burr",
+      "citation": "551 U.S. 47 (2007)",
+      "court": "Supreme Court of the United States",
+      "decidedOn": "2007-06-04",
+      "precedentialScope": "US_SUPREME_COURT",
+      "officialOpinionUrl": "https://tile.loc.gov/storage-services/service/ll/usrep/usrep551/usrep551047/usrep551047.pdf",
+      "holding": "For FCRA civil liability, a willful violation can include reckless disregard; the Court described recklessness as conduct creating an unjustifiably high risk that is known or so obvious it should be known.",
+      "operationalUse": "Do not label an error willful merely because it persisted; preserve the dispute history and repeated notice facts, and leave liability conclusions to counsel.",
+      "limits": "The case arose from adverse-action notices in insurance pricing and does not make every inaccurate tradeline willful."
+    },
+    {
+      "id": "transunion-v-ramirez-2021",
+      "caseName": "TransUnion LLC v. Ramirez",
+      "citation": "594 U.S. 413 (2021)",
+      "court": "Supreme Court of the United States",
+      "decidedOn": "2021-06-25",
+      "precedentialScope": "US_SUPREME_COURT",
+      "officialOpinionUrl": "https://www.supremecourt.gov/opinions/20pdf/20-297_4g25.pdf",
+      "holding": "A statutory violation alone does not necessarily establish concrete Article III injury for damages; dissemination of misleading OFAC alerts supported concrete reputational harm for affected class members, while undisseminated internal files did not establish that same harm on the stipulated record.",
+      "operationalUse": "Track whether inaccurate information was actually disclosed and any concrete consequences, without implying that documentation proves liability.",
+      "limits": "This is primarily a federal standing decision; it is not a general rule that an undisseminated inaccuracy never matters for correction or other relief."
+    },
+    {
+      "id": "usda-v-kirtz-2024",
+      "caseName": "Department of Agriculture Rural Development Rural Housing Service v. Kirtz",
+      "citation": "601 U.S. 42 (2024)",
+      "court": "Supreme Court of the United States",
+      "decidedOn": "2024-02-08",
+      "precedentialScope": "US_SUPREME_COURT",
+      "officialOpinionUrl": "https://www.supremecourt.gov/opinions/23pdf/601us1r03_4gcj.pdf",
+      "holding": "The FCRA's civil-liability provisions waive federal sovereign immunity for a federal agency that qualifies as a person under the Act.",
+      "operationalUse": "Do not reject a supported dispute solely because the furnisher is a federal agency; preserve the source and status of the government account.",
+      "limits": "The decision addressed federal sovereign immunity, not whether the reporting in a particular consumer's case is inaccurate or what damages are available."
+    },
+    {
+      "id": "sessa-v-trans-union-2023",
+      "caseName": "Sessa v. Trans Union, LLC",
+      "citation": "74 F.4th 38 (2d Cir. 2023)",
+      "court": "United States Court of Appeals for the Second Circuit",
+      "decidedOn": "2023-07-17",
+      "precedentialScope": "SECOND_CIRCUIT",
+      "officialOpinionUrl": "https://www.govinfo.gov/content/pkg/USCOURTS-ca2-22-00087/pdf/USCOURTS-ca2-22-00087-0.pdf",
+      "holding": "Section 1681e(b) does not create a categorical factual-versus-legal threshold. The relevant question is whether the asserted inaccuracy is objectively and readily verifiable; a live issue requiring bespoke legal reasoning may fall outside that test.",
+      "operationalUse": "Classify a proposed dispute by the exact field and supporting document, and distinguish a readily checkable mismatch from an unresolved legal interpretation.",
+      "limits": "Binding in the Second Circuit only; the decision remanded and did not establish that every contract-related disagreement is actionable."
+    },
+    {
+      "id": "gorman-v-wolpoff-2009",
+      "caseName": "Gorman v. Wolpoff & Abramson, LLP",
+      "citation": "584 F.3d 1147 (9th Cir. 2009)",
+      "court": "United States Court of Appeals for the Ninth Circuit",
+      "decidedOn": "2009-10-21",
+      "precedentialScope": "NINTH_CIRCUIT",
+      "officialOpinionUrl": "https://www.govinfo.gov/content/pkg/USCOURTS-ca9-06-17226/pdf/USCOURTS-ca9-06-17226-0.pdf",
+      "holding": "A furnisher's section 1681s-2(b) investigation may not be unreasonable or cursory, and its scope depends on the specific information in the CRA notice. An omission can be inaccurate or incomplete when it creates a materially misleading impression, including failure after investigation to report a bona fide dispute in the circumstances addressed.",
+      "operationalUse": "Draft precise bureau disputes that identify the field, evidence, and why the presentation is materially misleading; do not treat a generic disagreement notation as automatic relief.",
+      "limits": "Binding in the Ninth Circuit only; the opinion distinguishes initial furnisher duties from duties triggered after CRA notice and does not validate meritless disputes."
+    },
+    {
+      "id": "hinkle-v-midland-2016",
+      "caseName": "Hinkle v. Midland Credit Management, Inc.",
+      "citation": "827 F.3d 1295 (11th Cir. 2016)",
+      "court": "United States Court of Appeals for the Eleventh Circuit",
+      "decidedOn": "2016-07-11",
+      "precedentialScope": "ELEVENTH_CIRCUIT",
+      "officialOpinionUrl": "https://www.govinfo.gov/content/pkg/USCOURTS-ca11-15-10398/pdf/USCOURTS-ca11-15-10398-0.pdf",
+      "holding": "On the mistaken-identity debt-buyer record, a reasonable jury could find a furnisher's investigation inadequate when it merely compared the disputed data with the same internal electronic data and did not obtain available account-level documentation.",
+      "operationalUse": "For a genuine not-mine dispute, ask for objective identity/account evidence and identify why rechecking the same source would not resolve the mismatch.",
+      "limits": "Binding in the Eleventh Circuit only and fact-specific; the app must never suggest identity theft or a not-mine claim without the user's truthful factual basis."
+    },
+    {
+      "id": "marchisio-v-carrington-2019",
+      "caseName": "Marchisio v. Carrington Mortgage Services, LLC",
+      "citation": "919 F.3d 1288 (11th Cir. 2019)",
+      "court": "United States Court of Appeals for the Eleventh Circuit",
+      "decidedOn": "2019-03-25",
+      "precedentialScope": "ELEVENTH_CIRCUIT",
+      "officialOpinionUrl": "https://media.ca11.uscourts.gov/opinions/pub/files/201710584.pdf",
+      "holding": "A furnisher's investigation was unreasonable on an extreme record where its systems repeatedly failed to incorporate settlements showing no balance and it reverified a nonexistent balloon payment despite detailed notice.",
+      "operationalUse": "Preserve prior resolution documents and repeated dispute results; surface contradictions between a settlement or court record and the reported balance for user verification.",
+      "limits": "Binding in the Eleventh Circuit only and based on unusually extensive repeated notice; it does not make any single verification error reckless or willful."
+    },
+    {
+      "id": "losch-v-nationstar-2021",
+      "caseName": "Losch v. Nationstar Mortgage LLC",
+      "citation": "995 F.3d 937 (11th Cir. 2021)",
+      "court": "United States Court of Appeals for the Eleventh Circuit",
+      "decidedOn": "2021-04-28",
+      "precedentialScope": "ELEVENTH_CIRCUIT",
+      "officialOpinionUrl": "https://www.govinfo.gov/content/pkg/USCOURTS-ca11-20-10695/pdf/USCOURTS-ca11-20-10695-0.pdf",
+      "holding": "After a consumer pinpointed a post-bankruptcy mortgage inaccuracy, the CRA could not establish as a matter of law that simply forwarding the dispute to the furnisher and accepting its response was a reasonable reinvestigation on that record.",
+      "operationalUse": "For bankruptcy-related entries, compare the exact reported balance, past-due amount, responsibility, dates, and court documents instead of asserting that every reference to a discharged debt must disappear.",
+      "limits": "Binding in the Eleventh Circuit only and fact-specific; bankruptcy discharge and credit reporting require exact order and tradeline review, and unresolved bankruptcy-law questions must go to counsel."
+    }
+  ]
+}

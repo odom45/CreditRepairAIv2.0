@@ -1,0 +1,67 @@
+name: Deploy production legal agent
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-legal-agent
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Validate protected deployment credentials
+        run: |
+          test -n "$OPENAI_API_KEY"
+          test -n "$CONVEX_DEPLOY_KEY"
+
+      - name: Install exact dependencies
+        run: npm ci
+
+      - name: Validate legal source registry
+        run: npm run legal:check
+
+      - name: Create and verify versioned OpenAI vector store
+        id: legal_store
+        run: npm run legal:create-vector-store
+
+      - name: Configure production-only agent secrets
+        env:
+          VECTOR_STORE_ID: ${{ steps.legal_store.outputs.vector_store_id }}
+        run: |
+          test -n "$VECTOR_STORE_ID"
+          npx convex env set OPENAI_API_KEY "$OPENAI_API_KEY"
+          npx convex env set CREDIT_LEGAL_VECTOR_STORE_ID "$VECTOR_STORE_ID"
+          npx convex env set CREDIT_AGENT_MODEL "gpt-5.6-terra"
+
+      - name: Deploy Convex production functions
+        run: npx convex deploy --message "Deploy legal library ${{ steps.legal_store.outputs.library_version }}"
+
+      - name: Deployment summary
+        env:
+          VECTOR_STORE_ID: ${{ steps.legal_store.outputs.vector_store_id }}
+          LIBRARY_VERSION: ${{ steps.legal_store.outputs.library_version }}
+        run: |
+          {
+            echo "## Legal agent deployed"
+            echo "- Library version: $LIBRARY_VERSION"
+            echo "- Vector store: $VECTOR_STORE_ID"
+            echo "- Model: gpt-5.6-terra"
+            echo "- Previous vector stores were retained for rollback."
+          } >> "$GITHUB_STEP_SUMMARY"

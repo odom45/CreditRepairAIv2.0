@@ -131,6 +131,7 @@ import com.creditrepairai.v2.ui.theme.Slate300
 import com.creditrepairai.v2.ui.theme.Slate400
 import java.text.DateFormat
 import java.util.Date
+import java.util.Locale
 
 private enum class Destination(val label: String, val icon: ImageVector) {
     DASHBOARD("Home", Icons.Default.Dashboard),
@@ -801,6 +802,7 @@ private fun ScoreRow(snapshot: ScoreSnapshot) {
 private fun SettingsScreen(ui: AppUiState, viewModel: MainViewModel) {
     val data = ui.data
     var confirmClear by remember { mutableStateOf(false) }
+    var jurisdictionCode by remember(data.jurisdictionCode) { mutableStateOf(data.jurisdictionCode) }
     ScreenList {
         item { Hero("Privacy & settings", "Control local credit data and review connection status.", Icons.Default.Settings) }
         item { NoticeCard(Icons.Default.Check, "Native Android build", "Kotlin + Jetpack Compose. No WebView, Capacitor, or wrapped website is used for the app interface.", Emerald400) }
@@ -812,6 +814,39 @@ private fun SettingsScreen(ui: AppUiState, viewModel: MainViewModel) {
                 if (ui.isAgentEndpointConfigured) "The APK has a gateway URL but still requires a short-lived authenticated user session before any redacted case context can be sent." else "On-device parsing and deterministic review flags work. Interactive legal-agent answers remain disabled so the app never falls back to pretending rules are AI.",
                 if (ui.isAgentEndpointConfigured) Emerald400 else Amber400,
             )
+        }
+        item {
+            Card(colors = CardDefaults.cardColors(containerColor = Navy900), modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("State context", fontWeight = FontWeight.Black)
+                    Text(
+                        "Enter the user’s state or DC. The agent uses federal authority plus only state provisions that have been individually verified.",
+                        color = Slate400,
+                        fontSize = 12.sp,
+                    )
+                    OutlinedTextField(
+                        value = jurisdictionCode,
+                        onValueChange = { value ->
+                            jurisdictionCode = value.filter(Char::isLetter).uppercase(Locale.US).take(2)
+                        },
+                        label = { Text("Two-letter state or DC code") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Button(
+                        onClick = { viewModel.updateJurisdiction(jurisdictionCode) },
+                        enabled = jurisdictionCode.length == 2,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) { Text("Save state context") }
+                    if (data.jurisdictionCode.isNotBlank()) {
+                        Text(
+                            "Saved: ${data.jurisdictionCode}. Current state library coverage is source-registry only; federal guidance remains primary.",
+                            color = Amber400,
+                            fontSize = 12.sp,
+                        )
+                    }
+                }
+            }
         }
         item {
             Card(colors = CardDefaults.cardColors(containerColor = Navy900), modifier = Modifier.fillMaxWidth()) {

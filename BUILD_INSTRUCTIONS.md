@@ -21,3 +21,5 @@ Use the manual **Signed Android release** GitHub Actions workflow documented in 
 - `app-release.apk` for controlled tester distribution
 
 Never commit a keystore, password, OpenAI key, vector-store ID, or permanent bearer token. For an existing Play app, the upload certificate must match the key registered in Play Console. Each upload must use a higher `versionCode` than the previous release.
+
+The exact owner-supplied launch items are listed in `RELEASE_OWNER_CHECKLIST.md`.

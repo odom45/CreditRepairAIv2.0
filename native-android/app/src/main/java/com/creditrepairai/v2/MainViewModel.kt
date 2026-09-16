@@ -19,6 +19,7 @@ import com.creditrepairai.v2.model.CreditReport
 import com.creditrepairai.v2.model.DisputeStatus
 import com.creditrepairai.v2.model.Finding
 import com.creditrepairai.v2.model.ScoreSnapshot
+import com.creditrepairai.v2.model.UsJurisdictions
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -102,6 +103,7 @@ class MainViewModel(
         val findings = CreditAnalyzer.analyze(accounts, reports)
         mutate("Safe demo loaded. No real personal data is included.") {
             AppState(
+                jurisdictionCode = _uiState.value.data.jurisdictionCode,
                 reports = reports,
                 accounts = accounts,
                 findings = findings,
@@ -157,6 +159,19 @@ class MainViewModel(
             state.copy(
                 frozenBureaus = if (name in state.frozenBureaus) state.frozenBureaus - name else state.frozenBureaus + name,
             )
+        }
+    }
+
+    fun updateJurisdiction(value: String) {
+        val code = UsJurisdictions.normalize(value)
+        if (code == null) {
+            _uiState.update { it.copy(notice = "Enter a valid two-letter U.S. state or DC code.") }
+            return
+        }
+        mutate(
+            "State context set to ${UsJurisdictions.names.getValue(code)}. State-specific law remains disabled until its official provisions are verified.",
+        ) { state ->
+            state.copy(jurisdictionCode = code)
         }
     }
 

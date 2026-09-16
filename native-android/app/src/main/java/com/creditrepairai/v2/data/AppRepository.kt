@@ -62,6 +62,7 @@ class AppRepository(context: Context) {
     }
 
     private fun encode(state: AppState) = JSONObject().apply {
+        put("jurisdictionCode", state.jurisdictionCode)
         put("reports", JSONArray().apply { state.reports.forEach { put(it.toJson()) } })
         put("accounts", JSONArray().apply { state.accounts.forEach { put(it.toJson()) } })
         put("findings", JSONArray().apply { state.findings.forEach { put(it.toJson()) } })
@@ -72,6 +73,7 @@ class AppRepository(context: Context) {
     }
 
     private fun decode(json: JSONObject) = AppState(
+        jurisdictionCode = json.optString("jurisdictionCode"),
         reports = json.array("reports").objects().map { it.toReport() },
         accounts = json.array("accounts").objects().map { it.toAccount() },
         findings = json.array("findings").objects().map { it.toFinding() },

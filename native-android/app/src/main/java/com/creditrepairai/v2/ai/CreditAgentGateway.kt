@@ -60,6 +60,7 @@ class CreditAgentGateway(
     }
 
     private fun AppState.toSafeAgentJson(): JSONObject = JSONObject().apply {
+        put("jurisdictionCode", jurisdictionCode)
         put("reports", JSONArray().apply {
             reports.forEach { report ->
                 put(JSONObject()
