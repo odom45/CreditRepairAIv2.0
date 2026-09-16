@@ -92,12 +92,21 @@ if (caseLaw.treatmentStatus !== "ATTORNEY_REVIEW_PENDING" || caseLaw.usePolicy !
 
 if (checkLinks) {
   const links = [
-    ...manifest.sources.map((source) => ({ label: source.id, url: source.url })),
-    ...stateRegistry.jurisdictions.map((state) => ({ label: state.code, url: state.officialCodePortal })),
-    ...caseLaw.cases.map((decision) => ({ label: decision.id, url: decision.officialOpinionUrl })),
+    ...manifest.sources.map((source) => ({ label: source.id, url: source.url, required: true })),
+    ...stateRegistry.jurisdictions.map((state) => ({
+      label: state.code,
+      url: state.officialCodePortal,
+      required: state.coverageStatus === "SOURCE_TEXT_VERIFIED",
+    })),
+    ...caseLaw.cases.map((decision) => ({ label: decision.id, url: decision.officialOpinionUrl, required: true })),
   ];
+  let registryWarnings = 0;
   for (let index = 0; index < links.length; index += 8) {
-    await Promise.all(links.slice(index, index + 8).map(checkOfficialLink));
+    const results = await Promise.all(links.slice(index, index + 8).map(checkOfficialLink));
+    registryWarnings += results.filter((available) => !available).length;
+  }
+  if (registryWarnings > 5) {
+    throw new Error(`Too many registry-only state portals were unavailable (${registryWarnings}; limit 5).`);
   }
 }
 
@@ -134,7 +143,7 @@ async function checkOfficialLink(link) {
       });
       // Some official portals intentionally block automated requests while remaining
       // valid public sources. Auth/rate-limit responses therefore prove reachability.
-      if (response.ok || [401, 403, 429].includes(response.status)) return;
+      if (response.ok || [401, 403, 429].includes(response.status)) return true;
       lastError = new Error(`HTTP ${response.status}`);
     } catch (error) {
       lastError = error;
@@ -144,5 +153,9 @@ async function checkOfficialLink(link) {
   const cause = lastError instanceof Error
     ? `${lastError.cause?.code || lastError.message}`
     : "unknown network error";
+  if (!link.required) {
+    console.warn(`Registry-only portal warning for ${link.label} (${cause}): ${link.url}`);
+    return false;
+  }
   throw new Error(`Official source unavailable for ${link.label} after 3 attempts (${cause}): ${link.url}`);
 }

@@ -15,4 +15,4 @@ Case-law retrieval is also hard-filtered by court scope. Supreme Court opinions 
 
 ## Updating
 
-Do not automatically overwrite legal summaries from changed webpages. A source change creates a human-review task because an apparently small wording change can alter scope, effective date, or required procedure. After review, update the summary, registry/manifest date, and changelog, then rebuild the vector store. The weekly freshness workflow validates review age, jurisdiction completeness, official domains, and link reachability.
+Do not automatically overwrite legal summaries from changed webpages. A source change creates a human-review task because an apparently small wording change can alter scope, effective date, or required procedure. After review, update the summary, registry/manifest date, and changelog, then rebuild the vector store. The weekly freshness workflow validates review age, jurisdiction completeness, official domains, and link reachability. Verified source text fails closed when unavailable. Registry-only portal failures are warnings unless more than five are unavailable in one run; they cannot support an agent claim in either case.
