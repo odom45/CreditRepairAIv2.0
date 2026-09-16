@@ -5,7 +5,8 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.creditrepairai.v2.ai.CreditAssistant
+import com.creditrepairai.v2.ai.CreditAgentGateway
+import com.creditrepairai.v2.ai.SensitiveDataRedactor
 import com.creditrepairai.v2.analysis.CreditAnalyzer
 import com.creditrepairai.v2.analysis.CreditReportParser
 import com.creditrepairai.v2.data.AppRepository
@@ -29,13 +30,21 @@ data class AppUiState(
     val isProcessing: Boolean = false,
     val progressText: String = "",
     val notice: String? = null,
+    val isAssistantThinking: Boolean = false,
+    val isAgentEndpointConfigured: Boolean = false,
 )
 
 class MainViewModel(
     private val repository: AppRepository,
     private val parser: CreditReportParser,
+    private val agentGateway: CreditAgentGateway,
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(AppUiState(data = repository.load()))
+    private val _uiState = MutableStateFlow(
+        AppUiState(
+            data = repository.load(),
+            isAgentEndpointConfigured = agentGateway.isConfigured,
+        ),
+    )
     val uiState: StateFlow<AppUiState> = _uiState.asStateFlow()
 
     fun importPdf(uri: Uri, displayName: String) {
@@ -110,7 +119,20 @@ class MainViewModel(
 
     fun updateDispute(id: String, status: DisputeStatus) {
         mutate("Dispute status updated to ${status.name.lowercase()}.") { state ->
-            state.copy(disputes = state.disputes.map { if (it.id == id) it.copy(status = status) else it })
+            val now = System.currentTimeMillis()
+            state.copy(disputes = state.disputes.map { dispute ->
+                if (dispute.id != id) dispute
+                else if (status == DisputeStatus.SENT && dispute.sentAt == null) {
+                    dispute.copy(
+                        status = status,
+                        sentAt = now,
+                        // Conservative readiness window: CFPB says to first dispute
+                        // with the reporting company and not file while that dispute
+                        // remains pending; its current intake notice also references 45 days.
+                        craResponseDueAt = now + 45L * 24 * 60 * 60 * 1000,
+                    )
+                } else dispute.copy(status = status)
+            })
         }
     }
 
@@ -139,18 +161,37 @@ class MainViewModel(
     }
 
     fun askAssistant(prompt: String) {
-        val cleaned = prompt.trim()
+        val cleaned = SensitiveDataRedactor.redact(prompt.trim())
         if (cleaned.isBlank()) return
-        mutate(null) { state ->
-            val user = ChatMessage(fromUser = true, text = cleaned)
-            val reply = ChatMessage(fromUser = false, text = CreditAssistant.respond(cleaned, state))
-            state.copy(chat = (state.chat + user + reply).takeLast(40))
+        if (_uiState.value.isAssistantThinking) return
+
+        val stateWithQuestion = _uiState.value.data.copy(
+            chat = (_uiState.value.data.chat + ChatMessage(fromUser = true, text = cleaned)).takeLast(40),
+        )
+        repository.save(stateWithQuestion)
+        _uiState.update { it.copy(data = stateWithQuestion, isAssistantThinking = true, notice = null) }
+
+        viewModelScope.launch {
+            val answer = runCatching { agentGateway.answer(cleaned, stateWithQuestion) }
+                .getOrElse { error ->
+                    "I could not use the secure legal agent: ${error.message ?: "service unavailable"}"
+                }
+            val current = _uiState.value.data
+            val updated = current.copy(
+                chat = (current.chat + ChatMessage(fromUser = false, text = answer)).takeLast(40),
+            )
+            repository.save(updated)
+            _uiState.update { it.copy(data = updated, isAssistantThinking = false) }
         }
     }
 
     fun clearData() {
         repository.clear()
-        _uiState.value = AppUiState(data = AppState(), notice = "All locally stored reports, findings, disputes, scores, and chat were deleted.")
+        _uiState.value = AppUiState(
+            data = AppState(),
+            notice = "All local case data was deleted and its Android Keystore encryption key was destroyed.",
+            isAgentEndpointConfigured = agentGateway.isConfigured,
+        )
     }
 
     fun consumeNotice() {
@@ -160,7 +201,11 @@ class MainViewModel(
     private fun mutate(notice: String?, transform: (AppState) -> AppState) {
         val updated = transform(_uiState.value.data)
         repository.save(updated)
-        _uiState.value = AppUiState(data = updated, notice = notice)
+        _uiState.value = AppUiState(
+            data = updated,
+            notice = notice,
+            isAgentEndpointConfigured = agentGateway.isConfigured,
+        )
     }
 
     companion object {
@@ -169,6 +214,12 @@ class MainViewModel(
             override fun <T : ViewModel> create(modelClass: Class<T>): T = MainViewModel(
                 repository = AppRepository(context),
                 parser = CreditReportParser(context),
+                agentGateway = CreditAgentGateway(
+                    endpoint = BuildConfig.AI_GATEWAY_URL,
+                    // Production must inject the short-lived OIDC access token
+                    // obtained after native sign-in. A static APK token is forbidden.
+                    tokenProvider = { null },
+                ),
             ) as T
         }
     }

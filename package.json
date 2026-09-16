@@ -20,7 +20,9 @@
     "test:demo": "bun run --bun scripts/demo-test.ts",
     "screenshot": "bun run --bun scripts/screenshot.ts",
     "env:get": "bunx convex env get",
-    "env:list": "bunx convex env list"
+    "env:list": "bunx convex env list",
+    "legal:check": "node scripts/check-legal-library.mjs",
+    "legal:create-vector-store": "node scripts/create-legal-vector-store.mjs"
   },
   "dependencies": {
     "@auth/core": "^0.37.4",

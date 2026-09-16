@@ -1,6 +1,9 @@
 package com.creditrepairai.v2.data
 
 import android.content.Context
+import android.security.keystore.KeyGenParameterSpec
+import android.security.keystore.KeyProperties
+import android.util.Base64
 import com.creditrepairai.v2.model.AppState
 import com.creditrepairai.v2.model.Bureau
 import com.creditrepairai.v2.model.ChatMessage
@@ -14,21 +17,48 @@ import com.creditrepairai.v2.model.ScoreSnapshot
 import com.creditrepairai.v2.model.Severity
 import org.json.JSONArray
 import org.json.JSONObject
+import java.security.KeyStore
+import javax.crypto.Cipher
+import javax.crypto.KeyGenerator
+import javax.crypto.SecretKey
+import javax.crypto.spec.GCMParameterSpec
 
 class AppRepository(context: Context) {
     private val preferences = context.getSharedPreferences("credit_repair_private", Context.MODE_PRIVATE)
 
     fun load(): AppState {
-        val raw = preferences.getString(KEY_STATE, null) ?: return AppState()
-        return runCatching { decode(JSONObject(raw)) }.getOrElse { AppState() }
+        val encrypted = preferences.getString(KEY_ENCRYPTED_STATE, null)
+        if (encrypted != null) {
+            return runCatching { decode(JSONObject(decrypt(encrypted))) }.getOrElse {
+                // A corrupt or invalidated key must never cause sensitive state to be
+                // written back in plaintext. Start with an empty local session.
+                clear()
+                AppState()
+            }
+        }
+
+        // One-time migration from early preview builds that used a private but
+        // unencrypted SharedPreferences value.
+        val legacy = preferences.getString(KEY_LEGACY_STATE, null) ?: return AppState()
+        return runCatching { decode(JSONObject(legacy)) }.getOrElse { AppState() }.also { state ->
+            save(state)
+            preferences.edit().remove(KEY_LEGACY_STATE).apply()
+        }
     }
 
     fun save(state: AppState) {
-        preferences.edit().putString(KEY_STATE, encode(state).toString()).apply()
+        val encrypted = encrypt(encode(state).toString())
+        preferences.edit()
+            .putString(KEY_ENCRYPTED_STATE, encrypted)
+            .remove(KEY_LEGACY_STATE)
+            .apply()
     }
 
     fun clear() {
-        preferences.edit().clear().apply()
+        preferences.edit().clear().commit()
+        keyStore().apply {
+            if (containsAlias(KEY_ALIAS)) deleteEntry(KEY_ALIAS)
+        }
     }
 
     private fun encode(state: AppState) = JSONObject().apply {
@@ -66,6 +96,10 @@ class AppRepository(context: Context) {
         .put("id", id).put("creditor", creditor).put("accountSuffix", accountSuffix)
         .put("bureau", bureau.name).put("status", status).put("balance", balance ?: JSONObject.NULL)
         .put("paymentStatus", paymentStatus).put("openedDate", openedDate)
+        .put("accountType", accountType).put("responsibility", responsibility)
+        .put("dateReported", dateReported).put("originalCreditor", originalCreditor)
+        .put("pastDue", pastDue ?: JSONObject.NULL).put("creditLimit", creditLimit ?: JSONObject.NULL)
+        .put("highBalance", highBalance ?: JSONObject.NULL).put("remarks", remarks)
 
     private fun Finding.toJson() = JSONObject()
         .put("id", id).put("type", type.name).put("title", title).put("detail", detail)
@@ -77,6 +111,7 @@ class AppRepository(context: Context) {
         .put("id", id).put("findingId", findingId).put("creditor", creditor)
         .put("bureaus", bureaus.bureauJsonArray()).put("reason", reason).put("letter", letter)
         .put("status", status.name).put("createdAt", createdAt).put("reviewBy", reviewBy)
+        .put("sentAt", sentAt ?: JSONObject.NULL).put("craResponseDueAt", craResponseDueAt ?: JSONObject.NULL)
 
     private fun ScoreSnapshot.toJson() = JSONObject()
         .put("bureau", bureau.name).put("score", score).put("recordedAt", recordedAt)
@@ -94,6 +129,10 @@ class AppRepository(context: Context) {
         id = optString("id"), creditor = optString("creditor"), accountSuffix = optString("accountSuffix"),
         bureau = Bureau.from(optString("bureau")), status = optString("status", "Unknown"),
         balance = optIntOrNull("balance"), paymentStatus = optString("paymentStatus"), openedDate = optString("openedDate"),
+        accountType = optString("accountType"), responsibility = optString("responsibility"),
+        dateReported = optString("dateReported"), originalCreditor = optString("originalCreditor"),
+        pastDue = optIntOrNull("pastDue"), creditLimit = optIntOrNull("creditLimit"),
+        highBalance = optIntOrNull("highBalance"), remarks = optString("remarks"),
     )
 
     private fun JSONObject.toFinding() = Finding(
@@ -109,6 +148,7 @@ class AppRepository(context: Context) {
         bureaus = array("bureaus").strings().map(Bureau::from), reason = optString("reason"), letter = optString("letter"),
         status = enumValueOrDefault(optString("status"), DisputeStatus.DRAFT),
         createdAt = optLong("createdAt"), reviewBy = optLong("reviewBy"),
+        sentAt = optLongOrNull("sentAt"), craResponseDueAt = optLongOrNull("craResponseDueAt"),
     )
 
     private fun JSONObject.toScore() = ScoreSnapshot(
@@ -120,9 +160,58 @@ class AppRepository(context: Context) {
     )
 
     private fun JSONObject.optIntOrNull(key: String): Int? = if (isNull(key) || !has(key)) null else optInt(key)
+    private fun JSONObject.optLongOrNull(key: String): Long? = if (isNull(key) || !has(key)) null else optLong(key)
+
+    private fun encrypt(plaintext: String): String {
+        val cipher = Cipher.getInstance(TRANSFORMATION)
+        cipher.init(Cipher.ENCRYPT_MODE, encryptionKey())
+        val payload = JSONObject()
+            .put("v", 1)
+            .put("iv", Base64.encodeToString(cipher.iv, Base64.NO_WRAP))
+            .put("ciphertext", Base64.encodeToString(cipher.doFinal(plaintext.toByteArray(Charsets.UTF_8)), Base64.NO_WRAP))
+        return payload.toString()
+    }
+
+    private fun decrypt(payload: String): String {
+        val json = JSONObject(payload)
+        require(json.optInt("v") == 1) { "Unsupported encrypted state version" }
+        val cipher = Cipher.getInstance(TRANSFORMATION)
+        cipher.init(
+            Cipher.DECRYPT_MODE,
+            encryptionKey(),
+            GCMParameterSpec(128, Base64.decode(json.getString("iv"), Base64.NO_WRAP)),
+        )
+        return cipher.doFinal(Base64.decode(json.getString("ciphertext"), Base64.NO_WRAP)).toString(Charsets.UTF_8)
+    }
+
+    private fun encryptionKey(): SecretKey {
+        val store = keyStore()
+        (store.getKey(KEY_ALIAS, null) as? SecretKey)?.let { return it }
+        return KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, ANDROID_KEY_STORE).run {
+            init(
+                KeyGenParameterSpec.Builder(
+                    KEY_ALIAS,
+                    KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT,
+                )
+                    .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                    .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                    .setRandomizedEncryptionRequired(true)
+                    .build(),
+            )
+            generateKey()
+        }
+    }
+
+    private fun keyStore(): KeyStore = KeyStore.getInstance(ANDROID_KEY_STORE).apply { load(null) }
 
     private inline fun <reified T : Enum<T>> enumValueOrDefault(value: String, default: T): T =
         enumValues<T>().firstOrNull { it.name == value } ?: default
 
-    companion object { private const val KEY_STATE = "app_state_v1" }
+    companion object {
+        private const val ANDROID_KEY_STORE = "AndroidKeyStore"
+        private const val KEY_ALIAS = "credit_repair_local_state_v1"
+        private const val TRANSFORMATION = "AES/GCM/NoPadding"
+        private const val KEY_ENCRYPTED_STATE = "app_state_encrypted_v1"
+        private const val KEY_LEGACY_STATE = "app_state_v1"
+    }
 }

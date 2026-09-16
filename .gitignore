@@ -37,3 +37,8 @@ twa-project/
 native-android/.gradle/
 native-android/local.properties
 native-android/**/build/
+
+# Android signing material must only exist in an owner-controlled secret store.
+*.jks
+*.keystore
+*.p12

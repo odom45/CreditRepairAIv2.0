@@ -134,6 +134,14 @@ class CreditReportParser(private val context: Context) {
             }
             val paymentStatus = extractValue(window, "payment status") ?: extractValue(window, "pay status") ?: ""
             val opened = extractValue(window, "date opened") ?: extractValue(window, "opened") ?: ""
+            val accountType = extractValue(window, "account type") ?: extractValue(window, "type") ?: ""
+            val responsibility = extractValue(window, "responsibility") ?: extractValue(window, "ownership") ?: ""
+            val dateReported = extractValue(window, "date reported") ?: extractValue(window, "last reported") ?: ""
+            val originalCreditor = extractValue(window, "original creditor") ?: ""
+            val pastDue = extractMoneyValue(window, "past due")
+            val creditLimit = extractMoneyValue(window, "credit limit") ?: extractMoneyValue(window, "limit")
+            val highBalance = extractMoneyValue(window, "high balance") ?: extractMoneyValue(window, "highest balance")
+            val remarks = extractValue(window, "remarks") ?: extractValue(window, "comments") ?: ""
 
             CreditAccount(
                 creditor = creditor,
@@ -143,6 +151,14 @@ class CreditReportParser(private val context: Context) {
                 balance = balance,
                 paymentStatus = paymentStatus.take(80),
                 openedDate = opened.take(40),
+                accountType = accountType.take(80),
+                responsibility = responsibility.take(80),
+                dateReported = dateReported.take(40),
+                originalCreditor = originalCreditor.take(80),
+                pastDue = pastDue,
+                creditLimit = creditLimit,
+                highBalance = highBalance,
+                remarks = remarks.take(200),
             )
         }.distinctBy { Triple(normalizeName(it.creditor), it.accountSuffix, it.bureau) }.take(150)
     }
@@ -150,6 +166,13 @@ class CreditReportParser(private val context: Context) {
     private fun extractValue(lines: List<String>, label: String): String? {
         val pattern = Regex("(?i)^${Regex.escape(label)}\\s*[:#-]?\\s*(.+)$")
         return lines.firstNotNullOfOrNull { pattern.find(it)?.groupValues?.getOrNull(1)?.trim() }
+    }
+
+    private fun extractMoneyValue(lines: List<String>, label: String): Int? {
+        val pattern = Regex("(?i)^${Regex.escape(label)}\\s*[:#-]?\\s*\\$?([0-9][0-9,]*)")
+        return lines.firstNotNullOfOrNull { line ->
+            pattern.find(line)?.groupValues?.getOrNull(1)?.let(::parseMoney)
+        }
     }
 
     private fun parseMoney(raw: String): Int? = runCatching {

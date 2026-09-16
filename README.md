@@ -1,21 +1,21 @@
-# 🤖 CreditRepairAI v2.0
+# CreditRepairAI v2.0
 
 AI-powered 3-bureau credit report analysis and legal dispute generation.
 
 ## 🚀 Features
 
-- **AI 3-Bureau Analysis**: Automatically detect mismatches, errors, and missing accounts across TransUnion, Experian, and Equifax.
-- **Legal USC Code Integration**: Every dispute is backed by specific U.S. Code violations (e.g., 15 U.S.C. § 1681) to ensure maximum deletion rates.
-- **CFPB Assistant**: Step-by-step guidance for filing formal complaints with the Consumer Financial Protection Bureau.
+- **Native 3-Bureau Analysis**: Extract structured fields and flag cross-bureau differences for user verification.
+- **Tool-enabled Legal Agent**: A server-side agent can use redacted case tools and retrieve from a versioned official-source library. It never treats a flag as proof or promises deletion.
+- **CFPB Assistant**: Guided, editable answers with prerequisite checks and an official-portal handoff; the user reviews and submits.
 - **Secondary Bureau Freezes**: One-click access to freeze SageStream, CoreLogic, Innovis, and more.
 - **Modern Dashboard**: Sleek, professional UI designed for clarity and ease of use.
 - **Admin Panel**: Full control over users and system health (for administrators).
 
 ## 🛠️ Tech Stack
 
-- **Frontend**: React, Tailwind CSS, Lucide Icons, Shadcn UI.
-- **Backend**: Convex (Real-time database & Auth).
-- **AI Engine**: Custom logic for credit report parsing and legal code mapping.
+- **Android**: Kotlin and Jetpack Compose (no WebView or website wrapper).
+- **Backend**: Authenticated Convex HTTP gateway.
+- **AI**: OpenAI Responses API with case functions and legal-library file search.
 
 ## 📦 Installation (Local Development)
 
@@ -34,7 +34,7 @@ AI-powered 3-bureau credit report analysis and legal dispute generation.
 
 ## 📱 Play Store Submission
 
-This app is ready for production. Once the UI is approved by @Benjamin Odom, it will be submitted to the Google Play Store.
+The debug APK is for testing, not Play submission. Production requires the signed-release workflow, an owner-controlled upload key, native OIDC sign-in, deployed agent secrets/vector store, real-report parser validation, and legal/privacy/commercial review. See `native-android/README.md`.
 
 ## 👤 Author
 

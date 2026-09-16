@@ -57,7 +57,7 @@ object CreditAnalyzer {
                     creditor = creditor,
                     bureaus = (versionBureaus + missing).toList(),
                     accountIds = versions.map { it.id },
-                    legalBasis = listOf("15 U.S.C. § 1681e(b)"),
+                    legalBasis = listOf("No general duty to report to every bureau; verify whether any reported field is inaccurate"),
                 )
             }
 
@@ -114,7 +114,13 @@ object CreditAnalyzer {
         ),
     )
 
-    private fun accountKey(account: CreditAccount) = accountKey(account.creditor, account.accountSuffix)
+    private fun accountKey(account: CreditAccount): String {
+        val fallback = listOf(account.openedDate, account.accountType)
+            .joinToString(":")
+            .lowercase(Locale.US)
+            .replace(Regex("[^a-z0-9:]"), "")
+        return accountKey(account.creditor, account.accountSuffix.ifBlank { fallback })
+    }
     private fun accountKey(creditor: String, suffix: String) =
         creditor.lowercase(Locale.US).replace(Regex("[^a-z0-9]"), "") + ":" + suffix.takeLast(4)
 

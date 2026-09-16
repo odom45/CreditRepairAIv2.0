@@ -1,4 +1,4 @@
-name: Native Android APK and AAB
+name: Native Android test APK
 
 on:
   push:
@@ -39,21 +39,10 @@ jobs:
       - name: Build installable APK
         run: ./gradlew assembleDebug --stacktrace
 
-      - name: Build release app bundle
-        run: ./gradlew bundleRelease --stacktrace
-
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: CreditRepairAI-native-debug-apk
           path: native-android/app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: error
-          retention-days: 30
-
-      - name: Upload release AAB
-        uses: actions/upload-artifact@v4
-        with:
-          name: CreditRepairAI-native-release-aab
-          path: native-android/app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
           retention-days: 30

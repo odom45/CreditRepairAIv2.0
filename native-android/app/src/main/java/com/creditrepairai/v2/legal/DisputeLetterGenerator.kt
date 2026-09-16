@@ -48,13 +48,29 @@ object DisputeLetterGenerator {
         )
     }
 
-    fun cfpbNarrative(dispute: Dispute): String = """
-        I am submitting this complaint about credit-report information associated with ${dispute.creditor} and reported by ${dispute.bureaus.joinToString { it.displayName }}.
+    fun cfpbNarrative(
+        dispute: Dispute,
+        problem: String = dispute.reason,
+        companyResponse: String = "",
+        requestedResolution: String = "Correct or delete information that is inaccurate, incomplete, or cannot be verified, and provide an updated consumer report with a written explanation of the investigation result.",
+        evidence: String = "Credit report pages, prior correspondence, proof of delivery, and records supporting the disputed facts.",
+    ): String = """
+        PRODUCT: Credit reporting
+        COMPANY OR ITEM: ${dispute.creditor}
+        REPORTING COMPANY: ${dispute.bureaus.joinToString { it.displayName }}
 
-        ${dispute.reason}
+        WHAT HAPPENED:
+        ${problem.trim()}
 
-        I previously reviewed the information and am requesting a reasonable investigation and a clear written explanation of the result. My requested resolution is correction or deletion of information that is inaccurate, incomplete, or cannot be verified, plus an updated consumer report.
+        WHAT THE COMPANY SAID OR DID:
+        ${companyResponse.trim().ifBlank { "No response has been entered. Add the response received or state truthfully that none was received after the applicable waiting period." }}
 
-        I will attach copies of my report, identification, prior correspondence, and records supporting the specific facts above. I understand this draft must be reviewed and edited for accuracy before submission.
+        REQUESTED RESOLUTION:
+        ${requestedResolution.trim()}
+
+        SUPPORTING DOCUMENTS TO ATTACH AS COPIES:
+        ${evidence.trim()}
+
+        PRIVACY CHECK: Remove SSNs, full account numbers, unnecessary birth-date information, and unrelated sensitive records. Review every statement before submitting through the official CFPB portal.
     """.trimIndent()
 }

@@ -37,6 +37,14 @@ data class CreditAccount(
     val balance: Int? = null,
     val paymentStatus: String = "",
     val openedDate: String = "",
+    val accountType: String = "",
+    val responsibility: String = "",
+    val dateReported: String = "",
+    val originalCreditor: String = "",
+    val pastDue: Int? = null,
+    val creditLimit: Int? = null,
+    val highBalance: Int? = null,
+    val remarks: String = "",
 )
 
 data class CreditReport(
@@ -71,6 +79,8 @@ data class Dispute(
     val status: DisputeStatus = DisputeStatus.DRAFT,
     val createdAt: Long = System.currentTimeMillis(),
     val reviewBy: Long = System.currentTimeMillis() + 35L * 24 * 60 * 60 * 1000,
+    val sentAt: Long? = null,
+    val craResponseDueAt: Long? = null,
 )
 
 data class ScoreSnapshot(
@@ -96,7 +106,7 @@ data class AppState(
     val chat: List<ChatMessage> = listOf(
         ChatMessage(
             fromUser = false,
-            text = "I’m your private CreditRepairAI guide. Import reports or load the demo, then ask what to do first, what a finding means, or how to prepare a dispute.",
+            text = "I’m your secure CreditRepairAI guide. Import reports, then ask me to explain an item, weigh evidence, prepare a dispute plan, or check CFPB readiness. I use only a redacted case snapshot and retrieved, cited legal sources when the authenticated AI service is connected.",
         ),
     ),
 )

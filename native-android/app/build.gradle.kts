@@ -12,8 +12,8 @@ android {
         applicationId = "com.creditrepairai.v2"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "2.0.0-native-preview"
+        versionCode = providers.gradleProperty("CREDIT_VERSION_CODE").orElse("1").get().toInt()
+        versionName = providers.gradleProperty("CREDIT_VERSION_NAME").orElse("2.0.0").get()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -22,12 +22,39 @@ android {
         buildConfigField("String", "AI_GATEWAY_URL", "\"${gateway.replace("\"", "\\\"")}\"")
     }
 
+    val releaseKeystoreFile = providers.environmentVariable("ANDROID_KEYSTORE_FILE").orNull
+    val releaseKeystorePassword = providers.environmentVariable("ANDROID_KEYSTORE_PASSWORD").orNull
+    val releaseKeyAlias = providers.environmentVariable("ANDROID_KEY_ALIAS").orNull
+    val releaseKeyPassword = providers.environmentVariable("ANDROID_KEY_PASSWORD").orNull
+    val hasReleaseSigning = listOf(
+        releaseKeystoreFile,
+        releaseKeystorePassword,
+        releaseKeyAlias,
+        releaseKeyPassword,
+    ).all { !it.isNullOrBlank() }
+
+    signingConfigs {
+        if (hasReleaseSigning) {
+            create("releaseUpload") {
+                storeFile = file(requireNotNull(releaseKeystoreFile))
+                storePassword = releaseKeystorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+                enableV1Signing = true
+                enableV2Signing = true
+                enableV3Signing = true
+                enableV4Signing = true
+            }
+        }
+    }
+
     buildTypes {
         debug {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
         }
         release {
+            signingConfig = signingConfigs.findByName("releaseUpload")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(

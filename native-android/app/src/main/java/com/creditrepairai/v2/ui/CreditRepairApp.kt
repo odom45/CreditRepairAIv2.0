@@ -109,7 +109,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.creditrepairai.v2.AppUiState
-import com.creditrepairai.v2.BuildConfig
 import com.creditrepairai.v2.MainViewModel
 import com.creditrepairai.v2.analysis.CreditAnalyzer
 import com.creditrepairai.v2.legal.DisputeLetterGenerator
@@ -215,10 +214,10 @@ fun CreditRepairApp(viewModel: MainViewModel) {
                 Destination.DISPUTES -> DisputesScreen(ui.data, viewModel)
                 Destination.MORE -> MoreScreen { destination = it }
                 Destination.CFPB -> CfpbScreen(ui.data)
-                Destination.ASSISTANT -> AssistantScreen(ui.data, viewModel)
+                Destination.ASSISTANT -> AssistantScreen(ui, viewModel)
                 Destination.PROGRESS -> ProgressScreen(ui.data, viewModel)
                 Destination.FREEZES -> FreezesScreen(ui.data, viewModel)
-                Destination.SETTINGS -> SettingsScreen(ui.data, viewModel)
+                Destination.SETTINGS -> SettingsScreen(ui, viewModel)
             }
 
             if (ui.isProcessing) {
@@ -337,7 +336,6 @@ private fun ReportsScreen(ui: AppUiState, viewModel: MainViewModel) {
     val context = LocalContext.current
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
         uris.forEach { uri ->
-            runCatching { context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION) }
             viewModel.importPdf(uri, context.displayName(uri))
         }
     }
@@ -358,7 +356,7 @@ private fun ReportsScreen(ui: AppUiState, viewModel: MainViewModel) {
             NoticeCard(
                 Icons.Default.Lock,
                 "Private by default",
-                "The native parser stores structured findings, not the full PDF text. Imported data stays in this app’s private storage.",
+                "The native parser stores structured findings, not the full PDF text. Local case data is encrypted with an Android Keystore key and excluded from backup.",
                 Emerald400,
             )
         }
@@ -538,16 +536,46 @@ private fun CfpbScreen(data: AppState) {
     var activeStep by rememberSaveable { mutableIntStateOf(0) }
     val selected = data.disputes.firstOrNull { it.id == selectedId } ?: data.disputes.firstOrNull()
     val context = LocalContext.current
+    val relatedFinding = data.findings.firstOrNull { it.id == selected?.findingId }
+    var problem by rememberSaveable(selected?.id) { mutableStateOf(selected?.reason.orEmpty()) }
+    var companyResponse by rememberSaveable(selected?.id) { mutableStateOf("") }
+    var requestedResolution by rememberSaveable(selected?.id) {
+        mutableStateOf("Correct or delete information that is inaccurate, incomplete, or cannot be verified, and provide an updated consumer report with a written explanation of the investigation result.")
+    }
+    var evidence by rememberSaveable(selected?.id) {
+        mutableStateOf("Credit report pages showing the item; prior dispute and delivery proof; statements or records supporting the facts; response received, if any.")
+    }
+    var factsConfirmed by rememberSaveable(selected?.id) { mutableStateOf(false) }
+    val now = System.currentTimeMillis()
+    val cfpbReady = selected?.let { dispute ->
+        dispute.status == DisputeStatus.RESOLVED ||
+            (dispute.sentAt != null && dispute.craResponseDueAt?.let { it <= now } == true)
+    } == true
     val steps = listOf(
-        "Review facts and gather proof" to "Confirm the exact error. Prepare copies of the report, identification, correspondence, and supporting statements.",
-        "Choose credit reporting" to "In the official CFPB form, select the credit-reporting category and the company involved.",
-        "Review and paste your narrative" to "Use the generated draft below only after editing every statement for accuracy.",
-        "Attach, submit, and track" to "Upload copies, keep originals, review the form, then submit it yourself and save the confirmation number.",
+        "Dispute with the reporting company first" to "Send a specific dispute to the bureau or furnisher and keep delivery proof. Do not file a CFPB credit-reporting complaint while that dispute is still pending.",
+        "Wait for the response window" to "Continue after the company responds or after 45 days have passed. Record what was corrected, verified, or left unexplained.",
+        "Confirm the exact problem" to "Edit the prefilled answers below so every statement matches your records. Do not include an SSN, full account number, or unnecessary medical details.",
+        "Choose credit reporting" to "In the official CFPB form, select credit reporting and the company involved. Paste only the answer that corresponds to each prompt.",
+        "Attach, submit, and track" to "Upload copies, keep originals, review the form, submit it yourself, and save the confirmation number for follow-up.",
     )
     ScreenList {
         item { Hero("CFPB complaint assistant", "A guided native workflow that prepares your draft without submitting anything for you.", Icons.Default.AccountBalance) }
         item {
             NoticeCard(Icons.Default.Warning, "You stay in control", "The app cannot promise an outcome and will never file a government complaint without your review and submission.", Amber400)
+        }
+        selected?.let { dispute ->
+            item {
+                NoticeCard(
+                    if (cfpbReady) Icons.Default.Check else Icons.Default.Timeline,
+                    if (cfpbReady) "CFPB preparation window reached" else "CFPB prerequisite not complete",
+                    when {
+                        dispute.status in listOf(DisputeStatus.DRAFT, DisputeStatus.READY) -> "First send the dispute to the reporting company and keep proof of delivery."
+                        dispute.status == DisputeStatus.INVESTIGATING || dispute.status == DisputeStatus.SENT -> "The reporting dispute is pending. Wait for a response or until the recorded 45-day date before filing this complaint."
+                        else -> "A response is recorded. Review it and describe precisely what remains unresolved."
+                    },
+                    if (cfpbReady) Emerald400 else Amber400,
+                )
+            }
         }
         if (data.disputes.isEmpty()) item { EmptyState("Create a dispute first", "The assistant uses a saved fact-specific dispute to prepare the CFPB narrative.") }
         if (data.disputes.isNotEmpty()) {
@@ -576,14 +604,40 @@ private fun CfpbScreen(data: AppState) {
             }
         }
         selected?.let { dispute ->
-            item { SectionTitle("Reviewable complaint draft") }
+            item { SectionTitle("Prefilled answers — edit and confirm") }
             item {
-                val narrative = DisputeLetterGenerator.cfpbNarrative(dispute)
                 Card(colors = CardDefaults.cardColors(containerColor = Navy900), modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text(narrative, color = Slate300, fontSize = 13.sp, lineHeight = 19.sp)
-                        OutlinedButton(onClick = { context.copyText("CFPB complaint draft", narrative) }, modifier = Modifier.fillMaxWidth()) {
-                            Icon(Icons.Default.ContentCopy, null); Spacer(Modifier.width(8.dp)); Text("Copy reviewed draft")
+                        Text("What happened?", fontWeight = FontWeight.Bold)
+                        OutlinedTextField(value = problem, onValueChange = { problem = it.take(4_000) }, modifier = Modifier.fillMaxWidth(), minLines = 4)
+                        relatedFinding?.let {
+                            Text("App evidence flag: ${it.title} — ${it.detail}", color = Slate400, fontSize = 11.sp)
+                        }
+                        Text("What did the company say or do?", fontWeight = FontWeight.Bold)
+                        OutlinedTextField(value = companyResponse, onValueChange = { companyResponse = it.take(3_000) }, modifier = Modifier.fillMaxWidth(), minLines = 3, placeholder = { Text("Summarize the response or state that none was received.") })
+                        Text("What resolution are you requesting?", fontWeight = FontWeight.Bold)
+                        OutlinedTextField(value = requestedResolution, onValueChange = { requestedResolution = it.take(2_000) }, modifier = Modifier.fillMaxWidth(), minLines = 3)
+                        Text("Evidence checklist", fontWeight = FontWeight.Bold)
+                        OutlinedTextField(value = evidence, onValueChange = { evidence = it.take(2_000) }, modifier = Modifier.fillMaxWidth(), minLines = 3)
+                        FilterChip(
+                            selected = factsConfirmed,
+                            onClick = { factsConfirmed = !factsConfirmed },
+                            label = { Text(if (factsConfirmed) "Facts reviewed and confirmed" else "I must review every fact") },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        val narrative = DisputeLetterGenerator.cfpbNarrative(
+                            dispute = dispute,
+                            problem = problem,
+                            companyResponse = companyResponse,
+                            requestedResolution = requestedResolution,
+                            evidence = evidence,
+                        )
+                        OutlinedButton(
+                            onClick = { context.copyText("CFPB complaint draft", narrative) },
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = factsConfirmed,
+                        ) {
+                            Icon(Icons.Default.ContentCopy, null); Spacer(Modifier.width(8.dp)); Text("Copy confirmed answers")
                         }
                     }
                 }
@@ -601,14 +655,15 @@ private fun CfpbScreen(data: AppState) {
 }
 
 @Composable
-private fun AssistantScreen(data: AppState, viewModel: MainViewModel) {
+private fun AssistantScreen(ui: AppUiState, viewModel: MainViewModel) {
+    val data = ui.data
     var input by rememberSaveable { mutableStateOf("") }
     Column(Modifier.fillMaxSize()) {
         NoticeCard(
             Icons.Default.Lock,
-            "Private report-aware guidance",
-            "This test build uses its on-device analysis engine. It never claims to be a lawyer or guarantee a score result.",
-            Cyan400,
+            if (ui.isAgentEndpointConfigured) "Secure agent endpoint configured" else "Secure agent setup incomplete",
+            if (ui.isAgentEndpointConfigured) "Questions use a redacted case snapshot. A short-lived signed-in session is required; model and legal-library keys never live in the APK." else "No case data will leave this device until the authenticated AI gateway is configured.",
+            if (ui.isAgentEndpointConfigured) Emerald400 else Amber400,
             modifier = Modifier.padding(16.dp),
         )
         LazyColumn(
@@ -639,11 +694,15 @@ private fun AssistantScreen(data: AppState, viewModel: MainViewModel) {
                 placeholder = { Text("What should I do first?") },
                 modifier = Modifier.weight(1f),
                 maxLines = 3,
+                enabled = !ui.isAssistantThinking,
             )
             FloatingActionButton(
                 onClick = { viewModel.askAssistant(input); input = "" },
                 containerColor = Blue500,
-            ) { Icon(Icons.AutoMirrored.Filled.Send, "Send") }
+            ) {
+                if (ui.isAssistantThinking) CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
+                else Icon(Icons.AutoMirrored.Filled.Send, "Send")
+            }
         }
     }
 }
@@ -739,17 +798,19 @@ private fun ScoreRow(snapshot: ScoreSnapshot) {
 }
 
 @Composable
-private fun SettingsScreen(data: AppState, viewModel: MainViewModel) {
+private fun SettingsScreen(ui: AppUiState, viewModel: MainViewModel) {
+    val data = ui.data
     var confirmClear by remember { mutableStateOf(false) }
     ScreenList {
         item { Hero("Privacy & settings", "Control local credit data and review connection status.", Icons.Default.Settings) }
         item { NoticeCard(Icons.Default.Check, "Native Android build", "Kotlin + Jetpack Compose. No WebView, Capacitor, or wrapped website is used for the app interface.", Emerald400) }
+        item { NoticeCard(Icons.Default.Security, "Protected local storage", "Case state is encrypted with AES-GCM using a non-exportable Android Keystore key. Screenshots are blocked and Android backup is disabled.", Emerald400) }
         item {
             NoticeCard(
                 Icons.Default.AutoAwesome,
-                "Analysis engine: active",
-                if (BuildConfig.AI_GATEWAY_URL.isBlank()) "Private parsing, rule-based analysis, dispute drafting, and report-aware guidance work on-device. A secure generative-AI gateway is not configured in this test build." else "Secure generative-AI gateway configured.",
-                Cyan400,
+                if (ui.isAgentEndpointConfigured) "Legal agent endpoint: configured" else "Legal agent endpoint: not connected",
+                if (ui.isAgentEndpointConfigured) "The APK has a gateway URL but still requires a short-lived authenticated user session before any redacted case context can be sent." else "On-device parsing and deterministic review flags work. Interactive legal-agent answers remain disabled so the app never falls back to pretending rules are AI.",
+                if (ui.isAgentEndpointConfigured) Emerald400 else Amber400,
             )
         }
         item {

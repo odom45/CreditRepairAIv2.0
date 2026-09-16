@@ -1,0 +1,62 @@
+{
+  "libraryVersion": "2026.09.16",
+  "jurisdiction": "United States federal",
+  "reviewedOn": "2026-09-16",
+  "reviewIntervalDays": 45,
+  "sources": [
+    {
+      "id": "fcra-1681e",
+      "title": "15 U.S.C. § 1681e — Compliance procedures",
+      "url": "https://uscode.house.gov/view.xhtml?req=granuleid:USC-prelim-title15-section1681e&num=0&edition=prelim",
+      "topics": ["maximum possible accuracy", "consumer reporting agencies"]
+    },
+    {
+      "id": "fcra-1681i",
+      "title": "15 U.S.C. § 1681i — Procedure in case of disputed accuracy",
+      "url": "https://uscode.house.gov/view.xhtml?req=granuleid:USC-prelim-title15-section1681i&num=0&edition=prelim",
+      "topics": ["reinvestigation", "dispute notice", "results"]
+    },
+    {
+      "id": "fcra-1681s2",
+      "title": "15 U.S.C. § 1681s-2 — Responsibilities of furnishers",
+      "url": "https://uscode.house.gov/view.xhtml?req=granuleid:USC-prelim-title15-section1681s-2&num=0&edition=prelim",
+      "topics": ["furnisher accuracy", "notice of dispute", "investigation"]
+    },
+    {
+      "id": "fcra-1681c2",
+      "title": "15 U.S.C. § 1681c-2 — Block of information resulting from identity theft",
+      "url": "https://uscode.house.gov/view.xhtml?req=granuleid:USC-prelim-title15-section1681c-2&num=0&edition=prelim",
+      "topics": ["identity theft", "blocking"]
+    },
+    {
+      "id": "reg-v-1022-43",
+      "title": "12 C.F.R. § 1022.43 — Direct disputes",
+      "url": "https://www.ecfr.gov/current/title-12/chapter-X/part-1022/subpart-E/section-1022.43",
+      "topics": ["direct dispute", "furnisher", "frivolous or irrelevant"]
+    },
+    {
+      "id": "cfpb-dispute-guide",
+      "title": "CFPB — How do I dispute an error on my credit report?",
+      "url": "https://www.consumerfinance.gov/ask-cfpb/how-do-i-dispute-an-error-on-my-credit-report-en-314/",
+      "topics": ["consumer steps", "supporting documents", "bureau dispute"]
+    },
+    {
+      "id": "cfpb-accurate-negative",
+      "title": "CFPB — Is it possible to remove accurate negative information?",
+      "url": "https://www.consumerfinance.gov/ask-cfpb/is-it-possible-to-remove-accurate-negative-information-from-my-credit-report-en-1249/",
+      "topics": ["accurate negative information", "reporting period", "no deletion promise"]
+    },
+    {
+      "id": "cfpb-complaint-prerequisite",
+      "title": "CFPB — Credit and consumer reporting complaint notice",
+      "url": "https://www.consumerfinance.gov/complaint/credit-and-consumer-reporting-complaint-notice-2/",
+      "topics": ["CFPB complaint", "first dispute", "45 days", "pending dispute"]
+    },
+    {
+      "id": "ftc-croa",
+      "title": "FTC — Credit Repair Organizations Act consumer safeguards",
+      "url": "https://www.ftc.gov/business-guidance/blog/2019/06/ftc-says-credit-repair-company-en-croa-ched-consumer-rights",
+      "topics": ["credit repair services", "prohibited promises", "advance payment", "consumer rights"]
+    }
+  ]
+}
