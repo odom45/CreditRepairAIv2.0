@@ -124,14 +124,25 @@ function requireHttps(value) {
 }
 
 async function checkOfficialLink(link) {
-  const response = await fetch(link.url, {
-    headers: { "User-Agent": "CreditRepairAI-LegalReview/1.0" },
-    redirect: "follow",
-    signal: AbortSignal.timeout(20_000),
-  });
-  // Some official portals intentionally block automated requests while remaining
-  // valid public sources. Auth/rate-limit responses therefore prove reachability.
-  if (!response.ok && ![401, 403, 429].includes(response.status)) {
-    throw new Error(`Official source unavailable for ${link.label} (${response.status}): ${link.url}`);
+  let lastError;
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      const response = await fetch(link.url, {
+        headers: { "User-Agent": "CreditRepairAI-LegalReview/1.0" },
+        redirect: "follow",
+        signal: AbortSignal.timeout(20_000),
+      });
+      // Some official portals intentionally block automated requests while remaining
+      // valid public sources. Auth/rate-limit responses therefore prove reachability.
+      if (response.ok || [401, 403, 429].includes(response.status)) return;
+      lastError = new Error(`HTTP ${response.status}`);
+    } catch (error) {
+      lastError = error;
+    }
+    if (attempt < 3) await new Promise((resolve) => setTimeout(resolve, attempt * 1_000));
   }
+  const cause = lastError instanceof Error
+    ? `${lastError.cause?.code || lastError.message}`
+    : "unknown network error";
+  throw new Error(`Official source unavailable for ${link.label} after 3 attempts (${cause}): ${link.url}`);
 }
