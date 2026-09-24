@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "287473718478",
+    "project_id": "credit-repair-ai-v2",
+    "storage_bucket": "credit-repair-ai-v2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:287473718478:android:6c8b8089f0502981c02c9f",
+        "android_client_info": {
+          "package_name": "com.creditrepairai.v2.debug"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "287473718478-pjtf11jpvbes5t1e8vuvtvd0ugmri37v.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDAa1YN6dwST9GzkzTyTqwK2c1zqAJkKKE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "287473718478-pjtf11jpvbes5t1e8vuvtvd0ugmri37v.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
