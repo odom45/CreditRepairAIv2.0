@@ -1,6 +1,7 @@
 package com.creditrepairai.v2
 
 import android.content.Context
+import android.app.Activity
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -10,6 +11,7 @@ import com.creditrepairai.v2.ai.SensitiveDataRedactor
 import com.creditrepairai.v2.analysis.CreditAnalyzer
 import com.creditrepairai.v2.analysis.CreditReportParser
 import com.creditrepairai.v2.data.AppRepository
+import com.creditrepairai.v2.auth.FirebaseSession
 import com.creditrepairai.v2.legal.DisputeLetterGenerator
 import com.creditrepairai.v2.model.AppState
 import com.creditrepairai.v2.model.Bureau
@@ -33,20 +35,72 @@ data class AppUiState(
     val notice: String? = null,
     val isAssistantThinking: Boolean = false,
     val isAgentEndpointConfigured: Boolean = false,
+    val signedInEmail: String? = null,
+    val isAuthenticating: Boolean = false,
 )
 
 class MainViewModel(
     private val repository: AppRepository,
     private val parser: CreditReportParser,
     private val agentGateway: CreditAgentGateway,
+    private val session: FirebaseSession,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(
         AppUiState(
             data = repository.load(),
             isAgentEndpointConfigured = agentGateway.isConfigured,
+            signedInEmail = session.email,
         ),
     )
     val uiState: StateFlow<AppUiState> = _uiState.asStateFlow()
+
+    fun signInWithEmail(email: String, password: String, createAccount: Boolean) {
+        if (email.isBlank() || password.length < 6 || _uiState.value.isAuthenticating) return
+        viewModelScope.launch {
+            _uiState.update { it.copy(isAuthenticating = true, notice = null) }
+            runCatching {
+                if (createAccount) session.createAccount(email, password) else session.signInWithEmail(email, password)
+            }.onSuccess {
+                _uiState.update {
+                    it.copy(
+                        signedInEmail = session.email,
+                        isAuthenticating = false,
+                        notice = if (createAccount) "Account created. Check your email to verify it." else "Signed in securely.",
+                    )
+                }
+            }.onFailure {
+                _uiState.update { state ->
+                    state.copy(isAuthenticating = false, notice = "Sign-in did not complete. Check your details and try again.")
+                }
+            }
+        }
+    }
+
+    fun signInWithGoogle(activity: Activity) {
+        if (_uiState.value.isAuthenticating) return
+        viewModelScope.launch {
+            _uiState.update { it.copy(isAuthenticating = true, notice = null) }
+            runCatching { session.signInWithGoogle(activity) }
+                .onSuccess {
+                    _uiState.update { it.copy(signedInEmail = session.email, isAuthenticating = false, notice = "Signed in with Google.") }
+                }
+                .onFailure {
+                    _uiState.update { it.copy(isAuthenticating = false, notice = "Google sign-in did not complete. Try again or use email.") }
+                }
+        }
+    }
+
+    fun signOut(context: Context) {
+        viewModelScope.launch {
+            session.signOut(context)
+            repository.clear()
+            _uiState.value = AppUiState(
+                data = AppState(),
+                notice = "Signed out and removed local case data from this device.",
+                isAgentEndpointConfigured = agentGateway.isConfigured,
+            )
+        }
+    }
 
     fun importPdf(uri: Uri, displayName: String) {
         viewModelScope.launch {
@@ -226,16 +280,18 @@ class MainViewModel(
     companion object {
         fun factory(context: Context): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
-            override fun <T : ViewModel> create(modelClass: Class<T>): T = MainViewModel(
-                repository = AppRepository(context),
-                parser = CreditReportParser(context),
-                agentGateway = CreditAgentGateway(
-                    endpoint = BuildConfig.AI_GATEWAY_URL,
-                    // Production must inject the short-lived OIDC access token
-                    // obtained after native sign-in. A static APK token is forbidden.
-                    tokenProvider = { null },
-                ),
-            ) as T
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                val session = FirebaseSession()
+                return MainViewModel(
+                    repository = AppRepository(context),
+                    parser = CreditReportParser(context),
+                    agentGateway = CreditAgentGateway(
+                        endpoint = BuildConfig.AI_GATEWAY_URL,
+                        tokenProvider = session,
+                    ),
+                    session = session,
+                ) as T
+            }
         }
     }
 }

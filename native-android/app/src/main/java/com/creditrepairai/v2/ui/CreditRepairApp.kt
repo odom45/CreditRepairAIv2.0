@@ -1,5 +1,6 @@
 package com.creditrepairai.v2.ui
 
+import android.app.Activity
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -104,6 +105,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -150,6 +152,10 @@ private enum class Destination(val label: String, val icon: ImageVector) {
 @Composable
 fun CreditRepairApp(viewModel: MainViewModel) {
     val ui by viewModel.uiState.collectAsStateWithLifecycle()
+    if (ui.signedInEmail == null) {
+        AuthenticationScreen(ui, viewModel)
+        return
+    }
     var destination by rememberSaveable { mutableStateOf(Destination.DASHBOARD) }
     val snackbar = remember { SnackbarHostState() }
 
@@ -239,6 +245,93 @@ fun CreditRepairApp(viewModel: MainViewModel) {
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun AuthenticationScreen(ui: AppUiState, viewModel: MainViewModel) {
+    val context = LocalContext.current
+    val activity = context as? Activity
+    var email by rememberSaveable { mutableStateOf("") }
+    var password by rememberSaveable { mutableStateOf("") }
+    var createAccount by rememberSaveable { mutableStateOf(false) }
+
+    Surface(modifier = Modifier.fillMaxSize(), color = Navy950) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(24.dp),
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Spacer(Modifier.height(44.dp))
+            Surface(color = Blue500, shape = RoundedCornerShape(18.dp)) {
+                Text("C", modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp), fontWeight = FontWeight.Black, fontSize = 24.sp)
+            }
+            Spacer(Modifier.height(18.dp))
+            Text("Welcome to CreditRepairAI", fontWeight = FontWeight.Black, fontSize = 28.sp)
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "Sign in before using reports or the legal AI assistant. Local data stays encrypted on this device.",
+                color = Slate400,
+            )
+            Spacer(Modifier.height(24.dp))
+            OutlinedTextField(
+                value = email,
+                onValueChange = { email = it.trim() },
+                label = { Text("Email") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(10.dp))
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text("Password") },
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(12.dp))
+            Button(
+                onClick = { viewModel.signInWithEmail(email, password, createAccount) },
+                enabled = !ui.isAuthenticating && email.contains("@") && password.length >= 6,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(if (createAccount) "Create account" else "Sign in")
+            }
+            TextButton(onClick = { createAccount = !createAccount }, modifier = Modifier.fillMaxWidth()) {
+                Text(if (createAccount) "Already have an account? Sign in" else "New here? Create an account")
+            }
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                HorizontalDivider(modifier = Modifier.weight(1f))
+                Text("  or  ", color = Slate400, fontSize = 12.sp)
+                HorizontalDivider(modifier = Modifier.weight(1f))
+            }
+            Spacer(Modifier.height(12.dp))
+            OutlinedButton(
+                onClick = { activity?.let(viewModel::signInWithGoogle) },
+                enabled = !ui.isAuthenticating && activity != null,
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Continue with Google") }
+            if (ui.isAuthenticating) {
+                Spacer(Modifier.height(18.dp))
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                    Text("Signing in…", color = Slate400)
+                }
+            }
+            ui.notice?.let {
+                Spacer(Modifier.height(16.dp))
+                Text(it, color = Amber400, fontSize = 13.sp)
+            }
+            Spacer(Modifier.height(28.dp))
+            Text(
+                "Educational credit organization and drafting assistance—not legal advice, score guarantees, or lender decisions.",
+                color = Slate400,
+                fontSize = 11.sp,
+            )
         }
     }
 }
@@ -847,6 +940,14 @@ private fun SettingsScreen(ui: AppUiState, viewModel: MainViewModel) {
                     }
                 }
             }
+        }
+        item {
+            val context = LocalContext.current
+            OutlinedButton(
+                onClick = { viewModel.signOut(context) },
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = Rose400),
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Sign out and remove local data") }
         }
         item {
             Card(colors = CardDefaults.cardColors(containerColor = Navy900), modifier = Modifier.fillMaxWidth()) {
