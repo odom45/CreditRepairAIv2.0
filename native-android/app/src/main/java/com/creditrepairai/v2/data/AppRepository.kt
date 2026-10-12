@@ -79,6 +79,7 @@ class AppRepository(context: Context) {
             .put("id", record.id).put("disputeId", record.disputeId).put("portal", record.portal.name)
             .put("step", record.step).put("reviewed", record.reviewed).put("confirmation", record.confirmation)
             .put("problem", record.problem).put("companyResponse", record.companyResponse).put("resolution", record.resolution).put("evidence", record.evidence)
+            .put("explanation", record.explanation?.let { JSONObject().put("step", it.step).put("contextKey", it.contextKey).put("text", it.text) } ?: JSONObject.NULL)
             .put("submittedAt", record.submittedAt ?: JSONObject.NULL).put("responseReceivedAt", record.responseReceivedAt ?: JSONObject.NULL)
             .put("reminder30", record.reminder30 ?: JSONObject.NULL).put("reminder45", record.reminder45 ?: JSONObject.NULL)) } })
         put("jurisdictionCode", state.jurisdictionCode)
@@ -99,6 +100,7 @@ class AppRepository(context: Context) {
             id = it.optString("id"), disputeId = it.optString("disputeId"), portal = enumValueOrDefault(it.optString("portal"), FilingPortal.EXPERIAN),
             step = it.optInt("step").coerceIn(0, 6), reviewed = it.optBoolean("reviewed"), confirmation = it.optString("confirmation"),
             problem = it.optString("problem"), companyResponse = it.optString("companyResponse"), resolution = it.optString("resolution"), evidence = it.optString("evidence"),
+            explanation = it.optJSONObject("explanation")?.let { note -> FilingExplanation(note.optInt("step", -1), note.optString("contextKey"), note.optString("text")) },
             submittedAt = it.optLongOrNull("submittedAt"), responseReceivedAt = it.optLongOrNull("responseReceivedAt"), reminder30 = it.optLongOrNull("reminder30"), reminder45 = it.optLongOrNull("reminder45")) },
         jurisdictionCode = json.optString("jurisdictionCode"),
         reports = json.array("reports").objects().map { it.toReport() },

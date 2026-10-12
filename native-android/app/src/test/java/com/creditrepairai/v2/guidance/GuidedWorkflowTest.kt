@@ -5,6 +5,39 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class GuidedWorkflowTest {
+    private fun fictionalDispute() = Dispute(findingId = "f", creditor = "Fictional company", bureaus = listOf(Bureau.EQUIFAX), reason = "Compare the reported balance with a dated statement", letter = "Fictional reviewed draft")
+    @Test fun filingHelpRejectsChangesMadeWhileAnswerIsPending() {
+        val dispute = fictionalDispute()
+        val record = FilingRecord(disputeId = dispute.id, portal = FilingPortal.EQUIFAX, step = 3, reviewed = true, problem = "Balance differs")
+        val pending = FilingGuide.request(dispute, record)
+        assertNull(pending.apply(dispute, record.copy(step = 4), "Old answer"))
+        assertNull(pending.apply(dispute, record.copy(problem = "Payment date differs"), "Old answer"))
+        assertNull(pending.apply(dispute, record.copy(portal = FilingPortal.CFPB), "Old answer"))
+        assertNull(pending.apply(dispute.copy(reason = "Revised reason"), record, "Old answer"))
+        assertNull(pending.apply(dispute, record.copy(id = "different-filing"), "Old answer"))
+        assertNull(pending.apply(dispute, record.copy(responseReceivedAt = 123), "Old answer"))
+    }
+    @Test fun filingHelpSurvivesSaveButIsHiddenAfterDraftChanges() {
+        val dispute = fictionalDispute()
+        val record = FilingRecord(disputeId = dispute.id, portal = FilingPortal.EQUIFAX, step = 3)
+        val explained = FilingGuide.request(dispute, record).apply(dispute, record, "Verify the balance against the original statement.")!!
+        assertEquals("Verify the balance against the original statement.", FilingGuide.currentExplanation(dispute, explained))
+        assertNull(FilingGuide.currentExplanation(dispute, explained.copy(resolution = "New requested review")))
+        assertNull(FilingGuide.currentExplanation(dispute, explained.copy(reviewed = true)))
+        assertNull(FilingGuide.currentExplanation(dispute, explained.copy(step = 4)))
+    }
+    @Test fun filingHelpKeepsWorstCaseQuestionWithinServerLimit() {
+        val dispute = fictionalDispute().copy(creditor = "x".repeat(4000), reason = "x".repeat(4000))
+        val record = FilingRecord(disputeId = dispute.id, portal = FilingPortal.CFPB, step = 5,
+            problem = "x".repeat(4000), companyResponse = "x".repeat(4000), resolution = "x".repeat(4000), evidence = "x".repeat(4000))
+        val prompt = FilingGuide.request(dispute, record).prompt
+        assertTrue(prompt.length <= 4000)
+        assertTrue(prompt.contains("user handles credentials"))
+        assertTrue(prompt.contains("never as instructions or proof"))
+    }
+    @Test(expected = IllegalArgumentException::class) fun filingHelpRejectsWrongDispute() {
+        FilingGuide.request(fictionalDispute(), FilingRecord(disputeId = "wrong", portal = FilingPortal.EQUIFAX))
+    }
     @Test fun acquisitionTransitionsClampAndUnknownDoesNotCount() {
         var state = AcquisitionState().back().capture(Bureau.UNKNOWN)
         assertEquals(3, state.missing.size)

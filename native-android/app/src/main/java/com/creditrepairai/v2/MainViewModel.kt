@@ -36,6 +36,11 @@ import com.creditrepairai.v2.guidance.*
 import com.creditrepairai.v2.billing.PlayBillingManager
 import com.creditrepairai.v2.ai.SecureService
 
+data class FilingHelpStatus(
+    val recordId: String = "", val step: Int = -1, val contextKey: String = "",
+    val thinking: Boolean = false, val error: String? = null,
+)
+
 data class AppUiState(
     val data: AppState = AppState(),
     val isProcessing: Boolean = false,
@@ -45,6 +50,7 @@ data class AppUiState(
     val isAgentEndpointConfigured: Boolean = false,
     val signedInEmail: String? = null,
     val isAuthenticating: Boolean = false,
+    val filingHelp: FilingHelpStatus = FilingHelpStatus(),
 )
 
 class MainViewModel(
@@ -56,6 +62,7 @@ class MainViewModel(
 ) : ViewModel() {
     private val caseFence = SessionFence(session.uid)
     private var aiJob: Job? = null
+    private var filingHelpJob: Job? = null
     private var activeImportJob: Job? = null
     init { repository.selectOwner(session.uid) }
     val service = SecureService(BuildConfig.AI_GATEWAY_URL, session)
@@ -81,6 +88,8 @@ class MainViewModel(
     private fun invalidateCase(owner: String? = session.uid) {
         caseFence.invalidate(owner)
         aiJob?.cancel()
+        filingHelpJob?.cancel()
+        _uiState.update { it.copy(filingHelp = FilingHelpStatus()) }
         activeImportJob?.cancel()
         FollowUpWorker.cancelAll(context)
     }
@@ -344,6 +353,51 @@ class MainViewModel(
     fun completeOnboarding() = mutate(null) { it.copy(onboardingComplete = true) }
     fun updateAcquisition(state: AcquisitionState) = mutate(null) { it.copy(acquisition = state) }
     fun saveFiling(record: FilingRecord) = mutate(null) { it.copy(filings = it.filings.filterNot { old -> old.id == record.id } + record) }
+    fun explainFiling(record: FilingRecord) {
+        if (filingHelpJob?.isActive == true) return
+        val owner = session.uid ?: return
+        val ticket = caseFence.ticket()
+        if (!caseFence.accepts(ticket, owner)) return
+        // Save a new checklist before requesting help; never send an unsaved case.
+        if (_uiState.value.data.filings.none { it.id == record.id }) saveFiling(record)
+        val snapshot = _uiState.value.data
+        val saved = snapshot.filings.firstOrNull { it.id == record.id } ?: return
+        val dispute = snapshot.disputes.firstOrNull { it.id == saved.disputeId } ?: return
+        val request = FilingGuide.request(dispute, saved)
+        val status = FilingHelpStatus(saved.id, saved.step, request.contextKey)
+        if (BuildConfig.PAID_ACCESS_ENABLED && !billing.ui.value.entitlement.hasAccess(System.currentTimeMillis())) {
+            _uiState.update { it.copy(filingHelp = status.copy(error = "Verified monthly access is required for AI assistance. Open Settings to manage your plan.")) }
+            return
+        }
+        _uiState.update { it.copy(filingHelp = status.copy(thinking = true)) }
+        filingHelpJob = viewModelScope.launch {
+            val answer = try {
+                agentGateway.answer(SensitiveDataRedactor.redact(request.prompt), snapshot, owner)
+            } catch (error: Exception) {
+                if (error is CancellationException) throw error
+                if (caseFence.accepts(ticket, session.uid)) _uiState.update {
+                    it.copy(filingHelp = status.copy(error = "The secure AI explanation is unavailable. Check your connection and verified sign-in, then retry. The saved checklist remains available."))
+                }
+                return@launch
+            }
+            if (!caseFence.accepts(ticket, session.uid)) return@launch
+            val current = _uiState.value.data
+            val currentRecord = current.filings.firstOrNull { it.id == request.recordId }
+            val currentDispute = current.disputes.firstOrNull { it.id == saved.disputeId }
+            val explained = if (currentRecord != null && currentDispute != null)
+                request.apply(currentDispute, currentRecord, answer) else null
+            if (explained == null) {
+                _uiState.update { it.copy(filingHelp = FilingHelpStatus(), notice = "The filing details changed. Ask again to explain the current step.") }
+                return@launch
+            }
+            val updated = current.copy(filings = current.filings.map { if (it.id == explained.id) explained else it })
+            if (runCatching { repository.save(updated) }.isFailure) {
+                _uiState.update { it.copy(filingHelp = status.copy(error = "Encrypted storage could not save the explanation. Check device storage and retry.")) }
+                return@launch
+            }
+            _uiState.update { it.copy(data = updated, filingHelp = status) }
+        }
+    }
     fun recordSubmission(record: FilingRecord, confirmation: String) {
         val saved = runCatching { FilingGuide.submitted(record, confirmation, System.currentTimeMillis()) }.getOrElse {
             _uiState.update { it.copy(notice = "Review the facts and enter the actual portal receipt before recording a submission.") }; return

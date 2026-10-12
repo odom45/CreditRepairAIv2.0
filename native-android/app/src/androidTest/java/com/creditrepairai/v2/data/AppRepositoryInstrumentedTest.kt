@@ -3,6 +3,11 @@ package com.creditrepairai.v2.data
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.creditrepairai.v2.guidance.CreditGoal
+import com.creditrepairai.v2.guidance.FilingGuide
+import com.creditrepairai.v2.guidance.FilingPortal
+import com.creditrepairai.v2.guidance.FilingRecord
+import com.creditrepairai.v2.model.Dispute
+import com.creditrepairai.v2.model.Bureau
 import com.creditrepairai.v2.model.AppState
 import org.junit.After
 import org.junit.Assert.*
@@ -31,5 +36,16 @@ class AppRepositoryInstrumentedTest {
         assertFalse(prefs.all.values.joinToString().contains("Fictional private marker"))
         repository.selectOwner("fictional-owner-B")
         assertEquals("", repository.load().goal.description)
+    }
+    @Test fun savedFilingExplanationIsEncryptedAndRestored() {
+        repository.selectOwner("fictional-owner-A")
+        val dispute = Dispute(findingId = "f", creditor = "Fictional", bureaus = listOf(Bureau.EQUIFAX), reason = "Verify facts", letter = "Fictional draft")
+        val record = FilingRecord(disputeId = dispute.id, portal = FilingPortal.EQUIFAX, step = 3)
+        val explained = FilingGuide.request(dispute, record).apply(dispute, record, "Fictional saved explanation")!!
+        repository.save(AppState(disputes = listOf(dispute), filings = listOf(explained)))
+        val restarted = AppRepository(context).load()
+        assertEquals("Fictional saved explanation", FilingGuide.currentExplanation(restarted.disputes.single(), restarted.filings.single()))
+        val prefs = context.getSharedPreferences("credit_repair_private", android.content.Context.MODE_PRIVATE)
+        assertFalse(prefs.all.values.joinToString().contains("Fictional saved explanation"))
     }
 }

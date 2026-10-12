@@ -4,7 +4,7 @@ AI-powered 3-bureau credit report analysis and legal dispute generation.
 
 ## Native branch release status — 2026-10-12
 
-The native branch now implements persisted acquisition/filing guides, user-reviewed copy/paste drafts, receipt/response tracking, goals and AI explanations, Play monthly software-access billing, server-authorized subscription management, onboarding and policy screens. Session/privacy hardening and regression checks were added. Implemented does not mean launch verified: full device flows, permissioned real layouts, live Firebase/Convex/OpenAI/Play integration, signed release and external reviews remain required.
+The native branch now implements persisted acquisition/filing guides, encrypted AI explanations alongside the filing steps, user-reviewed copy/paste drafts, receipt/response tracking, goals and AI explanations, Play monthly software-access billing, server-authorized subscription management, onboarding and policy screens. Session/privacy hardening and regression checks were added. Implemented does not mean launch verified: full device flows, permissioned real layouts, live Firebase/Convex/OpenAI/Play integration, signed release and external reviews remain required. Custom Tab PDF downloads use an explicit user-selected Open/Share/import handoff.
 
 Read [RELEASE_OWNER_CHECKLIST.md](RELEASE_OWNER_CHECKLIST.md), [parser/device validation](docs/PARSER_VALIDATION.md), and [the architectural assessment](docs/PRODUCTION_ASSESSMENT.md). A finding is a review prompt; no deletion, score change, approval or outcome date is promised. Paid purchases default to disabled until owner configuration and qualified review.
 

@@ -7,7 +7,7 @@ Review snapshot: 2026-10-12. Code implemented is not equivalent to production ve
 - [x] Native Kotlin/Compose application, Firebase email/Google sign-in contract, short-lived user-bound tokens.
 - [x] On-device PDF/OCR parsing, automatic high-risk-identifier redaction, AES-GCM/Keystore case storage, FLAG_SECURE and backups disabled.
 - [x] Persisted report-acquisition checklist, isolated Custom Tabs, explicit PDF Open/Share import and document-picker fallback.
-- [x] Guided bureau/CFPB filing: editable fields, chunk limits, review before copying, user-only submission, receipts, response records, private check-ins.
+- [x] Guided bureau/CFPB filing: editable fields, chunk limits, review before copying, user-only submission, receipts, response records, private check-ins and encrypted inline AI step explanations. Answers are invalidated after relevant draft/step changes and account deletion/switch.
 - [x] Goals, local prioritized action checklist, saved AI planning output, explanation affordances and educational labels.
 - [x] Play monthly client, server purchase ownership/expiry/state verification, acknowledgment, restoration, hourly lifecycle refresh, admin authorization/cancel/refund-and-revoke.
 - [x] Five-page onboarding, in-app privacy/terms/support and local/account deletion paths.
@@ -18,7 +18,7 @@ Review snapshot: 2026-10-12. Code implemented is not equivalent to production ve
 
 ## Gates not yet proven
 
-- [ ] Remote CI must pass on the final published commit, not just a previous debug commit.
+- [x] Both remote CI jobs passed on `e7a1a4f`, run `38223703681`, including the account-deletion guard. The subsequent inline filing-help change requires a separate final CI result.
 - [ ] Follow `docs/PARSER_VALIDATION.md` on actual devices using permissioned, fully redacted reports. Full UI/device/large-font/TalkBack checks are not covered by pure unit tests.
 - [ ] Stage and verify Firebase → Convex → OpenAI with a fictional case and a verified-email account.
 - [ ] Stage Play license-tester scenarios: purchase, pending, canceled checkout, restore, expiry, grace, hold, account switch, replacement and administrator refund. Do not use a real charge for testing.
@@ -103,4 +103,4 @@ References: https://developer.android.com/google/play/billing/integrate and http
 
 ## Remaining engineering proof, not outside expert work
 
-Connected-device/instrumented flow verification, live staging integration, green remote CI, source-link checks and release-mode validation still need recorded results. Until then, code-complete and launch-ready are not accepted labels.
+Connected-device/instrumented flow verification, live staging integration, final-change CI, source-link checks and release-mode validation still need recorded results. Until then, code-complete and launch-ready are not accepted labels. Custom Tabs require an explicit PDF Open/Share/import handoff; silent download interception is unavailable through that browser API.

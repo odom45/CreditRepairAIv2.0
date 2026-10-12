@@ -237,13 +237,13 @@ fun CreditRepairApp(viewModel: MainViewModel) {
                 Destination.ANALYSIS -> AnalysisScreen(ui.data, viewModel) { viewModel.askAssistant(it); destination = Destination.ASSISTANT }
                 Destination.DISPUTES -> DisputesScreen(ui.data, viewModel, { viewModel.askAssistant(it); destination = Destination.ASSISTANT }, { destination = Destination.FILING })
                 Destination.MORE -> MoreScreen { destination = it }
-                Destination.CFPB -> FilingScreen(ui.data, viewModel, com.creditrepairai.v2.guidance.FilingPortal.CFPB) { viewModel.askAssistant(it); destination = Destination.ASSISTANT }
+                Destination.CFPB -> FilingScreen(ui, viewModel, com.creditrepairai.v2.guidance.FilingPortal.CFPB)
                 Destination.ASSISTANT -> AssistantScreen(ui, viewModel)
                 Destination.PROGRESS -> ProgressScreen(ui.data, viewModel)
                 Destination.FREEZES -> FreezesScreen(ui.data, viewModel)
                 Destination.SETTINGS -> SettingsScreen(ui, viewModel, { destination = Destination.SUBSCRIPTION }, { destination = Destination.POLICIES })
                 Destination.ACQUISITION -> AcquisitionScreen(ui.data, viewModel::updateAcquisition) { destination = Destination.REPORTS }
-                Destination.FILING -> FilingScreen(ui.data, viewModel) { viewModel.askAssistant(it); destination = Destination.ASSISTANT }
+                Destination.FILING -> FilingScreen(ui, viewModel)
                 Destination.PLANNING -> PlanningScreen(ui.data, viewModel) { destination = Destination.ASSISTANT }
                 Destination.SUBSCRIPTION -> SubscriptionScreen(viewModel)
                 Destination.POLICIES -> PolicyScreen()

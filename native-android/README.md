@@ -15,7 +15,7 @@ This directory contains the native Android rebuild. It uses Kotlin and Jetpack C
 - Authenticated, tool-enabled report-aware agent contract plus educational action checklists without predicted outcomes
 - Manual score history, action progress, safe fictional demo data, and complete local-data deletion
 - Persisted Custom Tab report acquisition and explicit PDF share/open imports; browser credentials and page contents are never inspected
-- Persisted editable portal filing guides, user-only submission, receipts, response records and private 30/45-day check-ins
+- Persisted editable portal filing guides, encrypted inline AI step explanations, user-only submission, receipts, response records and private 30/45-day check-ins. Step/draft edits invalidate outdated answers; credentials and actual portal submission remain entirely user controlled.
 - Goal planning, saved AI plans, finding/draft/citation explanation actions and educational labels
 - Play monthly billing client and server verification/admin management; purchases disabled by default until owner setup/review
 - Five-step onboarding, privacy/terms/support screens and account-deletion flow

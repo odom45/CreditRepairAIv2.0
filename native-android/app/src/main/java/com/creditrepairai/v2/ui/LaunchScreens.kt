@@ -83,7 +83,8 @@ fun AcquisitionScreen(data: AppState, update: (AcquisitionState) -> Unit, onImpo
     }
 }
 @Composable
-fun FilingScreen(data: AppState, viewModel: MainViewModel, initialPortal: FilingPortal = FilingPortal.EXPERIAN, explain: (String) -> Unit) {
+fun FilingScreen(ui: AppUiState, viewModel: MainViewModel, initialPortal: FilingPortal = FilingPortal.EXPERIAN) {
+    val data = ui.data
     val context = LocalContext.current
     var selectedDispute by rememberSaveable { mutableStateOf(data.disputes.firstOrNull()?.id.orEmpty()) }
     var portal by rememberSaveable { mutableStateOf(initialPortal) }
@@ -105,7 +106,20 @@ fun FilingScreen(data: AppState, viewModel: MainViewModel, initialPortal: Filing
         if (dispute != null) {
             Text("Step ${record.step + 1} of 7: ${FilingGuide.steps[record.step].first}", style = MaterialTheme.typography.titleLarge)
             Text(FilingGuide.steps[record.step].second)
-            TextButton(onClick = { explain("Explain this filing step in plain language, without reading or automating any portal: ${FilingGuide.steps[record.step]}") }) { Text("Ask AI to explain this step") }
+            val help = ui.filingHelp.takeIf { it.recordId == record.id && it.step == record.step && it.contextKey == FilingGuide.contextKey(dispute, record) }
+            TextButton(onClick = { viewModel.explainFiling(record) }, enabled = !ui.filingHelp.thinking) { Text("Ask AI to explain this step") }
+            if (help?.thinking == true) Text("Preparing an explanation for this saved step…")
+            help?.error?.let { Text(it, color = Amber400) }
+            FilingGuide.currentExplanation(dispute, record)?.let { answer ->
+                Card(Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text("AI explanation for this step", fontWeight = FontWeight.Bold)
+                        EducationLabel()
+                        Text(answer)
+                        Text("Compare this guidance with the actual portal and your records. Only you review, paste and submit.")
+                    }
+                }
+            }
             if (!ready) Text("First record the reporting company's response, or wait until the saved 45-day check-in date. CFPB guidance is not a guarantee of eligibility; verify current portal requirements.", color = Amber400)
             Button(onClick = { browserError = if (PortalBrowser.open(context, portal.url)) "" else "A compatible browser is unavailable. Try a trusted browser." }, enabled = ready && record.reviewed, modifier = Modifier.fillMaxWidth()) { Text("Open official ${portal.label} portal") }
             if (browserError.isNotEmpty()) Text(browserError, color = Amber400)
