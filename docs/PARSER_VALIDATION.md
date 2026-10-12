@@ -6,6 +6,8 @@
 
 Run `cd native-android` then `./gradlew testDebugUnitTest`. Never alter expectations just to match a parser error: compare the expected account records with the fixture text.
 
+The API-35 GitHub emulator also passed three generated PDF scenarios on source `2472e382`: embedded text, scanned on-device OCR and AES-encrypted fictional PDF with an empty document-user password. Run `./gradlew connectedDebugAndroidTest lintDebug` only on a disposable debug device containing fictional records. These fixtures contain no bureau login credential or consumer data; their success does not validate all current bureau formats.
+
 ## Permissioned real-layout validation — owner/testers
 
 1. Obtain explicit permission for each report. Keep originals out of Git, public issues, chat, screenshots and CI artifacts.
@@ -19,7 +21,7 @@ Run `cd native-android` then `./gradlew testDebugUnitTest`. Never alter expectat
 
 ## Device walkthrough checklist
 
-- Fresh install/sign-in → all five onboarding steps → policies → dashboard.
+- Fresh install/sign-in → explicit unchecked agreement/adult confirmation → all five onboarding steps → dashboard. First AI use requires a separate optional data-sharing choice; declining leaves local tools available.
 - Acquire reports with Custom Tabs; sign into official sites yourself; PDF sharing or Print → Save as PDF → import; inspect captured/missing bureaus.
 - Finding explanation and citation explanation → AI response or clear configuration/auth error.
 - Draft review checkbox → copy/share; guided portal fields → adjustable chunks → leave/return → saved receipt → recorded response/check-ins.
@@ -29,6 +31,8 @@ Run `cd native-android` then `./gradlew testDebugUnitTest`. Never alter expectat
 - Privacy/support/account deletion: recent sign-in failure must not say deletion completed. Cancel subscription separately in Play.
 - TalkBack, large font/display size, keyboard open, narrow screens, dark theme; all actions remain reachable.
 
-## Not yet established
+## Established automation and remaining manual acceptance
 
-No connected Android device or emulator was available in the execution environment at review time. Instrumented/full manual device flows, actual bureau layouts, live Firebase/Convex/AI, Google Play license-test lifecycle and R8 release behavior remain unverified. Unit tests and APK assembly do not substitute for these checks.
+[Final source run 38241196324](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/38241196324) passed all 15 API-35 device tests and lint, including the three PDF scenarios, encrypted storage, agreement/onboarding, acquisition, filing receipts/responses and demo/navigation. Lint has zero errors and 29 warnings; see `VERIFICATION_RESULTS.md` for limits.
+
+No complete human walkthrough or real-user feedback was obtained. TalkBack/device diversity, actual permissioned bureau layouts, native Firebase/Convex/AI, Google Play license lifecycle and release AAB/R8 remain unverified. The live model gate is blocked by exhausted API credit. Unit/device fixtures and APK assembly do not substitute for these checks.

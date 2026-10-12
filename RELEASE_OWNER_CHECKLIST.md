@@ -5,8 +5,10 @@ Review snapshot: 2026-10-12. Code implemented is not equivalent to production ve
 ## Implemented in the native-branch work
 
 - [x] Versioned full privacy/terms/educational disclaimer drafts; explicit acceptance and adult confirmation; separate affirmative AI-sharing choice with local/server enforcement and stale-choice protection. Qualified review still required; no blanket liability transfer is claimed.
-- [x] Public policy/deletion page sources and monitored-contact build injection; configure contact and host the pages before treating the external deletion pathway as operational.
-- [x] GitHub emulator instrumentation/lint and read-only staging/configuration preflight jobs added. Their current-run results must be recorded before they count as passed gates.
+- [x] Draft public policy/deletion pages hosted on the authorized development deployment and monitored-contact build injection implemented; configure/test the mailbox and obtain qualified approval before treating the commercial external deletion pathway as operational.
+- [x] GitHub emulator instrumentation/lint, read-only protected-configuration checks, owner-key signing probe, locked dependency audit and fictional live-agent smoke jobs added. Results and limits are recorded in `docs/VERIFICATION_RESULTS.md`.
+- [x] Reviewed authentication dependency updates and platform-binary cleanup applied; current npm audit reports zero known advisories. Android Bouncy Castle family upgraded from inherited 1.72 to aligned 1.86; resolved Maven inventory/OSV and encrypted-PDF gates added.
+- [x] Agent requires completed non-empty legal retrieval and a case-summary tool, rejects incomplete outputs, and clears an abort timer under one 60-second request budget. Eight additional backend regressions cover these cases.
 
 - [x] Native Kotlin/Compose application, Firebase email/Google sign-in contract, short-lived user-bound tokens.
 - [x] On-device PDF/OCR parsing, automatic high-risk-identifier redaction, AES-GCM/Keystore case storage, FLAG_SECURE and backups disabled.
@@ -20,9 +22,12 @@ Review snapshot: 2026-10-12. Code implemented is not equivalent to production ve
 - [x] Fictional parser, chunking, state-machine, entitlement and session regression tests; backend policy tests.
 - [x] CI definitions cover native tests/build plus backend/admin typecheck, tests, legal registry and source-token scan. Signed release checks owner configuration and signatures.
 
-## Gates not yet proven
+## Verification completed and still required
 
-- [x] Final application source passed both remote CI jobs on `29ce35b700f62614517408c3102620e9a28fad35`, [run `38225290284`](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/38225290284), including account-deletion guards, inline filing help and bounded-response handling. Debug APK and unit-test reports uploaded. Later assessment/checklist edits are documentation only.
+- [x] Current application source `2472e38210ac525616c014a9b9c4b65f45a03476`: native/backend jobs, 37 JVM tests, 20 backend tests and owner-signed debug APK verification passed. [Final source run `38241196324`](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/38241196324). All 15 device tests and lint also passed; Android OSV completed across 213 modules with zero reported advisories. Development deployment succeeded, but the real AI smoke failed on exhausted API credit, so the overall run is not green.
+- [x] All 15 device scenarios, Android lint, resolved Android dependency scan and protected development deployment completed.
+- [x] Private comparison confirmed the GitHub OpenAI key already matches the server key; [key-check run `38241914828`](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/38241914828) passed.
+- [ ] Real retrieval smoke: restore existing API-project credit and rerun the failed deployment job. Current result is HTTP 429, `credit_balance_exhausted`; no grounded live answer was accepted.
 - [ ] Follow `docs/PARSER_VALIDATION.md` on actual devices using permissioned, fully redacted reports. Full UI/device/large-font/TalkBack checks are not covered by pure unit tests.
 - [ ] Stage and verify Firebase → Convex → OpenAI with a fictional case and a verified-email account.
 - [ ] Stage Play license-tester scenarios: purchase, pending, canceled checkout, restore, expiry, grace, hold, account switch, replacement and administrator refund. Do not use a real charge for testing.
@@ -32,7 +37,16 @@ Review snapshot: 2026-10-12. Code implemented is not equivalent to production ve
 
 ## Owner actions, in order
 
-### 1. Stage cloud configuration
+### 1. Configure the missing contact and Firebase registrations
+
+The preflight verified the existing OpenAI/Convex/gateway and four signing Secrets; these are not assumed missing. It also verified the key/alias/password combination. The repository variable `CREDIT_SUPPORT_EMAIL`, Play service-account environment and billing-admin allowlist are missing. The existing signing certificate does not match either committed Firebase Android OAuth certificate.
+
+1. Restore API billing credit for the existing server OpenAI project/key: live Responses returned `credit_balance_exhausted`. A successful key/model-list read does not prove billable calls can run. Rerun the existing fictional live-agent smoke after funding; no key regeneration is required by this result.
+2. Choose/confirm an actually monitored support/deletion mailbox. Set GitHub repository **Variable** `CREDIT_SUPPORT_EMAIL` and Convex protected environment `CREDIT_SUPPORT_EMAIL` to it. Test Settings contact and the external deletion contact. An author email in a README is not proof of a monitored deletion service.
+3. Use the public SHA-1/SHA-256 in `docs/VERIFICATION_RESULTS.md` to register the stable tester/upload certificate with the appropriate Firebase Android apps. Download fresh matching configs to the existing main/debug file paths. Verify email and Google sign-in and native Firebase → Convex → AI using an owned staging account and fictional case.
+4. After counsel revisions, regenerate policies, deploy the approved documents and confirm public privacy/deletion URLs and mailbox delivery. Draft page hosting alone is not compliance approval.
+
+### 2. Stage cloud configuration
 
 Use the intended staging deployment first. The supplied `dev:` Convex deployment credential targets a development deployment; the word "production" in a workflow does not turn that into a production deployment. Select the actual production deployment only when ready and store its deployment credential in the protected configuration.
 
@@ -47,7 +61,7 @@ Firebase project: `credit-repair-ai-v2`; package: `com.creditrepairai.v2`; debug
 
 Official reference: https://firebase.google.com/docs/projects/api-keys and https://firebase.google.com/docs/android/troubleshooting-faq
 
-### 2. Configure protected agent/billing environment
+### 3. Configure protected agent/billing environment
 
 GitHub repository **Secrets** used by workflows:
 
@@ -70,6 +84,7 @@ GitHub repository **Variables** used by signed release:
 Convex protected environment:
 
 - `OPENAI_API_KEY`, `CREDIT_LEGAL_VECTOR_STORE_ID`, `CREDIT_AGENT_MODEL`: configure via the legal-agent workflow (model currently `gpt-5.6-terra`; confirm project access and actual tool response in staging).
+- `CREDIT_SUPPORT_EMAIL`: the same monitored mailbox configured for the native release; public Convex policy/deletion pages read this server setting.
 - `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`: existing authorized Google service-account credentials with least-privilege app permissions for Play purchase verification and, if needed, refund/cancel management. Keep server-only. Owner/account administrators must supply this; code cannot authorize itself to a Play account.
 - `BILLING_ADMIN_IDENTITIES`: exact authenticated `tokenIdentifier` values for trusted administrators. Sign into `/admin` to view the caller's identity, then configure the allowlist. Email addresses and client code do not grant administrator access.
 - `CREDIT_PAID_ACCESS_ENABLED`: match the APK's paid-access mode. A paid APK with a free backend mode is a release configuration error. A free staging mode still requires auth/verified email and has a per-account AI rate limit.
@@ -77,7 +92,7 @@ Convex protected environment:
 
 Do not commit service-account JSON, private keys, upload keys, purchase tokens, passwords or API secrets. Firebase `google-services.json` is public client configuration and is committed; its restrictions are an owner-console check, not proven by a source scan. Known historical test passwords are retired and the test provider is disabled by default. The pattern scan is not an exhaustive credential audit.
 
-### 3. Configure Play subscriptions and test them
+### 4. Configure Play subscriptions and test them
 
 Play Console for `com.creditrepairai.v2` → Monetize → Products → Subscriptions:
 
@@ -90,21 +105,23 @@ Play Console for `com.creditrepairai.v2` → Monetize → Products → Subscript
 
 References: https://developer.android.com/google/play/billing/integrate and https://developers.google.com/android-publisher/api-ref/rest/v3/purchases.subscriptionsv2/revoke
 
-### 4. Human reviews and actual devices
+### 5. Human reviews and actual devices
 
 - Fintech/CROA and applicable state credit-services review of software/access model, fee timing, advertising, contracts/cancellation, privacy and terms. Calling a payment "software access" does not establish legal exemption. In-app documents are implementation drafts pending qualified review.
 - Independent mobile/backend penetration test and remediation.
 - Real-user/device testing and permissioned layout validation; code tests cannot establish actual bureau behavior or consumer outcomes.
 - Publish approved privacy and external account-deletion-request URLs, a monitored support contact, store materials and accurate Data Safety/app-access answers.
 
-### 5. Release and owner submission
+### 6. Release and owner submission
 
-1. The reviewed application source is published and both jobs passed on `29ce35b`, run `38225290284`. Use that verified debug artifact for staging; any later application-code changes must pass the gates again. Do not promote a build from a different unverified source snapshot.
+1. Use the source/run and completed gate results in `docs/VERIFICATION_RESULTS.md`. Download the matching owner-signed debug APK artifact for staging. Any later application change must pass the applicable checks again; a documentation-only head does not change the tested application source.
 2. For manual dispatch, GitHub requires the workflow definition on the default branch. Review/copy the signed-release and deployment workflow definitions to `main` through an owner-controlled PR, then select `android-native-rebuild` as the ref to build/deploy. The `main` website is not automatically replaced by this task.
-3. Run the legal-agent deployment only against the intended deployment after staging checks; the workflow can create billable vector-store resources. Verify a fictional-case authenticated answer and cited official sources.
+3. The native workflow deploys only to the authorized development deployment, preserving the existing keys/vector store. Select/configure production explicitly after review. The separate legal-library workflow can create billable resources; do not run it merely to recheck existing staging. Verify a fictional-case authenticated native answer and source citations before release.
 4. Run **Signed Android release** with a version code above every previous Play upload and an appropriate version name. Existing owner upload key only. Gradle refuses missing gateway/support/signing configuration; workflow verifies APK/AAB signatures and removes its ephemeral decoded key file.
 5. Install the signed tester APK and complete release-mode checks. Owner uploads the signed `.aab` to Play, enrolls testers/fulfills account-specific testing requirements, completes review questions and submits. This task does not publish to Play.
 
-## Remaining engineering proof, not outside expert work
+## Remaining engineering proof and account-dependent work
 
-Connected-device/instrumented flow verification, live staging integration, source-link checks and release-mode validation still need recorded results. Final application-code debug/backend CI is green. Until the other gates have evidence, code-complete and launch-ready are not accepted labels. Custom Tabs require an explicit PDF Open/Share/import handoff; silent download interception is unavailable through that browser API.
+Automated device/lint results are specific to the tested source and fictional scenarios. Complete manual/TalkBack/device diversity checks, native authenticated staging, actual Play license lifecycles, permissioned bureau layouts, vendor deletion/re-auth failures and release AAB/R8 validation still need evidence. Owner-controlled Firebase/Play/contact inputs are prerequisites for several checks; code cannot grant its own Play permissions or establish that a mailbox is monitored. These account gates are additional to lawyer review, penetration testing, real-user feedback and Play submission. Do not declare 100% acceptance until they are complete.
+
+Custom Tabs require an explicit PDF Open/Share/import handoff; silent download interception is unavailable through that browser API. The app never observes portal credentials or auto-submits.
