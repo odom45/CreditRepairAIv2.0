@@ -1,6 +1,6 @@
 # Google Play closed testing and production-access record
 
-Status on 2026-10-12: **NOT STARTED / CONSOLE ACCESS UNAVAILABLE**. No tester has been enrolled by this task, no 14-day clock is claimed to have started, and no production-access approval has been obtained. The signed AAB exists; that is packaging evidence only.
+Status on 2026-10-12: **NOT VERIFIED / NOT STARTED BY THIS TASK / CONSOLE ACCESS UNAVAILABLE**. No tester has been enrolled by this task, no 14-day clock is claimed to have started, and no production-access approval has been obtained. The signed AAB exists; that is packaging evidence only.
 
 Official policy: https://support.google.com/googleplay/android-developer/answer/14151465
 
