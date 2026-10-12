@@ -1,0 +1,69 @@
+name: Verify existing owner and development agent key
+on:
+  push:
+    branches: [android-native-rebuild]
+    paths: [".github/workflows/protected-agent-key-check.yml"]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify-existing-key:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm ci --ignore-scripts
+      - name: Compare existing keys privately and validate before any development synchronization
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
+        run: |
+          node --input-type=module - <<'JS'
+          import {spawnSync} from 'node:child_process';
+          import {writeFileSync} from 'node:fs';
+          import {buildSync} from 'esbuild';
+          import {randomUUID} from 'node:crypto';
+          const report={keyMatch:null,candidateTested:false,candidatePassed:false,serverSynchronized:false,responseStatuses:[],apiErrorCodes:[]};
+          try {
+            const candidate=process.env.OPENAI_API_KEY;
+            if(!candidate || !(process.env.CONVEX_DEPLOY_KEY || '').startsWith('dev:lovable-dinosaur-379|'))throw Error('Protected development configuration required.');
+            function get(name) {
+              const r=spawnSync('npx',['convex','env','get',name],{encoding:'utf8',timeout:30000,maxBuffer:100000,stdio:['ignore','pipe','pipe']});
+              if(r.status!==0 || !r.stdout.trim())throw Error('Protected setting could not be read.');
+              return r.stdout.trim();
+            }
+            report.keyMatch=get('OPENAI_API_KEY')===candidate;
+            if(!report.keyMatch) {
+              process.env.CREDIT_LEGAL_VECTOR_STORE_ID=get('CREDIT_LEGAL_VECTOR_STORE_ID');
+              process.env.CREDIT_AGENT_MODEL=get('CREDIT_AGENT_MODEL');
+              const originalFetch=globalThis.fetch;
+              globalThis.fetch=async(...args)=>{
+                const response=await originalFetch(...args); report.responseStatuses.push(response.status);
+                const data=await response.clone().json().catch(()=>null);
+                const code=data?.error?.code;
+                if(typeof code==='string' && /^[a-z0-9_]{1,80}$/.test(code))report.apiErrorCodes.push(code);
+                return response;
+              };
+              const source=buildSync({entryPoints:['convex/creditAgentCore.ts'],bundle:true,platform:'node',format:'esm',write:false}).outputFiles[0].text;
+              const {runCreditAgent}=await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
+              report.candidateTested=true;
+              const answer=await runCreditAgent({clientRequestId:randomUUID(),question:'Fictional validation only: explain why differing balances are review prompts rather than proven errors; cite relevant FCRA sources.',caseSnapshot:{jurisdictionCode:'WA',reports:[],accounts:[],findings:[],disputes:[]}});
+              report.candidatePassed=answer.includes('Educational information only') && /FCRA|1681|15 U\.S\.C/i.test(answer);
+              if(!report.candidatePassed)throw Error('Candidate output check did not pass.');
+              const saved=spawnSync('npx',['convex','env','set','OPENAI_API_KEY',candidate],{encoding:'utf8',timeout:30000,maxBuffer:100000,stdio:['ignore','pipe','pipe']});
+              report.serverSynchronized=saved.status===0 && get('OPENAI_API_KEY')===candidate;
+              if(!report.serverSynchronized)throw Error('Development synchronization did not complete.');
+            }
+          } catch(error) {report.failureCategory='configuration-or-candidate-check';report.publicErrorStatus=typeof error?.status==='number'?error.status:null;}
+          writeFileSync('owner-agent-key-check.json',JSON.stringify(report,null,2));
+          console.log(JSON.stringify(report,null,2));
+          if(report.keyMatch!==true && !report.serverSynchronized)process.exit(1);
+          JS
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: CreditRepairAI-owner-agent-key-check
+          path: owner-agent-key-check.json
