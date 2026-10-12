@@ -18,7 +18,7 @@ Review snapshot: 2026-10-12. Code implemented is not equivalent to production ve
 
 ## Gates not yet proven
 
-- [x] Both remote CI jobs passed on `e7a1a4f`, run `38223703681`, including the account-deletion guard, and on `fb7c4a8`, run `38224835895`, including inline filing help. The subsequent bounded-response fix requires a final CI result.
+- [x] Final application source passed both remote CI jobs on `29ce35b700f62614517408c3102620e9a28fad35`, [run `38225290284`](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/38225290284), including account-deletion guards, inline filing help and bounded-response handling. Debug APK and unit-test reports uploaded. Later assessment/checklist edits are documentation only.
 - [ ] Follow `docs/PARSER_VALIDATION.md` on actual devices using permissioned, fully redacted reports. Full UI/device/large-font/TalkBack checks are not covered by pure unit tests.
 - [ ] Stage and verify Firebase → Convex → OpenAI with a fictional case and a verified-email account.
 - [ ] Stage Play license-tester scenarios: purchase, pending, canceled checkout, restore, expiry, grace, hold, account switch, replacement and administrator refund. Do not use a real charge for testing.
@@ -95,7 +95,7 @@ References: https://developer.android.com/google/play/billing/integrate and http
 
 ### 5. Release and owner submission
 
-1. Publish the reviewed native-branch commit and wait for both native and backend/admin jobs to pass. Do not promote a build from a different commit.
+1. The reviewed application source is published and both jobs passed on `29ce35b`, run `38225290284`. Use that verified debug artifact for staging; any later application-code changes must pass the gates again. Do not promote a build from a different unverified source snapshot.
 2. For manual dispatch, GitHub requires the workflow definition on the default branch. Review/copy the signed-release and deployment workflow definitions to `main` through an owner-controlled PR, then select `android-native-rebuild` as the ref to build/deploy. The `main` website is not automatically replaced by this task.
 3. Run the legal-agent deployment only against the intended deployment after staging checks; the workflow can create billable vector-store resources. Verify a fictional-case authenticated answer and cited official sources.
 4. Run **Signed Android release** with a version code above every previous Play upload and an appropriate version name. Existing owner upload key only. Gradle refuses missing gateway/support/signing configuration; workflow verifies APK/AAB signatures and removes its ephemeral decoded key file.
@@ -103,4 +103,4 @@ References: https://developer.android.com/google/play/billing/integrate and http
 
 ## Remaining engineering proof, not outside expert work
 
-Connected-device/instrumented flow verification, live staging integration, final-change CI, source-link checks and release-mode validation still need recorded results. Until then, code-complete and launch-ready are not accepted labels. Custom Tabs require an explicit PDF Open/Share/import handoff; silent download interception is unavailable through that browser API.
+Connected-device/instrumented flow verification, live staging integration, source-link checks and release-mode validation still need recorded results. Final application-code debug/backend CI is green. Until the other gates have evidence, code-complete and launch-ready are not accepted labels. Custom Tabs require an explicit PDF Open/Share/import handoff; silent download interception is unavailable through that browser API.
