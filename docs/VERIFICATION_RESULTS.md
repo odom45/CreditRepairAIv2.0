@@ -77,3 +77,19 @@ Owner approved `admin@synergyfundai.com` as the support/account-deletion contact
 This supersedes the earlier missing-contact/release-build blocker. It does not supersede Firebase certificate registration/native authenticated verification, Play license testing, legal review or the blocked live AI funding check. Owner said OpenAI funding will be added soon; no balance or live AI success is assumed.
 
 Native contact/development follow-up: [run 38269617057](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/38269617057), source `689173a6dd953ea7eb198cb4fccd012d54d9df75`. At this record's update, backend/admin, preflight and debug build jobs passed; device/development follow-up was still running. The deployment step is restricted to the previously authorized development deployment and sets its public support contact before deploying. Do not infer production deployment or successful live AI from release signing.
+
+## Parser/hand-off release follow-up — 2026-10-12
+
+The strict [60-case synthetic Android parser run 38294994560](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/38294994560) passed on source `ab72ce6dbc21ea61d85bd792d40040814401cea1`: 54/54 supported reports completely correct, 1,620/1,620 evaluated core fields, 6/6 unsupported inputs safely rejected. The valid unchanged-parser baseline was 27/54 complete reports (50%). See [PARSER_BATCH_RESULTS.md](PARSER_BATCH_RESULTS.md) for exact scope, raw artifacts, failures and corrections. These are controlled generated PDFs on an API-35 emulator, not actual current bureau/OEM accuracy.
+
+[Native run 38294994301](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/38294994301) passed native unit/build, backend/admin, preflight and the complete device suite. Its development deployment succeeded; the overall deployment job failed only at the real AI/retrieval smoke check with `credit_balance_exhausted`. Real native Firebase login remains unverified.
+
+[Signed Android 2.0.1 run 38295970981](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/38295970981) passed assembly, unit checks and APK/AAB signature verification, source `49b74e8c21657f6fd208c3fd045b7316fe723a9a`, version code `20261013`, same existing owner upload certificate.
+- [Signed APK artifact ZIP](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/38295970981/artifacts/11767788438).
+- [Signed AAB artifact ZIP](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/38295970981/artifacts/11767858470).
+
+The live prompt moved unchanged into `convex/creditAgentConfig.ts`; all 20 backend regressions passed. The contractor blueprint, actual 14-table schema export, configuration input map, Firebase certificate/app-ID readiness check, exact sign-in correction and closed-testing evidence template are in `docs/handoff/` and their linked documents.
+
+Firebase and Play Console could not be authenticated in this task because the Google login pages returned connection errors. The downloaded main/debug Firebase configs still lack the owner certificate's matching Android OAuth registration and share one Firebase app ID; registration/refreshed genuine configs and native login acceptance remain owner-account gates. Closed-testing enrollment/continuity and production access were not verified or completed.
+
+The local workspace disconnected after the final CI builds. New chat-local APK/AAB export/persistent attachment could not be completed; the verified source, documentation and artifact ZIPs remain in GitHub. No nonexistent local download is asserted.
