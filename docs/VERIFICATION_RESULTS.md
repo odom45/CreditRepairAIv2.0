@@ -64,3 +64,16 @@ Counsel should specifically evaluate CROA/state credit-services classification, 
 - Public policy/deletion source and successful page hosting do not prove an operational monitored mailbox or attorney-approved documents.
 
 See [RELEASE_OWNER_CHECKLIST.md](../RELEASE_OWNER_CHECKLIST.md) for the exact remaining order and [PRODUCTION_ASSESSMENT.md](PRODUCTION_ASSESSMENT.md) for findings and applied patches. Passing this bounded suite supports staged testing; it does not establish 100% launch acceptance or predict user satisfaction.
+
+## Signed release follow-up — 2026-10-12 15:25 UTC
+
+Owner approved `admin@synergyfundai.com` as the support/account-deletion contact, with `benjaminjodom45@gmail.com` available as a fallback. The release and native workflows now use the approved admin address when no repository override is configured. No mailbox message was sent or delivery test claimed.
+
+[Signed release run 38269615544](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/38269615544), source `86c6e52f9b7c78630ff00acb1bd48bb70ce66023`, passed unit tests, release optimization, APK/AAB assembly and signature verification. Both artifacts use package `com.creditrepairai.v2`, version `2.0.0`, version code `20261012`, and the existing owner certificate recorded above. Archive digests matched GitHub before extraction; local ZIP integrity and embedded support contact checks passed for both binaries. APK signature verification passed locally; AAB JAR verification passed on the runner and its certificate was inspected locally.
+
+- APK SHA-256: `e90afcd743c4ccce0323535056e54eb8f5fda35fd7765157bca1b75517ca41bf` (48,145,172 bytes).
+- AAB SHA-256: `c57a4945398ff9f4a22255eb3b1a6f283e1abb406314d5867c0315f786293ab1` (28,249,037 bytes).
+
+This supersedes the earlier missing-contact/release-build blocker. It does not supersede Firebase certificate registration/native authenticated verification, Play license testing, legal review or the blocked live AI funding check. Owner said OpenAI funding will be added soon; no balance or live AI success is assumed.
+
+Native contact/development follow-up: [run 38269617057](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/38269617057), source `689173a6dd953ea7eb198cb4fccd012d54d9df75`. At this record's update, backend/admin, preflight and debug build jobs passed; device/development follow-up was still running. The deployment step is restricted to the previously authorized development deployment and sets its public support contact before deploying. Do not infer production deployment or successful live AI from release signing.
