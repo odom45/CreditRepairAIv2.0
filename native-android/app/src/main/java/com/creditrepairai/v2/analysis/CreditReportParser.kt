@@ -142,10 +142,11 @@ class CreditReportParser(private val context: Context) {
 class ReportTextParser {
     internal fun detectBureau(fileName: String, text: String): Bureau {
         val source = "$fileName\n${text.take(8_000)}".lowercase(Locale.US)
+        val compact = source.replace(Regex("\\s+"), "")
         return when {
-            "transunion" in source || "trans union" in source -> Bureau.TRANSUNION
-            "experian" in source -> Bureau.EXPERIAN
-            "equifax" in source -> Bureau.EQUIFAX
+            "transunion" in compact -> Bureau.TRANSUNION
+            "experian" in compact -> Bureau.EXPERIAN
+            "equifax" in compact -> Bureau.EQUIFAX
             else -> Bureau.UNKNOWN
         }
     }

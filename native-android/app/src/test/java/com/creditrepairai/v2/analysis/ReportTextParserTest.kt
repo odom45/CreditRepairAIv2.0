@@ -61,4 +61,10 @@ class ReportTextParserTest {
         assertEquals(5000, record.creditLimit)
         assertEquals("01/2020", record.openedDate)
     }
+    @Test fun bureauLogoFragmentSpacesDoNotChangeBureau() {
+        assertEquals(Bureau.TRANSUNION, parser.detectBureau("synthetic.pdf", "TRANSUNI ON CREDIT REPORT"))
+        assertEquals(Bureau.EXPERIAN, parser.detectBureau("synthetic.pdf", "EXPE RIAN CREDIT REPORT"))
+        assertEquals(Bureau.EQUIFAX, parser.detectBureau("synthetic.pdf", "EQUI FAX CREDIT REPORT"))
+        assertEquals(Bureau.UNKNOWN, parser.detectBureau("synthetic.pdf", "No known bureau header"))
+    }
 }
