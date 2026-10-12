@@ -49,4 +49,10 @@ class ReportTextParserTest {
         assertNull(parser.parseScore("Your score: 6400"))
         assertEquals(640, parser.parseScore("FICO Score: 640"))
     }
+    @Test fun ocrSeparatorSpacesAreRejoinedWithoutInventingDigits() {
+        val record = parser.parseAccounts("NORTHSTAR BANK\nAccount Number: XXXX1234\nBalance: $1, 280\nCredit Limit: $5, 000\nDateReported: 09/20 26", Bureau.EQUIFAX).single()
+        assertEquals(1280, record.balance)
+        assertEquals(5000, record.creditLimit)
+        assertEquals("09/2026", record.dateReported)
+    }
 }

@@ -20,6 +20,11 @@ import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.io.File
+import kotlin.coroutines.Continuation
+import kotlin.coroutines.intrinsics.COROUTINE_SUSPENDED
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
 
 /** Generated fictional PDFs exercise the real Android importer, PDFBox and bundled ML Kit. */
 class SyntheticParserBatchTest {
@@ -30,6 +35,16 @@ class SyntheticParserBatchTest {
     private val scans = listOf("upper", "creditor", "no-score", "split-values")
     private data class Case(val id: String, val bureau: Bureau, val layout: String = "upper", val scanned: Boolean = false, val encrypted: Boolean = false, val multipage: Boolean = false, val reject: String? = null)
     private val expectedNames = listOf("NORTHSTAR BANK", "HARBOR COLLECTIONS", "PINE AUTO")
+    // Test-only inspection of this generated scan when field accuracy fails.
+    // Production importer does not log or export extracted consumer text.
+    private suspend fun diagnosticOcr(uri: android.net.Uri): String = suspendCoroutine { continuation ->
+        try {
+            val method = CreditReportParser::class.java.getDeclaredMethod("extractWithOcr", android.net.Uri::class.java, Continuation::class.java)
+            method.isAccessible = true
+            val result = method.invoke(parser, uri, continuation)
+            if (result !== COROUTINE_SUSPENDED) continuation.resume(result as String)
+        } catch(e: Exception) { continuation.resumeWithException(e) }
+    }
     private fun expected(case: Case) = expectedNames.mapIndexed { i, name ->
         linkedMapOf<String, Any?>("creditor" to name, "suffix" to listOf("1234", "5678", "9012")[i],
             "balance" to if (case.layout == "missing-balance" && i == 1) null else listOf(1280, 680, 0)[i],
@@ -126,6 +141,7 @@ class SyntheticParserBatchTest {
                 row.put("accepted", true).put("exactPass", exact).put("bureauCorrect", bureauOk).put("scoreCorrect", scoreOk)
                     .put("accountCount", got.size).put("fieldMatches", matched).put("fieldTotal", fieldTotal)
                     .put("extractionMethod", parsed.report.extractionMethod).put("expectedAccounts", JSONArray(want.map { JSONObject(it) })).put("actualAccounts", JSONArray(got.map { JSONObject(it) }))
+                if (!exact && case.scanned) row.put("syntheticOcrDiagnostic", runCatching { diagnosticOcr(uri) }.getOrDefault("Diagnostic extraction unavailable"))
             } catch(e: Exception) {
                 row.put("accepted", false).put("exactPass", case.reject != null).put("error", e.javaClass.simpleName + ": " + (e.message ?: "").take(250))
             }

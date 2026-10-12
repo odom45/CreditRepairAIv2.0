@@ -73,7 +73,7 @@ class CreditReportParser(private val context: Context) {
                     for (index in 0 until pageLimit) {
                         renderer.openPage(index).use { page ->
                             require(page.width > 0 && page.height > 0) { "PDF page dimensions are invalid." }
-                            val targetWidth = 1440
+                            val targetWidth = 2048
                             val targetHeight = (targetWidth * page.height.toFloat() / page.width).toInt().coerceAtLeast(1)
                             require(targetHeight <= 4096) { "PDF page is too tall for safe OCR. Export a standard-sized page." }
                             val bitmap = Bitmap.createBitmap(targetWidth, targetHeight, Bitmap.Config.ARGB_8888)
@@ -173,10 +173,10 @@ class ReportTextParser {
                 BALANCE.find(line)?.groupValues?.getOrNull(1)?.let(::parseMoney)
             }
             val paymentStatus = extractValue(window, "payment status") ?: extractValue(window, "pay status") ?: ""
-            val opened = extractValue(window, "date opened") ?: extractValue(window, "opened") ?: ""
+            val opened = normalizeDate(extractValue(window, "date opened") ?: extractValue(window, "opened") ?: "")
             val accountType = extractValue(window, "account type") ?: extractValue(window, "type") ?: ""
             val responsibility = extractValue(window, "responsibility") ?: extractValue(window, "ownership") ?: ""
-            val dateReported = extractValue(window, "date reported") ?: extractValue(window, "last reported") ?: ""
+            val dateReported = normalizeDate(extractValue(window, "date reported") ?: extractValue(window, "last reported") ?: "")
             val originalCreditor = extractValue(window, "original creditor") ?: ""
             val pastDue = extractMoneyValue(window, "past due")
             val creditLimit = extractMoneyValue(window, "credit limit") ?: extractMoneyValue(window, "limit")
@@ -204,20 +204,27 @@ class ReportTextParser {
     }
 
     private fun extractValue(lines: List<String>, label: String): String? {
-        val pattern = Regex("(?i)^${Regex.escape(label)}\\s*[:#-]?\\s*(.+)$")
+        val flexibleLabel = label.split(' ').joinToString("\\s*") { Regex.escape(it) }
+        val pattern = Regex("(?i)^${flexibleLabel}\\s*[:#-]?\\s*(.+)$")
         return lines.firstNotNullOfOrNull { pattern.find(it)?.groupValues?.getOrNull(1)?.trim() }
     }
 
     private fun extractMoneyValue(lines: List<String>, label: String): Int? {
-        val pattern = Regex("(?i)^${Regex.escape(label)}\\s*[:#-]?\\s*\\$?([0-9][0-9,]*)")
+        val pattern = Regex("(?i)^${Regex.escape(label)}\\s*[:#-]?\\s*\\$?([0-9][0-9, ]*)")
         return lines.firstNotNullOfOrNull { line ->
             pattern.find(line)?.groupValues?.getOrNull(1)?.let(::parseMoney)
         }
     }
 
     private fun parseMoney(raw: String): Int? = runCatching {
-        NumberFormat.getNumberInstance(Locale.US).parse(raw.replace("$", ""))?.toInt()
+        raw.replace("$", "").replace(",", "").replace(" ", "").substringBefore('.').toLongOrNull()
+            ?.takeIf { it in 0..Int.MAX_VALUE.toLong() }?.toInt()
     }.getOrNull()
+
+    // Rejoin only digits and separators already present; never infer a date digit.
+    private fun normalizeDate(value: String) = value
+        .replace(Regex("(?<=\\d)\\s+(?=\\d)"), "")
+        .replace(Regex("\\s*/\\s*"), "/")
 
     private fun sanitizeCreditor(value: String): String = value
         .replace(ACCOUNT_HEADING, "")
@@ -231,7 +238,7 @@ class ReportTextParser {
     companion object {
         private val ACCOUNT_HEADING = Regex("(?i)^(?:creditor|account name|company|subscriber)\\s*[:#-]?\\s*(.*)$")
         private val ACCOUNT_NUMBER = Regex("(?i)^(?:account(?:\\s*(?:number|no\\.?|#))?|acct)\\s*[:#-]")
-        private val BALANCE = Regex("(?i)^(?:current )?balance\\s*[:#-]?\\s*\\$?([0-9][0-9,]*)")
+        private val BALANCE = Regex("(?i)^(?:current )?balance\\s*[:#-]?\\s*\\$?([0-9][0-9, ]*)")
         private const val LABELS = "account number|account no[.]?|account #|acct|account status|payment status|pay status|date opened|date reported|last reported|original creditor|account type|credit limit|high balance|highest balance|current balance|responsibility|ownership|past due|balance|status|opened|limit|type|remarks|comments|creditor|account name|company|subscriber"
         private val EMPTY_FIELD = Regex("(?i)^(?:${LABELS})\\s*[:#-]?$")
         private val FIELD_PREFIX = Regex("(?i)^(?:${LABELS})\\s*[:#-]")
