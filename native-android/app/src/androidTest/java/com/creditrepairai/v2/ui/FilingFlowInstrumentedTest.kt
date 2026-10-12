@@ -83,6 +83,8 @@ class FilingFlowInstrumentedTest {
         repeat(4) { compose.onNodeWithText("Continue").performScrollTo().performClick() }
         compose.onNodeWithText("I understand — continue").performScrollTo().performClick()
         compose.onNode(hasText("Reports") and hasClickAction()).performClick()
+        compose.onNodeWithText("Select PDF reports").performScrollTo().assertIsEnabled()
+        compose.onNode(hasText("Home") and hasClickAction()).performClick()
         compose.onNodeWithText("Load safe demo").performScrollTo().performClick()
         compose.runOnIdle {
             assertEquals(3, viewModel.uiState.value.data.reports.size)
@@ -90,6 +92,8 @@ class FilingFlowInstrumentedTest {
             assertTrue(viewModel.uiState.value.data.policyAcceptance!!.isCurrent)
             assertFalse(viewModel.uiState.value.data.policyAcceptance!!.allowsAi)
         }
+        compose.onNode(hasText("Reports") and hasClickAction()).performClick()
+        compose.onNodeWithText("Demo-TransUnion.pdf").performScrollTo().assertIsDisplayed()
         compose.onNode(hasText("Analysis") and hasClickAction()).performClick()
         compose.onNodeWithText("No reports imported").assertDoesNotExist()
     }
