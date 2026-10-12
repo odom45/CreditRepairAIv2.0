@@ -25,6 +25,10 @@ import com.creditrepairai.v2.*
 import com.creditrepairai.v2.guidance.*
 import com.creditrepairai.v2.model.*
 import com.creditrepairai.v2.ui.theme.*
+import com.creditrepairai.v2.legal.PolicyDocuments
+import com.creditrepairai.v2.legal.PolicyAcceptance
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.selection.toggleable
 
 @Composable
 fun EducationLabel() { Text(EDUCATIONAL_LABEL, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), color = Amber400) }
@@ -32,6 +36,46 @@ fun EducationLabel() { Text(EDUCATIONAL_LABEL, modifier = Modifier.fillMaxWidth(
 @Composable
 private fun LaunchColumn(content: @Composable ColumnScope.() -> Unit) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp), content = content)
+}
+@Composable
+fun AgreementScreen(onAccept: (Boolean, Boolean) -> Unit, onRead: () -> Unit, onDecline: () -> Unit, notice: String? = null) {
+    var agreed by rememberSaveable { mutableStateOf(false) }
+    var adult by rememberSaveable { mutableStateOf(false) }
+    LaunchColumn {
+        Text("Your choices & agreement", style = MaterialTheme.typography.headlineMedium)
+        Text("Terms version ${PolicyDocuments.VERSION} • 3six0 Studios LLC")
+        EducationLabel()
+        Text("Suggestions are optional. You independently choose your actions and verify every fact, citation and submission. The creator's personal experience is not professional training; this app does not establish a professional advisory relationship or guarantee outcomes.")
+        Text("Acceptance does not waive consumer rights or excuse unlawful conduct. AI sharing requires a separate choice before any case information is sent to AI.")
+        notice?.let { Text(it, color = Amber400) }
+        OutlinedButton(onClick = onRead, modifier = Modifier.fillMaxWidth()) { Text("Read full terms, privacy & disclaimer") }
+        AgreementChoice("I agree to the displayed Terms of Use and acknowledge the Privacy Policy and Educational Disclaimer", agreed) { agreed = it }
+        AgreementChoice("I am at least 18 and will use records I own or have lawful permission to use", adult) { adult = it }
+        Button(onClick = { onAccept(agreed, adult) }, enabled = agreed && adult, modifier = Modifier.fillMaxWidth()) { Text("I agree — continue") }
+        OutlinedButton(onClick = onDecline, modifier = Modifier.fillMaxWidth()) { Text("Decline and sign out") }
+    }
+}
+@Composable
+private fun AgreementChoice(label: String, checked: Boolean, change: (Boolean) -> Unit) {
+    Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).toggleable(checked, role = Role.Checkbox, onValueChange = change).padding(vertical = 8.dp)) {
+        Checkbox(checked = checked, onCheckedChange = null)
+        Text(label, modifier = Modifier.weight(1f).padding(start = 8.dp))
+    }
+}
+@Composable
+fun AiSharingDisclosureDialog(enabled: Boolean, onChoice: (Boolean) -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(onDismissRequest = onDismiss,
+        title = { Text("Optional AI data sharing") },
+        text = { Column(Modifier.verticalScroll(rememberScrollState())) {
+            Text("When you ask AI, CreditRepairAI sends your question and redacted case details through Convex to OpenAI over HTTPS to provide educational explanations and planning. Details may include creditors, balances, account statuses, last-four suffixes, findings, citations and dispute history. Original PDFs are not uploaded.")
+            Spacer(Modifier.height(12.dp))
+            Text("Automatic redaction can miss unusual identifiers. Avoid names, full account numbers, SSNs, birth dates and contact details. Providers can retain technical/security records under their policies even though the OpenAI request uses store:false.")
+            Spacer(Modifier.height(12.dp))
+            Text("AI is optional; local tools remain available if you decline. You can disable sharing later in Settings. Already-sent information cannot be recalled. No case data is sent to AI merely because you read this message or dismiss it.")
+            EducationLabel()
+        } },
+        confirmButton = { TextButton(onClick = { onChoice(true) }) { Text("Allow AI sharing") } },
+        dismissButton = { TextButton(onClick = { if (enabled) onChoice(false) else onDismiss() }) { Text(if (enabled) "Disable AI sharing" else "Keep AI off") } })
 }
 @Composable
 fun OnboardingScreen(onComplete: () -> Unit, onPolicy: () -> Unit) {
@@ -195,17 +239,14 @@ fun PolicyScreen() {
     val context = LocalContext.current
     LaunchColumn {
         Text("Privacy policy & terms", style = MaterialTheme.typography.headlineMedium)
-        Text("Version: 2026-10-12 • Operator: 3six0 Studios LLC • U.S. educational software. Owner must complete legal review before commercial launch.")
+        Text("Version ${PolicyDocuments.VERSION} • 3six0 Studios LLC • Review draft pending qualified legal approval.")
         Text("Privacy policy", style = MaterialTheme.typography.titleLarge)
-        Text("Report PDFs are selected by you and parsed on-device. Extracted case data, drafts, receipts, goals and chat are stored using Android Keystore AES-GCM. App screens block screenshots and backup is disabled. Original PDFs downloaded by your browser remain outside the app; delete them yourself when no longer needed.")
-        Text("Firebase handles app sign-in. The app never receives bureau or government login credentials; those stay with the browser and official site. When you ask AI, a short-lived Firebase token and a redacted structured case snapshot are sent over HTTPS to Convex and OpenAI. Automated redaction can miss unusual identifiers; avoid including identifiers in goals/chat and review what you share. We do not upload original report PDFs.")
-        Text("Google Play handles purchases. The backend stores the account subject, purchase token, product/state/expiry and limited audit records to verify access, prevent token reuse, and manage subscriptions/refunds. No advertising or analytics SDK is included in the native app. Do not paste sensitive information into support requests or public issues.")
-        Text("Delete local data in Settings to destroy the local encryption key and cancel reminders. Account deletion first removes Convex billing records, then deletes Firebase login; recent sign-in may be required. A minimal hashed account-deletion marker remains to prevent delayed server work from restoring records; it contains no reports or purchase tokens. This does not delete the Google Play receipt, cancel a subscription, delete browser downloads, or guarantee removal from vendor retention/backups. Cancel renewal in Google Play separately. Contact support for privacy requests and vendor-retention questions. Owner must publish the external deletion-request and privacy URLs before Play launch.")
-        Text("Terms of service", style = MaterialTheme.typography.titleLarge)
+        Text(PolicyDocuments.PRIVACY)
+        Text("Terms of use", style = MaterialTheme.typography.titleLarge)
+        Text(PolicyDocuments.TERMS)
+        Text("Educational disclaimer", style = MaterialTheme.typography.titleLarge)
         EducationLabel()
-        Text("Use these tools only for your own records or records you have permission to use. You verify every fact, citation, attachment and statement, and submit directly to the official site yourself. Findings are review prompts, not proof of an error. AI output may be incorrect; verify cited authority and seek qualified advice when needed. Never allege fraud without supporting facts or dispute information you know to be accurate.")
-        Text("Software access does not include credit-repair representation, a government filing service, lending decisions, a guarantee of deletion or score change, or a promised time to results. Monthly subscriptions, when enabled, renew until canceled through Google Play. Purchases are subject to the price and terms shown by Play. Refunds are subject to applicable law and Play policy; statutory rights are not waived by these terms.")
-        Text("Security features reduce risk; they are not a bank-level-security certification. Keep your device protected. External portals have their own terms and privacy policies. Features, parsing accuracy, connectivity, browser support and reminders can vary. Do not rely on reminders as legal deadlines. The software is intended for U.S. adults; do not upload another person's information without permission.")
+        Text(PolicyDocuments.DISCLAIMER)
         Text("Support & privacy contact", style = MaterialTheme.typography.titleLarge)
         if (BuildConfig.SUPPORT_EMAIL.isNotBlank()) Button(onClick = { runCatching { context.startActivity(Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:${BuildConfig.SUPPORT_EMAIL}"))) } }, modifier = Modifier.fillMaxWidth()) { Text("Email ${BuildConfig.SUPPORT_EMAIL}") }
         else {

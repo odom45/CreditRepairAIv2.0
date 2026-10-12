@@ -21,6 +21,7 @@ import type * as users from "../users.js";
 import type * as viktorTools from "../viktorTools.js";
 import type * as billingData from "../billingData.js";
 import type * as playBilling from "../playBilling.js";
+import type * as policyAcceptance from "../policyAcceptance.js";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -39,6 +40,7 @@ declare const fullApi: ApiFromModules<{
   viktorTools: typeof viktorTools;
   billingData: typeof billingData;
   playBilling: typeof playBilling;
+  policyAcceptance: typeof policyAcceptance;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,

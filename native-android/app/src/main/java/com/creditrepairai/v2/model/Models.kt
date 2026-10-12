@@ -4,6 +4,7 @@ import java.util.UUID
 import com.creditrepairai.v2.guidance.AcquisitionState
 import com.creditrepairai.v2.guidance.FilingRecord
 import com.creditrepairai.v2.guidance.CreditGoal
+import com.creditrepairai.v2.legal.PolicyAcceptance
 
 enum class Bureau(val displayName: String) {
     TRANSUNION("TransUnion"),
@@ -101,6 +102,7 @@ data class ChatMessage(
 
 data class AppState(
     val onboardingComplete: Boolean = false,
+    val policyAcceptance: PolicyAcceptance? = null,
     val acquisition: AcquisitionState = AcquisitionState(),
     val filings: List<FilingRecord> = emptyList(),
     val goal: CreditGoal = CreditGoal(),

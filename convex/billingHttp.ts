@@ -1,5 +1,6 @@
 import { httpAction } from "./_generated/server";
 import { internal } from "./_generated/api";
+import { accountHash } from "./policyHttp";
 
 export const billingHttp = httpAction(async (ctx, request) => {
   const headers = { "Content-Type": "application/json", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" };
@@ -17,6 +18,8 @@ export const billingHttp = httpAction(async (ctx, request) => {
       result = { success: true };
     } else if (path === "/billing/status") result = await ctx.runAction(internal.playBilling.status, { owner: identity.subject });
     else {
+      const agreement = await ctx.runQuery(internal.policyAcceptance.current, { ownerHash: await accountHash(identity.subject) });
+      if (!agreement.accepted) return new Response(JSON.stringify({ error: "Current terms must be accepted before purchase verification." }), { status: 409, headers });
       const body = JSON.parse(raw);
       if (typeof body.purchaseToken !== "string") return new Response("{}", { status: 400, headers });
       result = await ctx.runAction(internal.playBilling.verify, { owner: identity.subject, token: body.purchaseToken });

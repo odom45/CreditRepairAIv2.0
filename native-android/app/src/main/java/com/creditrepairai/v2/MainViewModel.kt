@@ -35,6 +35,12 @@ import kotlinx.coroutines.sync.withLock
 import com.creditrepairai.v2.guidance.*
 import com.creditrepairai.v2.billing.PlayBillingManager
 import com.creditrepairai.v2.ai.SecureService
+import com.creditrepairai.v2.legal.PolicyAcceptance
+
+sealed interface PendingAiRequest {
+    data class Chat(val prompt: String, val saveAsPlan: Boolean) : PendingAiRequest
+    data class Filing(val record: FilingRecord) : PendingAiRequest
+}
 
 data class FilingHelpStatus(
     val recordId: String = "", val step: Int = -1, val contextKey: String = "",
@@ -51,6 +57,8 @@ data class AppUiState(
     val signedInEmail: String? = null,
     val isAuthenticating: Boolean = false,
     val filingHelp: FilingHelpStatus = FilingHelpStatus(),
+    val showAiDisclosure: Boolean = false,
+    val pendingAiRequest: PendingAiRequest? = null,
 )
 
 class MainViewModel(
@@ -65,7 +73,7 @@ class MainViewModel(
     private var filingHelpJob: Job? = null
     private var activeImportJob: Job? = null
     init { repository.selectOwner(session.uid) }
-    val service = SecureService(BuildConfig.AI_GATEWAY_URL, session)
+    val service = SecureService(BuildConfig.AI_GATEWAY_URL, session) { _uiState.value.data.policyAcceptance }
     val billing = PlayBillingManager(context, service) { session.uid }
     private val importLock = Mutex()
     private val _uiState = MutableStateFlow(
@@ -89,7 +97,7 @@ class MainViewModel(
         caseFence.invalidate(owner)
         aiJob?.cancel()
         filingHelpJob?.cancel()
-        _uiState.update { it.copy(filingHelp = FilingHelpStatus()) }
+        _uiState.update { it.copy(filingHelp = FilingHelpStatus(), showAiDisclosure = false, pendingAiRequest = null) }
         activeImportJob?.cancel()
         FollowUpWorker.cancelAll(context)
     }
@@ -222,6 +230,7 @@ class MainViewModel(
         mutate("Safe demo loaded. No real personal data is included.") {
             AppState(
                 onboardingComplete = _uiState.value.data.onboardingComplete,
+                policyAcceptance = _uiState.value.data.policyAcceptance,
                 jurisdictionCode = _uiState.value.data.jurisdictionCode,
                 reports = reports,
                 accounts = accounts,
@@ -296,33 +305,38 @@ class MainViewModel(
         }
     }
 
-    fun askAssistant(prompt: String, saveAsPlan: Boolean = false) {
-        val owner = session.uid ?: return
+    fun askAssistant(prompt: String, saveAsPlan: Boolean = false): Boolean {
+        val owner = session.uid ?: return false
         val ticket = caseFence.ticket()
-        if (!caseFence.accepts(ticket, owner)) return
+        if (!caseFence.accepts(ticket, owner)) return false
         val cleaned = SensitiveDataRedactor.redact(prompt.trim())
-        if (cleaned.isBlank()) return
-        if (_uiState.value.isAssistantThinking) return
+        if (cleaned.isBlank()) return false
+        if (_uiState.value.isAssistantThinking) return false
+        if (!allowAiOrDisclose(PendingAiRequest.Chat(cleaned, saveAsPlan))) return false
         if (BuildConfig.PAID_ACCESS_ENABLED && !billing.ui.value.entitlement.hasAccess(System.currentTimeMillis())) {
             _uiState.update { it.copy(notice = "A verified monthly software-access subscription is required for AI assistance. Manage it in Settings.") }
-            return
+            return false
         }
 
         val stateWithQuestion = _uiState.value.data.copy(
             chat = (_uiState.value.data.chat + ChatMessage(fromUser = true, text = cleaned)).takeLast(40),
         )
         if (runCatching { repository.save(stateWithQuestion) }.isFailure) {
-            _uiState.update { it.copy(notice = "Encrypted storage could not save the question. No case data was sent.") }; return
+            _uiState.update { it.copy(notice = "Encrypted storage could not save the question. No case data was sent.") }; return false
         }
         _uiState.update { it.copy(data = stateWithQuestion, isAssistantThinking = true, notice = null) }
 
         aiJob = viewModelScope.launch {
-            val answer = runCatching { agentGateway.answer(cleaned, stateWithQuestion, owner) }
+            val answer = runCatching {
+                service.syncPolicy(owner, requireNotNull(stateWithQuestion.policyAcceptance))
+                if (!caseFence.accepts(ticket, session.uid) || _uiState.value.data.policyAcceptance?.allowsAi != true) throw CancellationException()
+                agentGateway.answer(cleaned, stateWithQuestion, owner)
+            }
                 .getOrElse { error ->
                     if (error is CancellationException) throw error
                     "I could not use the secure legal agent: ${error.message ?: "service unavailable"}"
                 }
-            if (!caseFence.accepts(ticket, session.uid)) return@launch
+            if (!caseFence.accepts(ticket, session.uid) || _uiState.value.data.policyAcceptance?.allowsAi != true) return@launch
             val current = _uiState.value.data
             val updated = current.copy(
                 chat = (current.chat + ChatMessage(fromUser = false, text = answer)).takeLast(40),
@@ -333,6 +347,7 @@ class MainViewModel(
             }
             _uiState.update { it.copy(data = updated, isAssistantThinking = false) }
         }
+        return true
     }
 
     fun clearData() {
@@ -340,8 +355,12 @@ class MainViewModel(
         if (runCatching { repository.clear() }.isFailure) {
             _uiState.update { it.copy(isProcessing = false, isAssistantThinking = false, notice = "Local deletion could not finish. Retry before treating the data as deleted.") }; return
         }
+        val empty = AppState(onboardingComplete = true, policyAcceptance = _uiState.value.data.policyAcceptance)
+        if (runCatching { repository.save(empty) }.isFailure) {
+            _uiState.update { it.copy(data = AppState(), isProcessing = false, isAssistantThinking = false, notice = "Case data was cleared, but agreement choices could not be saved. Reopen the app and review them again.") }; return
+        }
         _uiState.update { it.copy(
-            data = AppState(onboardingComplete = true),
+            data = empty,
             isAssistantThinking = false,
             isProcessing = false,
             progressText = "",
@@ -351,6 +370,42 @@ class MainViewModel(
     }
 
     fun completeOnboarding() = mutate(null) { it.copy(onboardingComplete = true) }
+    fun acceptPolicies(agreed: Boolean, adult: Boolean) {
+        val acceptance = runCatching { PolicyAcceptance.accept(agreed, adult, System.currentTimeMillis()) }.getOrNull() ?: return
+        mutate(null) { it.copy(policyAcceptance = it.policyAcceptance?.takeIf { old -> old.isCurrent } ?: acceptance) }
+    }
+    private fun allowAiOrDisclose(request: PendingAiRequest): Boolean {
+        if (_uiState.value.data.policyAcceptance?.isCurrent != true) {
+            _uiState.update { it.copy(notice = "Read and accept the current terms before using AI.") }; return false
+        }
+        if (_uiState.value.data.policyAcceptance?.allowsAi == true) return true
+        _uiState.update { it.copy(showAiDisclosure = true, pendingAiRequest = request) }
+        return false
+    }
+    fun dismissAiDisclosure() { _uiState.update { it.copy(showAiDisclosure = false, pendingAiRequest = null) } }
+    fun reviewAiSharing() { _uiState.update { it.copy(showAiDisclosure = true, pendingAiRequest = null) } }
+    fun setAiSharing(enabled: Boolean) {
+        val prior = _uiState.value.data.policyAcceptance?.takeIf { it.isCurrent } ?: return
+        val pending = _uiState.value.pendingAiRequest
+        aiJob?.cancel(); filingHelpJob?.cancel()
+        val choice = prior.chooseAi(enabled, System.currentTimeMillis())
+        val updated = _uiState.value.data.copy(policyAcceptance = choice)
+        if (runCatching { repository.save(updated) }.isFailure) {
+            _uiState.update { it.copy(notice = "Encrypted storage could not save your choice. Retry before using AI.") }; return
+        }
+        _uiState.update { it.copy(data = updated, showAiDisclosure = false, pendingAiRequest = null,
+            isAssistantThinking = false, filingHelp = FilingHelpStatus(), notice = if (!enabled) "AI sharing is disabled on this device. Local tools remain available." else null) }
+        if (enabled && pending != null) when (pending) {
+            is PendingAiRequest.Chat -> askAssistant(pending.prompt, pending.saveAsPlan)
+            is PendingAiRequest.Filing -> explainFiling(pending.record)
+        } else session.uid?.let { owner ->
+            val ticket = caseFence.ticket()
+            viewModelScope.launch { runCatching { service.syncPolicy(owner, choice) }.onFailure {
+                if (it is CancellationException) throw it
+                if (caseFence.accepts(ticket, session.uid)) _uiState.update { it.copy(notice = "Your choice is saved on this device. Server preference sync is unavailable; retry when connected. Already-sent provider data cannot be recalled.") }
+            } }
+        }
+    }
     fun updateAcquisition(state: AcquisitionState) = mutate(null) { it.copy(acquisition = state) }
     fun saveFiling(record: FilingRecord) = mutate(null) { it.copy(filings = it.filings.filterNot { old -> old.id == record.id } + record) }
     fun explainFiling(record: FilingRecord) {
@@ -358,6 +413,7 @@ class MainViewModel(
         val owner = session.uid ?: return
         val ticket = caseFence.ticket()
         if (!caseFence.accepts(ticket, owner)) return
+        if (!allowAiOrDisclose(PendingAiRequest.Filing(record))) return
         // Save a new checklist before requesting help; never send an unsaved case.
         if (_uiState.value.data.filings.none { it.id == record.id }) saveFiling(record)
         val snapshot = _uiState.value.data
@@ -372,6 +428,8 @@ class MainViewModel(
         _uiState.update { it.copy(filingHelp = status.copy(thinking = true)) }
         filingHelpJob = viewModelScope.launch {
             val answer = try {
+                service.syncPolicy(owner, requireNotNull(snapshot.policyAcceptance))
+                if (!caseFence.accepts(ticket, session.uid) || _uiState.value.data.policyAcceptance?.allowsAi != true) throw CancellationException()
                 agentGateway.answer(SensitiveDataRedactor.redact(request.prompt), snapshot, owner)
             } catch (error: Exception) {
                 if (error is CancellationException) throw error
@@ -380,7 +438,7 @@ class MainViewModel(
                 }
                 return@launch
             }
-            if (!caseFence.accepts(ticket, session.uid)) return@launch
+            if (!caseFence.accepts(ticket, session.uid) || _uiState.value.data.policyAcceptance?.allowsAi != true) return@launch
             val current = _uiState.value.data
             val currentRecord = current.filings.firstOrNull { it.id == request.recordId }
             val currentDispute = current.disputes.firstOrNull { it.id == saved.disputeId }

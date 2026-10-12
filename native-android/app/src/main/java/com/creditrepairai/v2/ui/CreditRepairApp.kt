@@ -158,6 +158,9 @@ private enum class Destination(val label: String, val icon: ImageVector) {
 fun CreditRepairApp(viewModel: MainViewModel) {
     val ui by viewModel.uiState.collectAsStateWithLifecycle()
     var showPublicPolicies by rememberSaveable { mutableStateOf(false) }
+    var showAgreementChoices by rememberSaveable { mutableStateOf(false) }
+    val contextForAgreement = LocalContext.current
+    if (ui.showAiDisclosure && ui.signedInEmail != null) AiSharingDisclosureDialog(ui.data.policyAcceptance?.allowsAi == true, viewModel::setAiSharing, viewModel::dismissAiDisclosure)
     if (showPublicPolicies) {
         Column(Modifier.fillMaxSize()) {
             TextButton(onClick = { showPublicPolicies = false }) { Text("Back") }
@@ -167,6 +170,11 @@ fun CreditRepairApp(viewModel: MainViewModel) {
     }
     if (ui.signedInEmail == null) {
         AuthenticationScreen(ui, viewModel) { showPublicPolicies = true }
+        return
+    }
+    if (ui.data.policyAcceptance?.isCurrent != true || showAgreementChoices) {
+        AgreementScreen({ agreed, adult -> viewModel.acceptPolicies(agreed, adult); showAgreementChoices = false },
+            { showPublicPolicies = true }, { showAgreementChoices = false; viewModel.signOut(contextForAgreement) }, ui.notice)
         return
     }
     if (!ui.data.onboardingComplete) {
@@ -241,7 +249,7 @@ fun CreditRepairApp(viewModel: MainViewModel) {
                 Destination.ASSISTANT -> AssistantScreen(ui, viewModel)
                 Destination.PROGRESS -> ProgressScreen(ui.data, viewModel)
                 Destination.FREEZES -> FreezesScreen(ui.data, viewModel)
-                Destination.SETTINGS -> SettingsScreen(ui, viewModel, { destination = Destination.SUBSCRIPTION }, { destination = Destination.POLICIES })
+                Destination.SETTINGS -> SettingsScreen(ui, viewModel, { destination = Destination.SUBSCRIPTION }, { destination = Destination.POLICIES }, { showAgreementChoices = true })
                 Destination.ACQUISITION -> AcquisitionScreen(ui.data, viewModel::updateAcquisition) { destination = Destination.REPORTS }
                 Destination.FILING -> FilingScreen(ui, viewModel)
                 Destination.PLANNING -> PlanningScreen(ui.data, viewModel) { destination = Destination.ASSISTANT }
@@ -829,7 +837,7 @@ private fun AssistantScreen(ui: AppUiState, viewModel: MainViewModel) {
                 enabled = !ui.isAssistantThinking,
             )
             FloatingActionButton(
-                onClick = { viewModel.askAssistant(input); input = "" },
+                onClick = { if (viewModel.askAssistant(input)) input = "" },
                 containerColor = Blue500,
             ) {
                 if (ui.isAssistantThinking) CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
@@ -931,7 +939,7 @@ private fun ScoreRow(snapshot: ScoreSnapshot) {
 }
 
 @Composable
-private fun SettingsScreen(ui: AppUiState, viewModel: MainViewModel, onSubscription: () -> Unit, onPolicies: () -> Unit) {
+private fun SettingsScreen(ui: AppUiState, viewModel: MainViewModel, onSubscription: () -> Unit, onPolicies: () -> Unit, onAgreements: () -> Unit) {
     val data = ui.data
     var confirmClear by remember { mutableStateOf(false) }
     var confirmAccount by remember { mutableStateOf(false) }
@@ -940,6 +948,8 @@ private fun SettingsScreen(ui: AppUiState, viewModel: MainViewModel, onSubscript
         item { Hero("Privacy & settings", "Control local credit data and review connection status.", Icons.Default.Settings) }
         item { Button(onClick = onSubscription, modifier = Modifier.fillMaxWidth()) { Text("Monthly plan, restore & cancel") } }
         item { OutlinedButton(onClick = onPolicies, modifier = Modifier.fillMaxWidth()) { Text("Privacy policy, terms & support") } }
+        item { OutlinedButton(onClick = onAgreements, modifier = Modifier.fillMaxWidth()) { Text("Review agreement choices") } }
+        item { OutlinedButton(onClick = viewModel::reviewAiSharing, modifier = Modifier.fillMaxWidth()) { Text("AI data sharing: ${if (ui.data.policyAcceptance?.allowsAi == true) "enabled" else "off"} — change") } }
         item { OutlinedButton(onClick = { confirmAccount = true }, modifier = Modifier.fillMaxWidth()) { Text("Delete account and app-server records") } }
         item { NoticeCard(Icons.Default.Check, "Native Android build", "Kotlin + Jetpack Compose. No WebView, Capacitor, or wrapped website is used for the app interface.", Emerald400) }
         item { NoticeCard(Icons.Default.Security, "Protected local storage", "Case state is encrypted with AES-GCM using a non-exportable Android Keystore key. Screenshots are blocked and Android backup is disabled.", Emerald400) }

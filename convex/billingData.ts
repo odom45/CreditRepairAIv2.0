@@ -41,6 +41,7 @@ export const audit = internalMutation({ args: { actor: v.string(), subscriptionI
 export const deleteOwner = internalMutation({ args: { owner: v.string(), ownerHash: v.string(), actor: v.string() }, handler: async (ctx, args) => {
   const marker = await ctx.db.query("billingDeletionMarkers").withIndex("by_owner_hash", q => q.eq("ownerHash", args.ownerHash)).unique();
   if (!marker) await ctx.db.insert("billingDeletionMarkers", { ownerHash: args.ownerHash });
+  for (const item of await ctx.db.query("policyAcceptances").withIndex("by_owner_hash", q => q.eq("ownerHash", args.ownerHash)).collect()) await ctx.db.delete(item._id);
   for (const item of await ctx.db.query("playSubscriptions").withIndex("by_owner", q => q.eq("owner", args.owner)).collect()) {
     for (const audit of await ctx.db.query("billingAudit").withIndex("by_subscription", q => q.eq("subscriptionId", item._id)).collect()) await ctx.db.delete(audit._id);
     await ctx.db.delete(item._id);

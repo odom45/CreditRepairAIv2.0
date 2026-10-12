@@ -4,6 +4,8 @@
 
 Review date: 2026-10-12. Scope: the current `android-native-rebuild` workspace, including the feature implementation and follow-up fixes added during this session. Initial remote base was `b0ff5ce`, local gateway fix `a908fb4`. The four names are simulated review lenses used by one reviewer; Claude, Qodo and CodeRabbit services were not independently invoked.
 
+Current policy/device follow-up: versioned agreement and separate AI-sharing consent now cover native entry, encrypted persistence, server verification and deletion. Public policy/deletion page sources and a GitHub emulator/lint/configuration preflight are added. **The prior green application run cited below predates this follow-up; this newer source must obtain its own CI/device results.** Local policy/storage tests pass; deployment and actual cloud/account inputs remain independently verified gates. See `policies/LEGAL_REVIEW_HANDOFF.md` for the drafted protection and mandatory-law limitations.
+
 Targeted scans covered the root/build/manifest/workflows and the actual authentication, state, billing, persistence and linked HTTP/authorization files. The whole repository was not read into the review at once. Automated credential-pattern scans are separately bounded checks, not a full manual repository/security audit.
 
 Repository mapping from the build and entry-point scans:

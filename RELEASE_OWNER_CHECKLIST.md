@@ -4,6 +4,10 @@ Review snapshot: 2026-10-12. Code implemented is not equivalent to production ve
 
 ## Implemented in the native-branch work
 
+- [x] Versioned full privacy/terms/educational disclaimer drafts; explicit acceptance and adult confirmation; separate affirmative AI-sharing choice with local/server enforcement and stale-choice protection. Qualified review still required; no blanket liability transfer is claimed.
+- [x] Public policy/deletion page sources and monitored-contact build injection; configure contact and host the pages before treating the external deletion pathway as operational.
+- [x] GitHub emulator instrumentation/lint and read-only staging/configuration preflight jobs added. Their current-run results must be recorded before they count as passed gates.
+
 - [x] Native Kotlin/Compose application, Firebase email/Google sign-in contract, short-lived user-bound tokens.
 - [x] On-device PDF/OCR parsing, automatic high-risk-identifier redaction, AES-GCM/Keystore case storage, FLAG_SECURE and backups disabled.
 - [x] Persisted report-acquisition checklist, isolated Custom Tabs, explicit PDF Open/Share import and document-picker fallback.

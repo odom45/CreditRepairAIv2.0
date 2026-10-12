@@ -23,6 +23,7 @@ import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 import com.creditrepairai.v2.guidance.*
+import com.creditrepairai.v2.legal.PolicyAcceptance
 
 class AppRepository(context: Context) {
     private val preferences = context.getSharedPreferences("credit_repair_private", Context.MODE_PRIVATE)
@@ -73,6 +74,7 @@ class AppRepository(context: Context) {
 
     private fun encode(state: AppState) = JSONObject().apply {
         put("onboardingComplete", state.onboardingComplete)
+        put("policyAcceptance", state.policyAcceptance?.let { JSONObject().put("version", it.version).put("digest", it.digest).put("acceptedAt", it.acceptedAt).put("aiSharing", it.aiSharing).put("choiceAt", it.choiceAt) } ?: JSONObject.NULL)
         put("acquisition", JSONObject().put("step", state.acquisition.step.name).put("confirmed", JSONArray(state.acquisition.confirmed.map { it.name })))
         put("goal", JSONObject().put("description", state.goal.description).put("targetMonths", state.goal.targetMonths).put("aiPlan", state.goal.aiPlan))
         put("filings", JSONArray().apply { state.filings.forEach { record -> put(JSONObject()
@@ -94,6 +96,7 @@ class AppRepository(context: Context) {
 
     private fun decode(json: JSONObject) = AppState(
         onboardingComplete = json.optBoolean("onboardingComplete"),
+        policyAcceptance = json.optJSONObject("policyAcceptance")?.let { PolicyAcceptance(it.optString("version"), it.optString("digest"), it.optLong("acceptedAt"), it.optBoolean("aiSharing"), it.optLong("choiceAt", it.optLong("acceptedAt"))) },
         acquisition = json.optJSONObject("acquisition")?.let { AcquisitionState(enumValueOrDefault(it.optString("step"), AcquisitionStep.PREPARE), it.array("confirmed").strings().map(Bureau::from).filter { b -> b != Bureau.UNKNOWN }.toSet()) } ?: AcquisitionState(),
         goal = json.optJSONObject("goal")?.let { CreditGoal(it.optString("description"), it.optInt("targetMonths", 12).coerceIn(1, 120), it.optString("aiPlan")) } ?: CreditGoal(),
         filings = json.array("filings").objects().map { FilingRecord(

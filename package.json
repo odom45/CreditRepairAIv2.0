@@ -6,6 +6,8 @@
   "scripts": {
     "test:launch": "node --experimental-strip-types --test tests/*.test.mjs",
     "audit:source-secrets": "node scripts/audit-source-secrets.mjs",
+    "policies:generate": "node scripts/generate-policies.mjs",
+    "policies:check": "node scripts/generate-policies.mjs --check",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
