@@ -55,4 +55,10 @@ class ReportTextParserTest {
         assertEquals(5000, record.creditLimit)
         assertEquals("09/2026", record.dateReported)
     }
+    @Test fun emptyNumberLabelDoesNotBecomeAnInventedSuffix() {
+        val record = parser.parseAccounts("Creditor: Northstar Bank\nAccount Number:\nBalance: $500\nDate 0pened: 01/2020\nCredit Limit: $5.000", Bureau.EQUIFAX).single()
+        assertEquals("", record.accountSuffix)
+        assertEquals(5000, record.creditLimit)
+        assertEquals("01/2020", record.openedDate)
+    }
 }

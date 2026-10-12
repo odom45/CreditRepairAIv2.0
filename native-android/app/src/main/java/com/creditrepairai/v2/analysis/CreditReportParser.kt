@@ -79,7 +79,7 @@ class CreditReportParser(private val context: Context) {
                             val bitmap = Bitmap.createBitmap(targetWidth, targetHeight, Bitmap.Config.ARGB_8888)
                             try {
                                 page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-                                appendLine(recognizer.process(InputImage.fromBitmap(bitmap, 0)).await().text)
+                                appendLine(orderedOcrText(recognizer.process(InputImage.fromBitmap(bitmap, 0)).await()))
                             } finally {
                                 bitmap.recycle()
                             }
@@ -103,6 +103,38 @@ class CreditReportParser(private val context: Context) {
             output.write(buffer, 0, count)
         }
         return output.toByteArray()
+    }
+
+    private fun orderedOcrText(text: com.google.mlkit.vision.text.Text): String {
+        data class Word(val text: String, val bounds: android.graphics.Rect)
+        val words = text.textBlocks.flatMap { it.lines }.flatMap { it.elements }
+            .mapNotNull { element -> element.boundingBox?.let { Word(element.text, it) } }
+        if (words.isEmpty()) return text.text
+        val rows = mutableListOf<MutableList<Word>>()
+        for (word in words.sortedWith(compareBy<Word> { it.bounds.centerY() }.thenBy { it.bounds.left })) {
+            val row = rows.lastOrNull()
+            val center = row?.map { it.bounds.centerY() }?.average() ?: 0.0
+            val height = minOf(word.bounds.height().toDouble(), row?.map { it.bounds.height() }?.average() ?: 0.0)
+            if (row != null && kotlin.math.abs(word.bounds.centerY() - center) < (height * 0.45).coerceAtLeast(2.0)) row.add(word)
+            else rows.add(mutableListOf(word))
+        }
+        return rows.joinToString("\n") { row ->
+            val ordered = row.sortedBy { it.bounds.left }
+            buildString {
+                ordered.forEachIndexed { index, word ->
+                    val previous = ordered.getOrNull(index - 1)
+                    if (previous != null) {
+                        val advance = (previous.bounds.width().toDouble() / previous.text.length.coerceAtLeast(1) + word.bounds.width().toDouble() / word.text.length.coerceAtLeast(1)) / 2
+                        val gap = word.bounds.left - previous.bounds.right
+                        // Join only letter fragments separated by less than an estimated
+                        // character advance. Real word spaces remain; no dictionary/name guess.
+                        val contiguous = gap >= 0 && gap < advance * 0.60 && previous.text.lastOrNull()?.isLetter() == true && word.text.firstOrNull()?.isLetter() == true
+                        if (!contiguous) append(' ')
+                    }
+                    append(word.text)
+                }
+            }
+        }
     }
 }
 
@@ -131,7 +163,8 @@ class ReportTextParser {
     internal fun parseAccounts(text: String, bureau: Bureau): List<CreditAccount> {
         val rawLines = text.lineSequence()
             .flatMap { it.split('|').asSequence() }
-            .map { it.replace('\u00a0', ' ').replace('\u202f', ' ').replace(Regex("\\s+"), " ").trim() }
+            .map { it.replace('\u00a0', ' ').replace('\u202f', ' ').replace(Regex("\\s+"), " ").trim()
+                .replace(Regex("(?i)^date\\s+[o0]?pened\\b"), "Date Opened") }
             .filter { it.isNotBlank() }.toList()
         val lines = mutableListOf<String>()
         var cursor = 0
@@ -150,7 +183,7 @@ class ReportTextParser {
             val line = lines[index]
             ACCOUNT_HEADING.containsMatchIn(line) ||
                 (line.length in 3..64 && line.any(Char::isLetter) && !line.contains(':') &&
-                    line.uppercase(Locale.US) !in IGNORED_HEADINGS && !FIELD_PREFIX.containsMatchIn(line) &&
+                    line.uppercase(Locale.US) !in IGNORED_HEADINGS && !FIELD_PREFIX.containsMatchIn(line) && !MASKED_IDENTIFIER.matches(line) &&
                     lines.getOrNull(index + 1)?.let { ACCOUNT_NUMBER.containsMatchIn(it) } == true)
         }
 
@@ -165,7 +198,7 @@ class ReportTextParser {
             if (creditor.length < 3 || creditor.uppercase(Locale.US) in IGNORED_HEADINGS) return@mapIndexedNotNull null
 
             val accountLine = window.firstOrNull { ACCOUNT_NUMBER.containsMatchIn(it) }.orEmpty()
-            val suffix = Regex("(?i)^(?:account(?:\\s*(?:number|no\\.?|#))?|acct)[^A-Z0-9]*([*Xx\\s-]*[A-Z0-9-]{3,})")
+            val suffix = Regex("(?i)^(?:account(?:\\s*(?:number|no\\.?|#))?|acct)\\s*[:#-]+\\s*([*Xx\\s-]*[A-Z0-9-]{3,})")
                 .find(accountLine)?.groupValues?.getOrNull(1).orEmpty().filter(Char::isLetterOrDigit).takeLast(4)
             val status = extractValue(window, "account status") ?: extractValue(window, "status") ?: window.firstOrNull { NEGATIVE_STATUS.containsMatchIn(it) }
                 ?.let { NEGATIVE_STATUS.find(it)?.value } ?: "Unknown"
@@ -210,14 +243,21 @@ class ReportTextParser {
     }
 
     private fun extractMoneyValue(lines: List<String>, label: String): Int? {
-        val pattern = Regex("(?i)^${Regex.escape(label)}\\s*[:#-]?\\s*\\$?([0-9][0-9, ]*)")
+        val flexibleLabel = label.split(' ').joinToString("\\s*") { Regex.escape(it) }
+        val pattern = Regex("(?i)^${flexibleLabel}\\s*[:#-]?\\s*\\$?([0-9][0-9,. ]*)")
         return lines.firstNotNullOfOrNull { line ->
             pattern.find(line)?.groupValues?.getOrNull(1)?.let(::parseMoney)
         }
     }
 
     private fun parseMoney(raw: String): Int? = runCatching {
-        raw.replace("$", "").replace(",", "").replace(" ", "").substringBefore('.').toLongOrNull()
+        val number = raw.replace("$", "").replace(" ", "").trim()
+        val whole = when {
+            Regex("[0-9]{1,3}(?:\\.[0-9]{3})+").matches(number) -> number.replace(".", "")
+            Regex("(?:[0-9]+|[0-9]{1,3}(?:,[0-9]{3})+)(?:\\.[0-9]{1,2})?").matches(number) -> number.substringBefore('.').replace(",", "")
+            else -> return@runCatching null
+        }
+        whole.toLongOrNull()
             ?.takeIf { it in 0..Int.MAX_VALUE.toLong() }?.toInt()
     }.getOrNull()
 
@@ -238,10 +278,12 @@ class ReportTextParser {
     companion object {
         private val ACCOUNT_HEADING = Regex("(?i)^(?:creditor|account name|company|subscriber)\\s*[:#-]?\\s*(.*)$")
         private val ACCOUNT_NUMBER = Regex("(?i)^(?:account(?:\\s*(?:number|no\\.?|#))?|acct)\\s*[:#-]")
-        private val BALANCE = Regex("(?i)^(?:current )?balance\\s*[:#-]?\\s*\\$?([0-9][0-9, ]*)")
+        private val BALANCE = Regex("(?i)^(?:current\\s*)?balance\\s*[:#-]?\\s*\\$?([0-9][0-9,. ]*)")
         private const val LABELS = "account number|account no[.]?|account #|acct|account status|payment status|pay status|date opened|date reported|last reported|original creditor|account type|credit limit|high balance|highest balance|current balance|responsibility|ownership|past due|balance|status|opened|limit|type|remarks|comments|creditor|account name|company|subscriber"
-        private val EMPTY_FIELD = Regex("(?i)^(?:${LABELS})\\s*[:#-]?$")
-        private val FIELD_PREFIX = Regex("(?i)^(?:${LABELS})\\s*[:#-]")
+        private val LABEL_PATTERN = LABELS.replace(" ", "\\s*")
+        private val EMPTY_FIELD = Regex("(?i)^(?:${LABEL_PATTERN})\\s*[:#-]?$")
+        private val FIELD_PREFIX = Regex("(?i)^(?:${LABEL_PATTERN})\\s*[:#-]")
+        private val MASKED_IDENTIFIER = Regex("[*Xx -]*[0-9]{3,}")
         private val NEGATIVE_STATUS = Regex("(?i)charge[ -]?off|collection|repossession|late|delinquent|past due|closed|paid")
         private val IGNORED_HEADINGS = setOf(
             "ACCOUNT INFORMATION", "ACCOUNT HISTORY", "CREDIT REPORT", "PERSONAL INFORMATION", "SUMMARY",
