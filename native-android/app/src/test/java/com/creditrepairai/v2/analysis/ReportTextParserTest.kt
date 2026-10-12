@@ -33,4 +33,20 @@ class ReportTextParserTest {
         assertNull(parser.parseScore("Your score: 899"))
         assertTrue(parser.parseAccounts("No readable accounts", Bureau.UNKNOWN).isEmpty())
     }
+    @Test fun splitValuesInlineFieldsAndTitleCaseKeepAccountBoundaries() {
+        val text = "Northstar Bank\nAccount Number:\nXXXX 1234\nAccount Status:\nOpen\nBalance: $1,280 | Credit Limit: $5,000\nCreditor: Harbor Collections\nAcct: XXXX5678\nStatus: Collection\nHigh Balance: $900"
+        val records = parser.parseAccounts(text, Bureau.EQUIFAX)
+        assertEquals(2, records.size)
+        assertEquals("1234", records[0].accountSuffix)
+        assertEquals("Open", records[0].status)
+        assertEquals(1280, records[0].balance)
+        assertEquals(5000, records[0].creditLimit)
+        assertNull(records[1].balance) // A high balance is not a current balance.
+        assertEquals(900, records[1].highBalance)
+    }
+    @Test fun creditLimitIsNotAScoreAndLongNumbersAreNotTruncatedToScores() {
+        assertNull(parser.parseScore("Credit Limit: 5000\nBalance: 640"))
+        assertNull(parser.parseScore("Your score: 6400"))
+        assertEquals(640, parser.parseScore("FICO Score: 640"))
+    }
 }

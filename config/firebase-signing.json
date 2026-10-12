@@ -1,0 +1,13 @@
+{
+  "projectId": "credit-repair-ai-v2",
+  "ownerUploadCertificate": {
+    "sha1": "B0:36:16:11:7F:D6:A0:37:92:77:07:1B:26:35:E4:19:64:74:6A:87",
+    "sha256": "1E:C8:AA:A5:A3:B2:59:AC:8D:0E:C1:6F:66:B8:05:DD:F8:2E:32:A7:3F:C5:F4:86:DC:E3:20:84:4E:8D:09:AD"
+  },
+  "apps": [
+    { "package": "com.creditrepairai.v2", "config": "native-android/app/google-services.json" },
+    { "package": "com.creditrepairai.v2.debug", "config": "native-android/app/src/debug/google-services.json" }
+  ],
+  "playAppSigningSha1": null,
+  "note": "Public certificate metadata only. Play-delivered APKs require the actual Play App Signing certificate in Firebase as well. Do not manufacture OAuth entries in google-services.json."
+}

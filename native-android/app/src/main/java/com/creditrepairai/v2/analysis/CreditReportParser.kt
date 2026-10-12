@@ -120,8 +120,8 @@ class ReportTextParser {
 
     internal fun parseScore(text: String): Int? {
         val scorePatterns = listOf(
-            Regex("(?i)(?:credit|fico|vantage)[®™ ]*(?:score)?[^0-9]{0,25}([3-8][0-9]{2})"),
-            Regex("(?i)(?:your|current) score[^0-9]{0,15}([3-8][0-9]{2})"),
+            Regex("(?i)\\b(?:credit\\s+score|fico[®™ ]*(?:score)?|vantage(?:score)?[®™ ]*(?:score)?)[^0-9]{0,25}([3-8][0-9]{2})(?![0-9])"),
+            Regex("(?i)(?:your|current) score[^0-9]{0,15}([3-8][0-9]{2})(?![0-9])"),
         )
         return scorePatterns.firstNotNullOfOrNull { pattern ->
             pattern.find(text)?.groupValues?.getOrNull(1)?.toIntOrNull()?.takeIf { it in 300..850 }
@@ -129,17 +129,29 @@ class ReportTextParser {
     }
 
     internal fun parseAccounts(text: String, bureau: Bureau): List<CreditAccount> {
-        val lines = text.lineSequence()
-            .map { it.replace(Regex("\\s+"), " ").trim() }
-            .filter { it.isNotBlank() }
-            .toList()
+        val rawLines = text.lineSequence()
+            .flatMap { it.split('|').asSequence() }
+            .map { it.replace('\u00a0', ' ').replace('\u202f', ' ').replace(Regex("\\s+"), " ").trim() }
+            .filter { it.isNotBlank() }.toList()
+        val lines = mutableListOf<String>()
+        var cursor = 0
+        while (cursor < rawLines.size) {
+            val line = rawLines[cursor]
+            val next = rawLines.getOrNull(cursor + 1)
+            if (EMPTY_FIELD.matches(line) && next != null && !FIELD_PREFIX.containsMatchIn(next)) {
+                lines.add("${line.trimEnd(':', '#', '-', ' ')}: $next")
+                cursor += 2
+            } else {
+                lines.add(line)
+                cursor += 1
+            }
+        }
         val candidateIndexes = lines.indices.filter { index ->
             val line = lines[index]
             ACCOUNT_HEADING.containsMatchIn(line) ||
-                (line.length in 3..48 && line == line.uppercase(Locale.US) && !line.contains(':') &&
-                    line !in IGNORED_HEADINGS && !ACCOUNT_NUMBER.containsMatchIn(line) &&
-                    lines.subList(index + 1, minOf(index + 6, lines.size)).any { ACCOUNT_NUMBER.containsMatchIn(it) } &&
-                    lines.subList(index + 1, minOf(index + 6, lines.size)).none { ACCOUNT_HEADING.containsMatchIn(it) })
+                (line.length in 3..64 && line.any(Char::isLetter) && !line.contains(':') &&
+                    line.uppercase(Locale.US) !in IGNORED_HEADINGS && !FIELD_PREFIX.containsMatchIn(line) &&
+                    lines.getOrNull(index + 1)?.let { ACCOUNT_NUMBER.containsMatchIn(it) } == true)
         }
 
         return candidateIndexes.mapIndexedNotNull { position, index ->
@@ -153,9 +165,9 @@ class ReportTextParser {
             if (creditor.length < 3 || creditor.uppercase(Locale.US) in IGNORED_HEADINGS) return@mapIndexedNotNull null
 
             val accountLine = window.firstOrNull { ACCOUNT_NUMBER.containsMatchIn(it) }.orEmpty()
-            val suffix = Regex("(?i)(?:account(?: number| #)?|acct)[^A-Z0-9]*([*Xx-]*[A-Z0-9-]{3,})")
+            val suffix = Regex("(?i)^(?:account(?:\\s*(?:number|no\\.?|#))?|acct)[^A-Z0-9]*([*Xx\\s-]*[A-Z0-9-]{3,})")
                 .find(accountLine)?.groupValues?.getOrNull(1).orEmpty().filter(Char::isLetterOrDigit).takeLast(4)
-            val status = extractValue(window, "status") ?: window.firstOrNull { NEGATIVE_STATUS.containsMatchIn(it) }
+            val status = extractValue(window, "account status") ?: extractValue(window, "status") ?: window.firstOrNull { NEGATIVE_STATUS.containsMatchIn(it) }
                 ?.let { NEGATIVE_STATUS.find(it)?.value } ?: "Unknown"
             val balance = window.firstNotNullOfOrNull { line ->
                 BALANCE.find(line)?.groupValues?.getOrNull(1)?.let(::parseMoney)
@@ -218,8 +230,11 @@ class ReportTextParser {
 
     companion object {
         private val ACCOUNT_HEADING = Regex("(?i)^(?:creditor|account name|company|subscriber)\\s*[:#-]?\\s*(.*)$")
-        private val ACCOUNT_NUMBER = Regex("(?i)(?:account(?: number| #)?|acct)\\s*[:#-]")
-        private val BALANCE = Regex("(?i)(?:current )?balance\\s*[:#-]?\\s*\\$?([0-9][0-9,]*)")
+        private val ACCOUNT_NUMBER = Regex("(?i)^(?:account(?:\\s*(?:number|no\\.?|#))?|acct)\\s*[:#-]")
+        private val BALANCE = Regex("(?i)^(?:current )?balance\\s*[:#-]?\\s*\\$?([0-9][0-9,]*)")
+        private const val LABELS = "account number|account no[.]?|account #|acct|account status|payment status|pay status|date opened|date reported|last reported|original creditor|account type|credit limit|high balance|highest balance|current balance|responsibility|ownership|past due|balance|status|opened|limit|type|remarks|comments|creditor|account name|company|subscriber"
+        private val EMPTY_FIELD = Regex("(?i)^(?:${LABELS})\\s*[:#-]?$")
+        private val FIELD_PREFIX = Regex("(?i)^(?:${LABELS})\\s*[:#-]")
         private val NEGATIVE_STATUS = Regex("(?i)charge[ -]?off|collection|repossession|late|delinquent|past due|closed|paid")
         private val IGNORED_HEADINGS = setOf(
             "ACCOUNT INFORMATION", "ACCOUNT HISTORY", "CREDIT REPORT", "PERSONAL INFORMATION", "SUMMARY",

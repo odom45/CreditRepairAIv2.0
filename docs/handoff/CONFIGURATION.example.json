@@ -1,0 +1,28 @@
+{
+  "exampleOnly": true,
+  "android": {
+    "releasePackage": "com.creditrepairai.v2",
+    "debugPackage": "com.creditrepairai.v2.debug",
+    "javaVersion": 17,
+    "compileSdk": 36,
+    "minSdk": 26,
+    "gatewayOrigin": "https://YOUR_DEPLOYMENT.convex.site",
+    "supportEmail": "admin@synergyfundai.com",
+    "paidAccessEnabled": false,
+    "versionCode": "GREATER_THAN_ALL_PRIOR_PLAY_UPLOADS",
+    "firebaseConfigFiles": ["native-android/app/google-services.json", "native-android/app/src/debug/google-services.json"]
+  },
+  "convexServerEnvironment": {
+    "OPENAI_API_KEY": "SET_IN_PROTECTED_ENVIRONMENT_ONLY",
+    "CREDIT_LEGAL_VECTOR_STORE_ID": "YOUR_OWNED_VECTOR_STORE_ID",
+    "CREDIT_AGENT_MODEL": "YOUR_PROJECT_ENABLED_MODEL",
+    "CREDIT_SUPPORT_EMAIL": "admin@synergyfundai.com",
+    "CREDIT_PAID_ACCESS_ENABLED": "false",
+    "GOOGLE_PLAY_SERVICE_ACCOUNT_JSON": "SET_SERVER_ONLY_AFTER_PLAY_AUTHORIZATION",
+    "BILLING_ADMIN_IDENTITIES": "EXACT_AUTHENTICATED_TOKEN_IDENTIFIERS",
+    "CREDIT_ENABLE_TEST_AUTH": "false",
+    "CREDIT_ENABLE_OPERATOR_TOOLS": "false"
+  },
+  "openaiPromptConfig": "convex/creditAgentConfig.ts",
+  "note": "This file documents inputs; runtime reads protected environment and Gradle properties, not this example JSON. Never replace placeholders with secrets and commit the file."
+}

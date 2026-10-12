@@ -119,6 +119,12 @@ jobs:
       - run: npm run test:launch
       - run: npm run legal:check
       - run: npm run audit:source-secrets
+      - name: Report Firebase registration readiness without exposing client API keys
+        run: node scripts/firebase-signing-readiness.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CreditRepairAI-firebase-signing-readiness
+          path: firebase-signing-readiness.json
       - run: node scripts/generate-policies.mjs --check
   build-native-apk:
     runs-on: ubuntu-latest
@@ -243,3 +249,4 @@ jobs:
             native-android/app/build/reports/androidTests/
             native-android/app/build/outputs/androidTest-results/
             native-android/app/build/reports/lint-results-debug.*
+
