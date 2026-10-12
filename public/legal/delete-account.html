@@ -7,12 +7,4 @@
 <h2>What deletion removes</h2><p>The native deletion flow removes app-server subscription verification records, current agreement/AI-choice records, rate-limit entries and relevant administrative audits, then requests Firebase login deletion. A recent sign-in may be required. If a step fails, it is reported as incomplete and can be retried. Local app data can also be cleared in Settings; uninstalling removes the app's private local data.</p>
 <h2>What is separate or retained</h2><p>Account deletion does not cancel Google Play renewal, remove Google Play's transaction records, recall information already sent to providers, or delete browser downloads, exported copies or official portal submissions. Cancel renewal separately through <a href="https://play.google.com/store/account/subscriptions">Google Play subscriptions</a>. Deletion assistance does not require a purchase.</p>
 <p>A minimal hashed account-deletion marker remains to prevent delayed work from recreating records. It contains no reports, purchase tokens or contact details and currently has no automatic expiry; qualified review must approve its retention before launch. Vendor backups, security logs and required legal retention follow applicable provider policy and law. See the <a href="privacy.html">Privacy Policy</a> for details. The operator will explain any applicable retention when handling a request.</p>
-<script src="support-config.js"></script><script>
-const email=window.creditRepairSupportEmail;
-if(typeof email==='string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
- const box=document.getElementById('support');box.textContent='';
- const link=document.createElement('a');link.className='request';link.textContent='Request deletion — '+email;
- link.href='mailto:'+encodeURIComponent(email)+'?subject='+encodeURIComponent('CreditRepairAI account deletion request')+'&body='+encodeURIComponent('Please delete my CreditRepairAI account and associated app data. My app sign-in email is the sender address. Please confirm any ownership verification needed and the completion status.');box.append(link);
- const text=document.createElement('p');text.textContent='If your device has no email app, send a message to '+email+' from your own email service. Keep a copy of your request.';box.append(text);
-}
-</script></body></html>
+<script src="support-config.js"></script><script src="deletion-contact.js"></script></body></html>

@@ -62,6 +62,8 @@ android {
         debug {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
+            // CI can reuse the owner's existing key for stable tester fingerprints.
+            signingConfig = signingConfigs.findByName("releaseUpload") ?: signingConfigs.getByName("debug")
         }
         release {
             signingConfig = signingConfigs.findByName("releaseUpload")

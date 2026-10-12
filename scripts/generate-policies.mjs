@@ -15,6 +15,13 @@ for (const doc of data.documents) {
   outputs.set(`public/legal/${doc.id}.html`, `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CreditRepairAI ${esc(doc.title)}</title><style>body{font:18px/1.6 system-ui;margin:0 auto;padding:24px;max-width:850px;color:#172033;background:#f8fafc}a{color:#1254b1}nav{display:flex;flex-wrap:wrap;gap:16px}h1,h2{line-height:1.3}.status{padding:12px;background:#fff2cf}</style></head><body><nav><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="disclaimer.html">Disclaimer</a><a href="delete-account.html">Account deletion</a></nav><h1>CreditRepairAI ${esc(doc.title)}</h1><p>Version ${esc(data.version)} · ${esc(data.operator)}</p><p class="status">${esc(data.status)}</p>${doc.sections.map(s => `<section><h2>${esc(s.title)}</h2><p>${esc(s.text)}</p></section>`).join('')}<p>Support/privacy contact: the operator must configure a monitored contact before commercial release. Use the released app's displayed contact; never send credit reports, passwords or SSNs.</p></body></html>\n`);
 }
 let failed = false;
+for (const [path, content] of outputs) if (path.startsWith('public/legal/')) outputs.set(path, content
+  .replace('<p>Support/privacy contact:', '<p id="public-contact">Support/privacy contact:')
+  .replace('</body>', '<script src="support-config.js"></script><script src="contact.js"></script></body>'));
+const publicPaths = ['privacy','terms','disclaimer'];
+const publicAssets = Object.fromEntries(publicPaths.map(id => [`/legal/${id}.html`, outputs.get(`public/legal/${id}.html`)]));
+for (const file of ['delete-account.html','contact.js','deletion-contact.js']) publicAssets[`/legal/${file}`] = readFileSync(`public/legal/${file}`, 'utf8');
+outputs.set('convex/publicPolicyDocuments.ts', `// Generated public policy/deletion assets.\nexport const PUBLIC_POLICY_ASSETS: Record<string,string> = ${JSON.stringify(publicAssets)};\n`);
 for (const [path, content] of outputs) {
   if (process.argv.includes('--check')) {
     let existing; try { existing = readFileSync(path, 'utf8'); } catch { existing = ''; }

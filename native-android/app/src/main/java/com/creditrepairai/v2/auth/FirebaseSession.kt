@@ -19,9 +19,9 @@ import kotlinx.coroutines.tasks.await
 /** Owns Firebase's short-lived user session; no token is persisted by the app. */
 class FirebaseSession(
     private val auth: FirebaseAuth = Firebase.auth,
-) : SessionTokenProvider {
-    val email: String? get() = auth.currentUser?.email
-    val uid: String? get() = auth.currentUser?.uid
+) : NativeSession {
+    override val email: String? get() = auth.currentUser?.email
+    override val uid: String? get() = auth.currentUser?.uid
     val isSignedIn: Boolean get() = auth.currentUser != null
 
     override suspend fun bearerToken(expectedSubject: String): String? {
@@ -30,28 +30,28 @@ class FirebaseSession(
         return token.takeIf { auth.currentUser?.uid == expectedSubject }
     }
 
-    fun observeSession(onChange: (String?) -> Unit): () -> Unit {
+    override fun observeSession(onChange: (String?) -> Unit): () -> Unit {
         val listener = FirebaseAuth.AuthStateListener { onChange(it.currentUser?.uid) }
         auth.addAuthStateListener(listener)
         return { auth.removeAuthStateListener(listener) }
     }
 
-    suspend fun signInWithEmail(email: String, password: String) {
+    override suspend fun signInWithEmail(email: String, password: String) {
         auth.signInWithEmailAndPassword(email.trim(), password).await()
     }
 
-    suspend fun createAccount(email: String, password: String) {
+    override suspend fun createAccount(email: String, password: String) {
         auth.createUserWithEmailAndPassword(email.trim(), password).await()
         auth.currentUser?.sendEmailVerification()?.await()
     }
 
-    suspend fun deleteAccount() {
+    override suspend fun deleteAccount() {
         val user = requireNotNull(auth.currentUser)
         // Firebase requires recent authentication for this sensitive operation.
         user.delete().await()
     }
 
-    suspend fun signInWithGoogle(activity: Activity) {
+    override suspend fun signInWithGoogle(activity: Activity) {
         val googleIdOption = GetGoogleIdOption.Builder()
             .setServerClientId(activity.getString(R.string.default_web_client_id))
             .setFilterByAuthorizedAccounts(false)
@@ -68,7 +68,7 @@ class FirebaseSession(
         auth.signInWithCredential(GoogleAuthProvider.getCredential(idToken, null)).await()
     }
 
-    suspend fun signOut(context: Context) {
+    override suspend fun signOut(context: Context) {
         auth.signOut()
         runCatching {
             CredentialManager.create(context).clearCredentialState(ClearCredentialStateRequest())

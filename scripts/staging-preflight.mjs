@@ -12,6 +12,7 @@ const gateway = (process.env.CREDIT_AI_GATEWAY_URL || 'https://lovable-dinosaur-
 const expectedGateway = /^https:\/\/lovable-dinosaur-379\.convex\.site$/;
 if (expectedGateway.test(gateway)) for (const route of ['/credit-agent','/policy/accept','/account/delete']) report.checks[route] = await status(gateway+route, { method: 'POST', headers: {'Content-Type':'application/json'}, body: '{}' });
 else report.checks.gateway = 'unexpected-origin; not probed';
+if(expectedGateway.test(gateway)) for(const route of ['/legal/privacy.html','/legal/terms.html','/legal/disclaimer.html','/legal/delete-account.html']) report.checks[route]=await status(gateway+route);
 if (process.env.OPENAI_API_KEY) report.checks.openaiCredentialReadOnly = await status('https://api.openai.com/v1/models', {headers:{Authorization:`Bearer ${process.env.OPENAI_API_KEY}`}});
 const key = process.env.CONVEX_DEPLOY_KEY || '';
 report.checks.intendedDevelopmentKey = key.startsWith('dev:lovable-dinosaur-379|');

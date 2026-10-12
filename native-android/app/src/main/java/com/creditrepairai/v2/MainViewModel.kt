@@ -12,6 +12,7 @@ import com.creditrepairai.v2.analysis.CreditAnalyzer
 import com.creditrepairai.v2.analysis.CreditReportParser
 import com.creditrepairai.v2.data.AppRepository
 import com.creditrepairai.v2.auth.FirebaseSession
+import com.creditrepairai.v2.auth.NativeSession
 import com.creditrepairai.v2.auth.SessionFence
 import com.creditrepairai.v2.legal.DisputeLetterGenerator
 import com.creditrepairai.v2.model.AppState
@@ -65,7 +66,7 @@ class MainViewModel(
     private val repository: AppRepository,
     private val parser: CreditReportParser,
     private val agentGateway: CreditAgentGateway,
-    private val session: FirebaseSession,
+    private val session: NativeSession,
     private val context: Context,
 ) : ViewModel() {
     private val caseFence = SessionFence(session.uid)
@@ -160,6 +161,7 @@ class MainViewModel(
     }
 
     fun importPdf(uri: Uri, displayName: String) {
+        if (_uiState.value.data.policyAcceptance?.isCurrent != true || !_uiState.value.data.onboardingComplete) return
         val owner = session.uid ?: return
         val ticket = caseFence.ticket()
         if (uri.scheme != "content") return
