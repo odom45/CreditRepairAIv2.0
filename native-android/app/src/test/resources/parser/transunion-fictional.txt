@@ -1,0 +1,8 @@
+TransUnion fictional fixture — no real consumer data
+Fictional Cedar Bank
+Creditor: Fictional Cedar Bank
+Acct: XXXX1234
+Pay Status: Current
+Status: Open
+Balance: $680
+Date Reported: 2026-08

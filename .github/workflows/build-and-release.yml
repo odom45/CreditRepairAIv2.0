@@ -26,11 +26,6 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: "1.4.1"
-
       - name: Verify production configuration
         run: |
           if [ -z "${{ secrets.VITE_CONVEX_URL }}" ]; then
@@ -40,12 +35,12 @@ jobs:
           fi
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: npm ci --ignore-scripts
 
       - name: Typecheck
-        run: bun run typecheck
+        run: npm run typecheck
 
       - name: Build
-        run: bun run build
+        run: npm run build
         env:
           VITE_CONVEX_URL: ${{ secrets.VITE_CONVEX_URL }}

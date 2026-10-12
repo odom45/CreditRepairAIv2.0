@@ -11,6 +11,7 @@
  */
 import { v } from "convex/values";
 import { action } from "./_generated/server";
+import { isBillingAdmin } from "./billingPolicy";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -31,7 +32,7 @@ async function callTool<T>(role: string, args: Record<string, unknown> = {}): Pr
   });
 
   if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+    throw new Error("External tool request failed.");
   }
 
   const json = await response.json();
@@ -44,7 +45,10 @@ async function callTool<T>(role: string, args: Record<string, unknown> = {}): Pr
 export const quickAiSearch = action({
   args: { query: v.string() },
   returns: v.string(),
-  handler: async (_ctx, { query }) => {
+  handler: async (ctx, { query }) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (process.env.CREDIT_ENABLE_OPERATOR_TOOLS !== "true" || !identity || !isBillingAdmin(identity.tokenIdentifier)) throw new Error("Operator tool access is disabled.");
+    if (query.length > 4000) throw new Error("Query too long.");
     const result = await callTool<{ search_response: string }>("quick_ai_search", {
       search_question: query,
     });
@@ -66,7 +70,10 @@ export const generateImage = action({
     ),
   },
   returns: v.string(),
-  handler: async (_ctx, { prompt, aspectRatio }) => {
+  handler: async (ctx, { prompt, aspectRatio }) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (process.env.CREDIT_ENABLE_OPERATOR_TOOLS !== "true" || !identity || !isBillingAdmin(identity.tokenIdentifier)) throw new Error("Operator tool access is disabled.");
+    if (prompt.length > 4000) throw new Error("Prompt too long.");
     const result = await callTool<{ response_text: string }>("text2im", {
       prompt,
       aspect_ratio: aspectRatio ?? "1:1",

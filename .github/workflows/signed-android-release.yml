@@ -23,6 +23,8 @@ jobs:
       run:
         working-directory: native-android
     env:
+      CREDIT_SUPPORT_EMAIL: ${{ vars.CREDIT_SUPPORT_EMAIL }}
+      CREDIT_PAID_ACCESS_ENABLED: ${{ vars.CREDIT_PAID_ACCESS_ENABLED || 'false' }}
       ANDROID_KEYSTORE_FILE: ${{ github.workspace }}/native-android/creditrepair-upload.jks
       ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
       ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
@@ -50,9 +52,12 @@ jobs:
           test -n "$ANDROID_KEYSTORE_PASSWORD"
           test -n "$ANDROID_KEY_ALIAS"
           test -n "$ANDROID_KEY_PASSWORD"
+          test -n "$CREDIT_SUPPORT_EMAIL"
+          case "$CREDIT_PAID_ACCESS_ENABLED" in true|false) ;; *) echo "CREDIT_PAID_ACCESS_ENABLED must be true or false"; exit 1;; esac
           case "$CREDIT_AI_GATEWAY_URL" in https://*) ;; *) echo "CREDIT_AI_GATEWAY_URL must be HTTPS"; exit 1;; esac
           case "$VERSION_CODE" in ''|*[!0-9]*) echo "version_code must contain digits only"; exit 1;; esac
           test "$VERSION_CODE" -gt 0
+          test -n "$VERSION_NAME"
           case "$VERSION_NAME" in *[!0-9A-Za-z._-]*) echo "version_name contains unsupported characters"; exit 1;; esac
           printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$ANDROID_KEYSTORE_FILE"
           chmod 600 "$ANDROID_KEYSTORE_FILE"
@@ -65,7 +70,7 @@ jobs:
           CREDIT_AI_GATEWAY_URL: ${{ secrets.CREDIT_AI_GATEWAY_URL }}
           VERSION_CODE: ${{ inputs.version_code }}
           VERSION_NAME: ${{ inputs.version_name }}
-        run: ./gradlew bundleRelease assembleRelease -PCREDIT_AI_GATEWAY_URL="$CREDIT_AI_GATEWAY_URL" -PCREDIT_VERSION_CODE="$VERSION_CODE" -PCREDIT_VERSION_NAME="$VERSION_NAME" --stacktrace
+        run: ./gradlew bundleRelease assembleRelease -PCREDIT_AI_GATEWAY_URL="$CREDIT_AI_GATEWAY_URL" -PCREDIT_VERSION_CODE="$VERSION_CODE" -PCREDIT_VERSION_NAME="$VERSION_NAME" -PCREDIT_SUPPORT_EMAIL="$CREDIT_SUPPORT_EMAIL" -PCREDIT_PAID_ACCESS_ENABLED="$CREDIT_PAID_ACCESS_ENABLED" --stacktrace
 
       - name: Verify signatures
         run: |
@@ -82,6 +87,13 @@ jobs:
           path: native-android/app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
           retention-days: 30
+
+      - name: Remove ephemeral decoded signing file
+        if: always()
+        run: |
+          if [ -f "$ANDROID_KEYSTORE_FILE" ]; then
+            rm -- "$ANDROID_KEYSTORE_FILE"
+          fi
 
       - name: Upload signed tester APK
         uses: actions/upload-artifact@v4

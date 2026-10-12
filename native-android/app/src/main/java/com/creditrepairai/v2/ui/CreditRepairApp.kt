@@ -146,14 +146,31 @@ private enum class Destination(val label: String, val icon: ImageVector) {
     PROGRESS("Progress", Icons.Default.Timeline),
     FREEZES("Freezes", Icons.Default.Security),
     SETTINGS("Settings", Icons.Default.Settings),
+    ACQUISITION("Get reports", Icons.Default.FileOpen),
+    FILING("Guided filing", Icons.Default.Description),
+    PLANNING("Goals & next actions", Icons.Default.Timeline),
+    SUBSCRIPTION("Subscription", Icons.Default.Settings),
+    POLICIES("Privacy & terms", Icons.Default.Security),
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreditRepairApp(viewModel: MainViewModel) {
     val ui by viewModel.uiState.collectAsStateWithLifecycle()
+    var showPublicPolicies by rememberSaveable { mutableStateOf(false) }
+    if (showPublicPolicies) {
+        Column(Modifier.fillMaxSize()) {
+            TextButton(onClick = { showPublicPolicies = false }) { Text("Back") }
+            Box(Modifier.weight(1f)) { PolicyScreen() }
+        }
+        return
+    }
     if (ui.signedInEmail == null) {
-        AuthenticationScreen(ui, viewModel)
+        AuthenticationScreen(ui, viewModel) { showPublicPolicies = true }
+        return
+    }
+    if (!ui.data.onboardingComplete) {
+        OnboardingScreen(viewModel::completeOnboarding) { showPublicPolicies = true }
         return
     }
     var destination by rememberSaveable { mutableStateOf(Destination.DASHBOARD) }
@@ -216,15 +233,20 @@ fun CreditRepairApp(viewModel: MainViewModel) {
         Box(Modifier.fillMaxSize().padding(padding)) {
             when (destination) {
                 Destination.DASHBOARD -> DashboardScreen(ui.data, viewModel, onNavigate = { destination = it })
-                Destination.REPORTS -> ReportsScreen(ui, viewModel)
-                Destination.ANALYSIS -> AnalysisScreen(ui.data, viewModel)
-                Destination.DISPUTES -> DisputesScreen(ui.data, viewModel)
+                Destination.REPORTS -> ReportsScreen(ui, viewModel) { destination = Destination.ACQUISITION }
+                Destination.ANALYSIS -> AnalysisScreen(ui.data, viewModel) { viewModel.askAssistant(it); destination = Destination.ASSISTANT }
+                Destination.DISPUTES -> DisputesScreen(ui.data, viewModel, { viewModel.askAssistant(it); destination = Destination.ASSISTANT }, { destination = Destination.FILING })
                 Destination.MORE -> MoreScreen { destination = it }
-                Destination.CFPB -> CfpbScreen(ui.data)
+                Destination.CFPB -> FilingScreen(ui.data, viewModel, com.creditrepairai.v2.guidance.FilingPortal.CFPB) { viewModel.askAssistant(it); destination = Destination.ASSISTANT }
                 Destination.ASSISTANT -> AssistantScreen(ui, viewModel)
                 Destination.PROGRESS -> ProgressScreen(ui.data, viewModel)
                 Destination.FREEZES -> FreezesScreen(ui.data, viewModel)
-                Destination.SETTINGS -> SettingsScreen(ui, viewModel)
+                Destination.SETTINGS -> SettingsScreen(ui, viewModel, { destination = Destination.SUBSCRIPTION }, { destination = Destination.POLICIES })
+                Destination.ACQUISITION -> AcquisitionScreen(ui.data, viewModel::updateAcquisition) { destination = Destination.REPORTS }
+                Destination.FILING -> FilingScreen(ui.data, viewModel) { viewModel.askAssistant(it); destination = Destination.ASSISTANT }
+                Destination.PLANNING -> PlanningScreen(ui.data, viewModel) { destination = Destination.ASSISTANT }
+                Destination.SUBSCRIPTION -> SubscriptionScreen(viewModel)
+                Destination.POLICIES -> PolicyScreen()
             }
 
             if (ui.isProcessing) {
@@ -250,11 +272,11 @@ fun CreditRepairApp(viewModel: MainViewModel) {
 }
 
 @Composable
-private fun AuthenticationScreen(ui: AppUiState, viewModel: MainViewModel) {
+private fun AuthenticationScreen(ui: AppUiState, viewModel: MainViewModel, onPolicies: () -> Unit) {
     val context = LocalContext.current
     val activity = context as? Activity
     var email by rememberSaveable { mutableStateOf("") }
-    var password by rememberSaveable { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
     var createAccount by rememberSaveable { mutableStateOf(false) }
 
     Surface(modifier = Modifier.fillMaxSize(), color = Navy950) {
@@ -332,6 +354,7 @@ private fun AuthenticationScreen(ui: AppUiState, viewModel: MainViewModel) {
                 color = Slate400,
                 fontSize = 11.sp,
             )
+            TextButton(onClick = onPolicies) { Text("Privacy, terms & support") }
         }
     }
 }
@@ -426,7 +449,7 @@ private fun DashboardScreen(data: AppState, viewModel: MainViewModel, onNavigate
 }
 
 @Composable
-private fun ReportsScreen(ui: AppUiState, viewModel: MainViewModel) {
+private fun ReportsScreen(ui: AppUiState, viewModel: MainViewModel, onAcquisition: () -> Unit) {
     val context = LocalContext.current
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
         uris.forEach { uri ->
@@ -435,6 +458,7 @@ private fun ReportsScreen(ui: AppUiState, viewModel: MainViewModel) {
     }
     ScreenList {
         item { Hero("Import credit reports", "Choose downloaded PDFs. Text extraction and OCR run on your device.", Icons.Default.PictureAsPdf) }
+        item { OutlinedButton(onClick = onAcquisition, modifier = Modifier.fillMaxWidth()) { Text("Guided report acquisition") } }
         item {
             Button(
                 onClick = { launcher.launch(arrayOf("application/pdf")) },
@@ -481,7 +505,7 @@ private fun ReportsScreen(ui: AppUiState, viewModel: MainViewModel) {
 }
 
 @Composable
-private fun AnalysisScreen(data: AppState, viewModel: MainViewModel) {
+private fun AnalysisScreen(data: AppState, viewModel: MainViewModel, onExplain: (String) -> Unit) {
     ScreenList {
         item { Hero("Three-bureau analysis", "Review differences; a flag is a prompt to verify, not proof the data is wrong.", Icons.Default.Analytics) }
         item {
@@ -498,7 +522,7 @@ private fun AnalysisScreen(data: AppState, viewModel: MainViewModel) {
             )
         }
         items(data.findings, key = { it.id }) { finding ->
-            FindingCard(finding, data.disputes.any { it.findingId == finding.id }) { viewModel.createDispute(finding) }
+            FindingCard(finding, data.disputes.any { it.findingId == finding.id }, { viewModel.createDispute(finding) }, onExplain)
         }
         if (data.accounts.isNotEmpty()) {
             item { SectionTitle("Parsed account entries") }
@@ -519,7 +543,7 @@ private fun AnalysisScreen(data: AppState, viewModel: MainViewModel) {
 }
 
 @Composable
-private fun FindingCard(finding: Finding, created: Boolean, onCreate: () -> Unit) {
+private fun FindingCard(finding: Finding, created: Boolean, onCreate: () -> Unit, onExplain: (String) -> Unit) {
     val color = when (finding.severity) { Severity.HIGH -> Rose400; Severity.MEDIUM -> Amber400; Severity.LOW -> Cyan400 }
     Card(colors = CardDefaults.cardColors(containerColor = Navy900), modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
@@ -531,7 +555,12 @@ private fun FindingCard(finding: Finding, created: Boolean, onCreate: () -> Unit
             }
             Text(finding.title, fontSize = 18.sp, fontWeight = FontWeight.Bold)
             Text(finding.detail, color = Slate300, lineHeight = 20.sp)
-            Text(finding.legalBasis.joinToString(" • "), color = Slate400, fontSize = 11.sp)
+            EducationLabel()
+            TextButton(onClick = { onExplain("Explain this review prompt in plain language, with facts to verify and no assumption that it proves an error: ${finding.title}. ${finding.detail}") }) { Text("Explain this finding") }
+            finding.legalBasis.forEach { citation ->
+                Text(citation, color = Slate400)
+                TextButton(onClick = { onExplain("Explain this legal reference in plain language and retrieve the official text with a source link: $citation. Discuss its limits; do not presume it establishes an error.") }) { Text("Explain this citation") }
+            }
             Button(onClick = onCreate, enabled = !created, modifier = Modifier.fillMaxWidth()) {
                 Icon(if (created) Icons.Default.Check else Icons.Default.Gavel, null)
                 Spacer(Modifier.width(8.dp))
@@ -542,20 +571,22 @@ private fun FindingCard(finding: Finding, created: Boolean, onCreate: () -> Unit
 }
 
 @Composable
-private fun DisputesScreen(data: AppState, viewModel: MainViewModel) {
+private fun DisputesScreen(data: AppState, viewModel: MainViewModel, onExplain: (String) -> Unit, onFiling: () -> Unit) {
     ScreenList {
         item { Hero("Dispute workspace", "Review, copy, share, and track fact-specific letters.", Icons.Default.Description) }
+        item { Button(onClick = onFiling, modifier = Modifier.fillMaxWidth()) { Text("Guided portal filing & receipts") } }
         if (data.disputes.isEmpty()) item { EmptyState("No disputes yet", "Create a draft from a verified finding in Analysis.") }
         items(data.disputes.sortedByDescending { it.createdAt }, key = { it.id }) { dispute ->
-            DisputeCard(dispute, viewModel)
+            DisputeCard(dispute, viewModel, onExplain)
         }
         item { LegalAccuracyNote() }
     }
 }
 
 @Composable
-private fun DisputeCard(dispute: Dispute, viewModel: MainViewModel) {
+private fun DisputeCard(dispute: Dispute, viewModel: MainViewModel, onExplain: (String) -> Unit) {
     var expanded by rememberSaveable(dispute.id) { mutableStateOf(false) }
+    var draftReviewed by rememberSaveable(dispute.id, dispute.letter) { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
     val context = LocalContext.current
     Card(colors = CardDefaults.cardColors(containerColor = Navy900), modifier = Modifier.fillMaxWidth()) {
@@ -567,7 +598,7 @@ private fun DisputeCard(dispute: Dispute, viewModel: MainViewModel) {
                 }
                 StatusPill(dispute.status)
                 IconButton(onClick = { expanded = !expanded }) {
-                    Icon(if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore, null)
+                    Icon(if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore, if (expanded) "Collapse draft" else "Expand draft")
                 }
             }
             AnimatedVisibility(expanded) {
@@ -575,22 +606,25 @@ private fun DisputeCard(dispute: Dispute, viewModel: MainViewModel) {
                     Surface(color = Navy950, shape = RoundedCornerShape(12.dp)) {
                         Text(dispute.letter, modifier = Modifier.padding(14.dp), color = Slate300, fontSize = 12.sp, lineHeight = 18.sp)
                     }
+                    EducationLabel()
+                    TextButton(onClick = { onExplain("Explain this draft's purpose and what I must verify, in plain language: ${dispute.reason}") }) { Text("Explain this draft") }
+                    FilterChip(selected = draftReviewed, onClick = { draftReviewed = !draftReviewed }, label = { Text("I reviewed every fact and will replace placeholders") })
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedButton(onClick = { context.copyText("Dispute letter", dispute.letter) }, modifier = Modifier.weight(1f)) {
+                        OutlinedButton(onClick = { context.copyText("Dispute letter", dispute.letter) }, enabled = draftReviewed, modifier = Modifier.weight(1f)) {
                             Icon(Icons.Default.ContentCopy, null); Spacer(Modifier.width(5.dp)); Text("Copy")
                         }
-                        OutlinedButton(onClick = { context.shareText("Credit dispute draft", dispute.letter) }, modifier = Modifier.weight(1f)) {
+                        OutlinedButton(onClick = { context.shareText("Credit dispute draft", dispute.letter) }, enabled = draftReviewed, modifier = Modifier.weight(1f)) {
                             Icon(Icons.Default.Share, null); Spacer(Modifier.width(5.dp)); Text("Share")
                         }
                     }
                     Text("Update tracking status", color = Slate400, fontSize = 12.sp)
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         listOf(DisputeStatus.READY, DisputeStatus.SENT, DisputeStatus.INVESTIGATING, DisputeStatus.RESOLVED).forEach { status ->
                             FilterChip(
                                 selected = dispute.status == status,
                                 onClick = { viewModel.updateDispute(dispute.id, status) },
-                                label = { Text(status.name.take(5).lowercase(), fontSize = 9.sp) },
-                                modifier = Modifier.weight(1f),
+                                label = { Text(status.name.lowercase()) },
+                                modifier = Modifier.fillMaxWidth(),
                             )
                         }
                     }
@@ -617,6 +651,9 @@ private fun MoreScreen(onNavigate: (Destination) -> Unit) {
     ScreenList {
         item { Hero("Every tool in one place", "Government complaint help, score planning, freezes, and private guidance.", Icons.Default.MoreHoriz) }
         item { ActionRow(Icons.Default.AccountBalance, "CFPB Assistant", "Build a complaint from a saved dispute") { onNavigate(Destination.CFPB) } }
+        item { ActionRow(Icons.Default.FileOpen, "Get reports", "Saved acquisition checklist and private browser handoff") { onNavigate(Destination.ACQUISITION) } }
+        item { ActionRow(Icons.Default.Description, "Guided filing", "Reviewed draft chunks, receipts, and check-ins") { onNavigate(Destination.FILING) } }
+        item { ActionRow(Icons.Default.Timeline, "Goals & next actions", "A sequenced educational plan from your findings") { onNavigate(Destination.PLANNING) } }
         item { ActionRow(Icons.Default.AutoAwesome, "AI Assistant", "Ask questions using your analyzed report context") { onNavigate(Destination.ASSISTANT) } }
         item { ActionRow(Icons.Default.Timeline, "Score & action progress", "Separate immediate actions from longer-term effects") { onNavigate(Destination.PROGRESS) } }
         item { ActionRow(Icons.Default.Security, "Secondary bureau freezes", "Official links and confirmation checklist") { onNavigate(Destination.FREEZES) } }
@@ -753,6 +790,7 @@ private fun AssistantScreen(ui: AppUiState, viewModel: MainViewModel) {
     val data = ui.data
     var input by rememberSaveable { mutableStateOf("") }
     Column(Modifier.fillMaxSize()) {
+        EducationLabel()
         NoticeCard(
             Icons.Default.Lock,
             if (ui.isAgentEndpointConfigured) "Secure agent endpoint configured" else "Secure agent setup incomplete",
@@ -846,7 +884,8 @@ private fun ProgressScreen(data: AppState, viewModel: MainViewModel) {
     var scoreText by rememberSaveable { mutableStateOf("") }
     val stages = CreditAnalyzer.impactPlan(data.findings, data.disputes)
     ScreenList {
-        item { Hero("Score & action progress", "See what can happen soon, what normally takes time, and what cannot be promised.", Icons.Default.Timeline) }
+        item { Hero("Score & action progress", "Track actual records and next actions without predicting results.", Icons.Default.Timeline) }
+        item { EducationLabel() }
         item { SectionTitle("Record a score") }
         item {
             Card(colors = CardDefaults.cardColors(containerColor = Navy900), modifier = Modifier.fillMaxWidth()) {
@@ -892,12 +931,16 @@ private fun ScoreRow(snapshot: ScoreSnapshot) {
 }
 
 @Composable
-private fun SettingsScreen(ui: AppUiState, viewModel: MainViewModel) {
+private fun SettingsScreen(ui: AppUiState, viewModel: MainViewModel, onSubscription: () -> Unit, onPolicies: () -> Unit) {
     val data = ui.data
     var confirmClear by remember { mutableStateOf(false) }
+    var confirmAccount by remember { mutableStateOf(false) }
     var jurisdictionCode by remember(data.jurisdictionCode) { mutableStateOf(data.jurisdictionCode) }
     ScreenList {
         item { Hero("Privacy & settings", "Control local credit data and review connection status.", Icons.Default.Settings) }
+        item { Button(onClick = onSubscription, modifier = Modifier.fillMaxWidth()) { Text("Monthly plan, restore & cancel") } }
+        item { OutlinedButton(onClick = onPolicies, modifier = Modifier.fillMaxWidth()) { Text("Privacy policy, terms & support") } }
+        item { OutlinedButton(onClick = { confirmAccount = true }, modifier = Modifier.fillMaxWidth()) { Text("Delete account and app-server records") } }
         item { NoticeCard(Icons.Default.Check, "Native Android build", "Kotlin + Jetpack Compose. No WebView, Capacitor, or wrapped website is used for the app interface.", Emerald400) }
         item { NoticeCard(Icons.Default.Security, "Protected local storage", "Case state is encrypted with AES-GCM using a non-exportable Android Keystore key. Screenshots are blocked and Android backup is disabled.", Emerald400) }
         item {
@@ -977,6 +1020,10 @@ private fun SettingsScreen(ui: AppUiState, viewModel: MainViewModel) {
             dismissButton = { TextButton(onClick = { confirmClear = false }) { Text("Cancel") } },
         )
     }
+    if (confirmAccount) AlertDialog(onDismissRequest = { confirmAccount = false }, title = { Text("Delete account?") },
+        text = { Text("This removes app-server billing records and the Firebase login, then clears local case data. Google Play subscription renewal is NOT canceled. Manage/cancel it first. Recent sign-in may be required. Browser PDFs and vendor retention are separate.") },
+        confirmButton = { TextButton(onClick = { confirmAccount = false; viewModel.deleteAccount() }) { Text("Delete account") } },
+        dismissButton = { TextButton(onClick = { confirmAccount = false }) { Text("Cancel") } })
 }
 
 @Composable

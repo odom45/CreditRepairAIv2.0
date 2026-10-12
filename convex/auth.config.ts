@@ -2,10 +2,10 @@ import { type AuthConfig } from "convex/server";
 
 export default {
   providers: [
-    {
+    ...(process.env.CONVEX_SITE_URL ? [{
       domain: process.env.CONVEX_SITE_URL,
       applicationID: "convex",
-    },
+    }] : []),
     {
       // Firebase Authentication ID tokens are short-lived JWTs. The Android app
       // obtains them only after email/password or Google sign-in; no OAuth or

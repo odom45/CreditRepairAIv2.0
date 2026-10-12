@@ -22,9 +22,18 @@ import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
+import com.creditrepairai.v2.guidance.*
 
 class AppRepository(context: Context) {
     private val preferences = context.getSharedPreferences("credit_repair_private", Context.MODE_PRIVATE)
+
+    fun selectOwner(uid: String?) {
+        val owner = uid?.let { java.security.MessageDigest.getInstance("SHA-256").digest(it.toByteArray()).joinToString("") { b -> "%02x".format(b) } }
+        if (preferences.getString("owner", null) != owner) {
+            clear(preserveOwner = false)
+            preferences.edit().putString("owner", owner).commit()
+        }
+    }
 
     fun load(): AppState {
         val encrypted = preferences.getString(KEY_ENCRYPTED_STATE, null)
@@ -54,14 +63,24 @@ class AppRepository(context: Context) {
             .apply()
     }
 
-    fun clear() {
-        preferences.edit().clear().commit()
+    fun clear(preserveOwner: Boolean = true) {
+        val owner = if (preserveOwner) preferences.getString("owner", null) else null
+        check(preferences.edit().clear().putString("owner", owner).commit()) { "Local deletion could not be saved." }
         keyStore().apply {
             if (containsAlias(KEY_ALIAS)) deleteEntry(KEY_ALIAS)
         }
     }
 
     private fun encode(state: AppState) = JSONObject().apply {
+        put("onboardingComplete", state.onboardingComplete)
+        put("acquisition", JSONObject().put("step", state.acquisition.step.name).put("confirmed", JSONArray(state.acquisition.confirmed.map { it.name })))
+        put("goal", JSONObject().put("description", state.goal.description).put("targetMonths", state.goal.targetMonths).put("aiPlan", state.goal.aiPlan))
+        put("filings", JSONArray().apply { state.filings.forEach { record -> put(JSONObject()
+            .put("id", record.id).put("disputeId", record.disputeId).put("portal", record.portal.name)
+            .put("step", record.step).put("reviewed", record.reviewed).put("confirmation", record.confirmation)
+            .put("problem", record.problem).put("companyResponse", record.companyResponse).put("resolution", record.resolution).put("evidence", record.evidence)
+            .put("submittedAt", record.submittedAt ?: JSONObject.NULL).put("responseReceivedAt", record.responseReceivedAt ?: JSONObject.NULL)
+            .put("reminder30", record.reminder30 ?: JSONObject.NULL).put("reminder45", record.reminder45 ?: JSONObject.NULL)) } })
         put("jurisdictionCode", state.jurisdictionCode)
         put("reports", JSONArray().apply { state.reports.forEach { put(it.toJson()) } })
         put("accounts", JSONArray().apply { state.accounts.forEach { put(it.toJson()) } })
@@ -73,6 +92,14 @@ class AppRepository(context: Context) {
     }
 
     private fun decode(json: JSONObject) = AppState(
+        onboardingComplete = json.optBoolean("onboardingComplete"),
+        acquisition = json.optJSONObject("acquisition")?.let { AcquisitionState(enumValueOrDefault(it.optString("step"), AcquisitionStep.PREPARE), it.array("confirmed").strings().map(Bureau::from).filter { b -> b != Bureau.UNKNOWN }.toSet()) } ?: AcquisitionState(),
+        goal = json.optJSONObject("goal")?.let { CreditGoal(it.optString("description"), it.optInt("targetMonths", 12).coerceIn(1, 120), it.optString("aiPlan")) } ?: CreditGoal(),
+        filings = json.array("filings").objects().map { FilingRecord(
+            id = it.optString("id"), disputeId = it.optString("disputeId"), portal = enumValueOrDefault(it.optString("portal"), FilingPortal.EXPERIAN),
+            step = it.optInt("step").coerceIn(0, 6), reviewed = it.optBoolean("reviewed"), confirmation = it.optString("confirmation"),
+            problem = it.optString("problem"), companyResponse = it.optString("companyResponse"), resolution = it.optString("resolution"), evidence = it.optString("evidence"),
+            submittedAt = it.optLongOrNull("submittedAt"), responseReceivedAt = it.optLongOrNull("responseReceivedAt"), reminder30 = it.optLongOrNull("reminder30"), reminder45 = it.optLongOrNull("reminder45")) },
         jurisdictionCode = json.optString("jurisdictionCode"),
         reports = json.array("reports").objects().map { it.toReport() },
         accounts = json.array("accounts").objects().map { it.toAccount() },

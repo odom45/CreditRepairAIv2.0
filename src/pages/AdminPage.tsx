@@ -1,240 +1,50 @@
 import { useState } from "react";
-import { ShieldAlert, Users, Settings, Database, AlertTriangle, CheckCircle2, MessageSquare, Megaphone, TicketPercent, RefreshCcw, Calendar, UserPlus, Mail } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { toast } from "sonner";
-import { useQuery } from "convex/react";
+import { useAction, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import { Navigate } from "react-router-dom";
-
-const users = [
-  { id: 1, name: "Benjamin Odom", email: "benjaminjodom45@gmail.com", status: "active", plan: "unlimited" },
-  { id: 2, name: "Test User", email: "test@example.com", status: "active", plan: "free" },
-  { id: 3, name: "John Doe", email: "john@doe.com", status: "inactive", plan: "pro" }
-];
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { toast } from "sonner";
+import type { Id } from "../../convex/_generated/dataModel";
 
 export function AdminPage() {
-  const user = useQuery(api.auth.currentUser);
-  const [announcement, setAnnouncement] = useState("");
-  const [inviteEmail, setInviteEmail] = useState("");
-
-  const isAdmin = user?.email === "benjaminjodom45@gmail.com" || user?.email === "agent@test.local";
-
-  if (user !== undefined && !isAdmin) {
-    return <Navigate to="/dashboard" replace />;
+  const identity = useQuery(api.billingData.adminIdentity);
+  const rows = useQuery(api.billingData.adminList);
+  const manage = useAction(api.playBilling.adminManage);
+  const [busy, setBusy] = useState(false);
+  const [pending, setPending] = useState<{ id: Id<"playSubscriptions">; operation: "cancel" | "refundAndRevoke" } | null>(null);
+  async function perform(id: Id<"playSubscriptions">, operation: "refresh" | "cancel" | "refundAndRevoke") {
+    setBusy(true);
+    try {
+      await manage({ id, operation, confirmed: true });
+      toast.success(operation === "refresh" ? "Play status refreshed." : "Google Play action completed and status refreshed.");
+      setPending(null);
+    } catch {
+      toast.error("Action failed or status is pending. Refresh and check Play Console before retrying a financial action.");
+    } finally { setBusy(false); }
   }
-
-  const handleAction = (action: string) => {
-    setTimeout(() => {
-      toast.success(`Admin action: ${action} completed!`);
-    }, 1000);
-  };
-
-  return (
-    <div className="max-w-6xl mx-auto space-y-8 pb-20">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-          <ShieldAlert className="size-8 text-primary" />
-          Administrator Dashboard
-        </h1>
-        <p className="text-muted-foreground">Manage users, system health, and administrative actions.</p>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">TOTAL USERS</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">1,248</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">ACTIVE DISPUTES</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-primary">3,892</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">SYSTEM HEALTH</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-emerald-500">99.9%</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">REVENUE (MTD)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-chart-3">$12,450</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-8 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="size-5 text-primary" />
-              User Management
-            </CardTitle>
-            <CardDescription>Manage user accounts, subscriptions, and refunds.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {users.map((u) => (
-                <div key={u.id} className="flex flex-col p-4 rounded-lg border bg-card gap-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="size-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                        {u.name[0]}
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">{u.name}</span>
-                          <Badge variant="outline" className={
-                            u.plan === "unlimited" ? "bg-primary/10 text-primary border-primary/20" : "bg-muted text-muted-foreground"
-                          }>
-                            {u.plan.toUpperCase()}
-                          </Badge>
-                        </div>
-                        <p className="text-xs text-muted-foreground">{u.email}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button variant="ghost" size="sm">Edit</Button>
-                      <Button variant="ghost" size="sm" className="text-destructive">Suspend</Button>
-                    </div>
-                  </div>
-                  
-                  <div className="flex flex-wrap gap-2 pt-2 border-t border-border/50">
-                    <Button variant="outline" size="sm" className="h-8 gap-1" onClick={() => handleAction(`Discount for ${u.name}`)}>
-                      <TicketPercent className="size-3" />
-                      Apply Discount
-                    </Button>
-                    <Button variant="outline" size="sm" className="h-8 gap-1" onClick={() => handleAction(`Refund for ${u.name}`)}>
-                      <RefreshCcw className="size-3" />
-                      Issue Refund
-                    </Button>
-                    <Button variant="outline" size="sm" className="h-8 gap-1" onClick={() => handleAction(`Free Month for ${u.name}`)}>
-                      <Calendar className="size-3" />
-                      Give Free Month
-                    </Button>
-                    <Button variant="outline" size="sm" className="h-8 gap-1" onClick={() => handleAction(`Message to ${u.name}`)}>
-                      <MessageSquare className="size-3" />
-                      Respond
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        <div className="space-y-8">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <UserPlus className="size-5 text-primary" />
-                Invite Friends & Family
-              </CardTitle>
-              <CardDescription>Send a free trial invitation.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex flex-col gap-2">
-                <div className="relative">
-                  <Mail className="absolute left-3 top-3 size-4 text-muted-foreground" />
-                  <Input 
-                    placeholder="Email address" 
-                    className="pl-9" 
-                    value={inviteEmail}
-                    onChange={(e) => setInviteEmail(e.target.value)}
-                  />
-                </div>
-                <Button className="w-full gap-2" onClick={() => {
-                  handleAction(`Invite sent to ${inviteEmail}`);
-                  setInviteEmail("");
-                }}>
-                  <UserPlus className="size-4" />
-                  Send Free Trial Invite
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Megaphone className="size-5 text-primary" />
-                Announcements
-              </CardTitle>
-              <CardDescription>Send updates to all users.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Textarea 
-                placeholder="Type your update or announcement here..." 
-                value={announcement}
-                onChange={(e) => setAnnouncement(e.target.value)}
-                className="min-h-[100px]"
-              />
-              <Button className="w-full gap-2" onClick={() => {
-                handleAction("Global Announcement");
-                setAnnouncement("");
-              }}>
-                <Megaphone className="size-4" />
-                Post Announcement
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TicketPercent className="size-5 text-primary" />
-                Global Discounts
-              </CardTitle>
-              <CardDescription>Apply to all app users.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex gap-2">
-                <Input placeholder="Discount %" type="number" />
-                <Button variant="outline" onClick={() => handleAction("Global Discount")}>Apply</Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings className="size-5 text-muted-foreground" />
-                System Actions
-              </CardTitle>
-              <CardDescription>Global system controls.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Button className="w-full justify-start gap-2" variant="outline" onClick={() => handleAction("Clear Cache")}>
-                <Database className="size-4" />
-                Clear System Cache
-              </Button>
-              <Button className="w-full justify-start gap-2" variant="outline" onClick={() => handleAction("Sync Data")}>
-                <CheckCircle2 className="size-4" />
-                Sync Bureau Data
-              </Button>
-              <Button className="w-full justify-start gap-2 text-destructive hover:bg-destructive/5" variant="outline" onClick={() => handleAction("Maintenance Mode")}>
-                <AlertTriangle className="size-4" />
-                Enable Maintenance Mode
-              </Button>
-            </CardContent>
-          </Card>
+  if (identity === undefined) return <p role="status">Checking administrator access…</p>;
+  if (!identity) return <p>Sign in with the owner’s administrator account.</p>;
+  if (!identity.isAdmin) return <div className="space-y-4"><h1 className="text-2xl font-bold">Administrator setup required</h1><p>Server authorization is required; an email or client-side check cannot grant access. Ask the owner to add this account’s identity to the protected BILLING_ADMIN_IDENTITIES environment setting.</p><p className="break-all">Your authenticated identity: {identity.identity}</p></div>;
+  return <div className="space-y-6 pb-16">
+    <h1 className="text-3xl font-bold">Play subscription management</h1>
+    <p>Live, server-verified monthly software access. No simulated refunds, invented user totals, or outcome-based fees. Purchase tokens are not exposed to this screen.</p>
+    {rows === undefined ? <p role="status">Loading subscriptions…</p> : rows.length === 0 ? <p>No verified Play subscriptions recorded yet.</p> : rows.map(row => <Card key={row._id}>
+      <CardHeader><CardTitle className="break-all">Account: {row.owner}</CardTitle></CardHeader>
+      <CardContent className="space-y-3">
+        <p>{row.productId} · {row.state} · {row.active && row.expiresAt > Date.now() ? "Access eligible" : "No active access"}</p>
+        <p>Play expiry: {new Date(row.expiresAt).toLocaleString()} · Last checked: {new Date(row.checkedAt).toLocaleString()}</p>
+        <div className="flex flex-wrap gap-3">
+          <Button disabled={busy} variant="outline" onClick={() => void perform(row._id, "refresh")}>Refresh from Play</Button>
+          <Button disabled={busy} variant="outline" onClick={() => setPending({ id: row._id, operation: "cancel" })}>Stop future renewals</Button>
+          <Button disabled={busy} variant="destructive" onClick={() => setPending({ id: row._id, operation: "refundAndRevoke" })}>Refund and revoke access</Button>
         </div>
-      </div>
-    </div>
-  );
+      </CardContent>
+    </Card>)}
+    {pending && <Card role="dialog" aria-label="Confirm Google Play account action"><CardContent className="pt-6 space-y-4">
+      <p>{pending.operation === "refundAndRevoke" ? "This issues a full refund for the current subscription purchase and revokes access immediately via Google Play. Verify the account and transaction in Play Console first." : "This cancels future subscription renewals through Google Play. Existing paid access can remain until its expiry."}</p>
+      <p>Target subscription: {pending.id}</p>
+      <Button disabled={busy} variant="destructive" onClick={() => void perform(pending.id, pending.operation)}>Confirm actual Play action</Button>{" "}
+      <Button disabled={busy} variant="outline" onClick={() => setPending(null)}>Cancel</Button>
+    </CardContent></Card>}
+  </div>;
 }

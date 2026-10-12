@@ -1,0 +1,51 @@
+package com.creditrepairai.v2.guidance
+
+import com.creditrepairai.v2.model.*
+import org.junit.Assert.*
+import org.junit.Test
+
+class GuidedWorkflowTest {
+    @Test fun acquisitionTransitionsClampAndUnknownDoesNotCount() {
+        var state = AcquisitionState().back().capture(Bureau.UNKNOWN)
+        assertEquals(3, state.missing.size)
+        repeat(20) { state = state.next() }
+        assertEquals(AcquisitionStep.VERIFY, state.step)
+        state = state.capture(Bureau.EQUIFAX).capture(Bureau.EQUIFAX)
+        assertEquals(1, state.confirmed.size)
+        assertEquals(2, state.missing.size)
+        repeat(20) { state = state.back() }
+        assertEquals(AcquisitionStep.PREPARE, state.step)
+    }
+    @Test fun chunkingNeverSilentlyTruncates() {
+        val text = (1..200).joinToString(" ") { "word$it" }
+        val chunks = DisputeChunker.split("Explanation", text, 100)
+        assertTrue(chunks.all { it.text.length <= 100 })
+        assertEquals(text, chunks.joinToString(" ") { it.text })
+        val token = "x".repeat(350)
+        assertEquals(token, DisputeChunker.split("Token", token, 100).joinToString("") { it.text })
+    }
+    @Test(expected = IllegalArgumentException::class) fun rejectsInvalidFieldLimit() { DisputeChunker.split("test", "text", 0) }
+    @Test fun blankDraftHasNoChunks() { assertTrue(DisputeChunker.split("Empty", " ", 100).isEmpty()) }
+    @Test fun cfpbRequiresPriorSubmissionAndResponseOrCheckin() {
+        val draft = Dispute(findingId = "f", creditor = "Fictional", bureaus = listOf(Bureau.EQUIFAX), reason = "Verify", letter = "Draft", status = DisputeStatus.RESOLVED)
+        assertFalse(FilingGuide.cfpbReady(draft, emptyList(), 100))
+        assertFalse(FilingGuide.cfpbReady(draft.copy(sentAt = 1, craResponseDueAt = 200), emptyList(), 100))
+        assertTrue(FilingGuide.cfpbReady(draft.copy(sentAt = 1, craResponseDueAt = 200), emptyList(), 200))
+        assertTrue(FilingGuide.cfpbReady(draft.copy(sentAt = 1), listOf(FilingRecord(disputeId = draft.id, portal = FilingPortal.EQUIFAX, responseReceivedAt = 5)), 100))
+    }
+    @Test fun submissionCreatesCheckinsNotOutcomeDates() {
+        val record = FilingGuide.submitted(FilingRecord(disputeId = "d", portal = FilingPortal.EQUIFAX, reviewed = true), "Fictional-receipt", 1000)
+        assertEquals(1000L, record.submittedAt)
+        assertEquals(1000L + 30L * 86400000, record.reminder30)
+        assertEquals(1000L + 45L * 86400000, record.reminder45)
+    }
+    @Test(expected = IllegalArgumentException::class) fun cannotRecordUnreviewedSubmission() { FilingGuide.submitted(FilingRecord(disputeId = "d", portal = FilingPortal.CFPB), "receipt", 0) }
+    @Test fun plannerUsesActualFindingsAndMissingReports() {
+        val finding = Finding(type = FindingType.BALANCE_MISMATCH, title = "Balance differs", detail = "Review", severity = Severity.HIGH, creditor = "Fictional bank", bureaus = listOf(Bureau.EQUIFAX), accountIds = emptyList(), legalBasis = emptyList())
+        val plan = GoalPlanner.prioritize(AppState(findings = listOf(finding)))
+        assertTrue(plan.first().title.contains("Obtain"))
+        assertEquals(finding.id, plan[1].findingId)
+        assertTrue(plan[1].reason.contains("not proof"))
+        assertTrue(GoalPlanner.prompt(CreditGoal("Home", 12)).contains("not a forecast"))
+    }
+}

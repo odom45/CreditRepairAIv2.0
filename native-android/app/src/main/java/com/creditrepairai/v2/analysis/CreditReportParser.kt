@@ -21,6 +21,7 @@ import java.util.Locale
 
 class CreditReportParser(private val context: Context) {
     suspend fun parse(uri: Uri, fileName: String): ParsedReport = withContext(Dispatchers.IO) {
+        require(uri.scheme == "content") { "Select a PDF through Android's document picker or share sheet." }
         var extractionMethod = "Embedded PDF text"
         var text = runCatching { extractEmbeddedText(uri) }.getOrDefault("")
         if (text.filterNot(Char::isWhitespace).length < 200) {
@@ -32,9 +33,10 @@ class CreditReportParser(private val context: Context) {
             "The PDF did not contain enough readable text. Try an original downloaded report instead of a photo-only scan."
         }
 
-        val bureau = detectBureau(fileName, text)
-        val accounts = parseAccounts(text, bureau)
-        val score = parseScore(text)
+        val reader = ReportTextParser()
+        val bureau = reader.detectBureau(fileName, text)
+        val accounts = reader.parseAccounts(text, bureau)
+        val score = reader.parseScore(text)
         ParsedReport(
             report = CreditReport(
                 fileName = fileName,
@@ -50,7 +52,12 @@ class CreditReportParser(private val context: Context) {
 
     private fun extractEmbeddedText(uri: Uri): String {
         return context.contentResolver.openInputStream(uri)?.use { stream ->
-            PDDocument.load(stream).use { document -> PDFTextStripper().getText(document) }
+            val bytes = stream.readBytesLimited(50_000_000)
+            require(bytes.take(5).toByteArray().toString(Charsets.US_ASCII) == "%PDF-") { "Selected file is not a PDF." }
+            PDDocument.load(bytes).use { document ->
+                require(document.numberOfPages <= 200) { "PDF exceeds 200 pages. Export a bureau report separately." }
+                PDFTextStripper().getText(document)
+            }
         }.orEmpty()
     }
 
@@ -61,11 +68,14 @@ class CreditReportParser(private val context: Context) {
         return try {
             PdfRenderer(descriptor).use { renderer ->
                 buildString {
-                    val pageLimit = minOf(renderer.pageCount, 30)
+                    require(renderer.pageCount <= 30) { "Scanned PDF exceeds 30 pages. Import smaller report sections; no pages were silently skipped." }
+                    val pageLimit = renderer.pageCount
                     for (index in 0 until pageLimit) {
                         renderer.openPage(index).use { page ->
+                            require(page.width > 0 && page.height > 0) { "PDF page dimensions are invalid." }
                             val targetWidth = 1440
                             val targetHeight = (targetWidth * page.height.toFloat() / page.width).toInt().coerceAtLeast(1)
+                            require(targetHeight <= 4096) { "PDF page is too tall for safe OCR. Export a standard-sized page." }
                             val bitmap = Bitmap.createBitmap(targetWidth, targetHeight, Bitmap.Config.ARGB_8888)
                             try {
                                 page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
@@ -83,6 +93,21 @@ class CreditReportParser(private val context: Context) {
         }
     }
 
+    private fun java.io.InputStream.readBytesLimited(limit: Int): ByteArray {
+        val output = java.io.ByteArrayOutputStream()
+        val buffer = ByteArray(8192)
+        while (true) {
+            val count = read(buffer)
+            if (count < 0) break
+            require(output.size() + count <= limit) { "PDF is larger than 50 MB. Export a smaller report." }
+            output.write(buffer, 0, count)
+        }
+        return output.toByteArray()
+    }
+}
+
+/** Pure text parser used by Android import and permission-free JVM fixtures. */
+class ReportTextParser {
     internal fun detectBureau(fileName: String, text: String): Bureau {
         val source = "$fileName\n${text.take(8_000)}".lowercase(Locale.US)
         return when {
@@ -111,18 +136,21 @@ class CreditReportParser(private val context: Context) {
         val candidateIndexes = lines.indices.filter { index ->
             val line = lines[index]
             ACCOUNT_HEADING.containsMatchIn(line) ||
-                (line.length in 3..48 && line == line.uppercase(Locale.US) &&
-                    lines.drop(index + 1).take(5).any { ACCOUNT_NUMBER.containsMatchIn(it) })
+                (line.length in 3..48 && line == line.uppercase(Locale.US) && !line.contains(':') &&
+                    line !in IGNORED_HEADINGS && !ACCOUNT_NUMBER.containsMatchIn(line) &&
+                    lines.subList(index + 1, minOf(index + 6, lines.size)).any { ACCOUNT_NUMBER.containsMatchIn(it) } &&
+                    lines.subList(index + 1, minOf(index + 6, lines.size)).none { ACCOUNT_HEADING.containsMatchIn(it) })
         }
 
-        return candidateIndexes.mapNotNull { index ->
-            val window = lines.drop(index).take(24)
+        return candidateIndexes.mapIndexedNotNull { position, index ->
+            val end = candidateIndexes.getOrNull(position + 1) ?: lines.size
+            val window = lines.subList(index, end).take(40)
             val headingMatch = ACCOUNT_HEADING.find(window.first())
             val creditor = sanitizeCreditor(
                 headingMatch?.groupValues?.getOrNull(1)?.takeIf(String::isNotBlank)
                     ?: window.first(),
             )
-            if (creditor.length < 3 || creditor in IGNORED_HEADINGS) return@mapNotNull null
+            if (creditor.length < 3 || creditor.uppercase(Locale.US) in IGNORED_HEADINGS) return@mapIndexedNotNull null
 
             val accountLine = window.firstOrNull { ACCOUNT_NUMBER.containsMatchIn(it) }.orEmpty()
             val suffix = Regex("(?i)(?:account(?: number| #)?|acct)[^A-Z0-9]*([*Xx-]*[A-Z0-9-]{3,})")
@@ -160,7 +188,7 @@ class CreditReportParser(private val context: Context) {
                 highBalance = highBalance,
                 remarks = remarks.take(200),
             )
-        }.distinctBy { Triple(normalizeName(it.creditor), it.accountSuffix, it.bureau) }.take(150)
+        }.take(150)
     }
 
     private fun extractValue(lines: List<String>, label: String): String? {

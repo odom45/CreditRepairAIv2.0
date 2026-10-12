@@ -20,6 +20,7 @@ export const TestCredentials = ConvexCredentials<DataModel>({
     },
   },
   authorize: async (params, ctx) => {
+    if (process.env.CREDIT_ENABLE_TEST_AUTH !== "true") throw new Error("Test authentication is disabled.");
     const email = params.email as string;
     const password = params.password as string;
     const flow = params.flow as string;

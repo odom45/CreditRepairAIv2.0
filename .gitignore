@@ -35,6 +35,7 @@ twa-project/
 
 # Native Android build output and machine-local SDK paths
 native-android/.gradle/
+native-android/.kotlin/
 native-android/local.properties
 native-android/**/build/
 

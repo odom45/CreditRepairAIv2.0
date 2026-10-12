@@ -1,5 +1,6 @@
 import { httpAction } from "./_generated/server";
 import { PublicAgentError, runCreditAgent, type CreditAgentRequest } from "./creditAgentCore";
+import { internal } from "./_generated/api";
 
 const jsonHeaders = {
   "Content-Type": "application/json; charset=utf-8",
@@ -14,7 +15,13 @@ export const creditAgentHttp = httpAction(async (ctx, request) => {
       throw new PublicAgentError("Content-Type must be application/json.", 415);
     }
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new PublicAgentError("Sign in is required.", 401);
+    if (!identity || identity.issuer !== "https://securetoken.google.com/credit-repair-ai-v2") throw new PublicAgentError("Firebase sign-in is required.", 401);
+    if (identity.emailVerified !== true) throw new PublicAgentError("Verify your account email, then sign in again before asking AI.", 403);
+    if (!await ctx.runMutation(internal.billingData.allowAgentRequest, { owner: identity.subject })) throw new PublicAgentError("Educational AI request limit reached. Try again later.", 429);
+    if (process.env.CREDIT_PAID_ACCESS_ENABLED === "true") {
+      const entitlement = await ctx.runAction(internal.playBilling.status, { owner: identity.subject });
+      if (!entitlement.active || entitlement.expiresAt <= Date.now()) throw new PublicAgentError("Verified software-access subscription required.", 402);
+    }
 
     const raw = await request.text();
     if (raw.length > 200_000) throw new PublicAgentError("Request is too large.", 413);

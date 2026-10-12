@@ -1,6 +1,9 @@
 package com.creditrepairai.v2.model
 
 import java.util.UUID
+import com.creditrepairai.v2.guidance.AcquisitionState
+import com.creditrepairai.v2.guidance.FilingRecord
+import com.creditrepairai.v2.guidance.CreditGoal
 
 enum class Bureau(val displayName: String) {
     TRANSUNION("TransUnion"),
@@ -97,6 +100,10 @@ data class ChatMessage(
 )
 
 data class AppState(
+    val onboardingComplete: Boolean = false,
+    val acquisition: AcquisitionState = AcquisitionState(),
+    val filings: List<FilingRecord> = emptyList(),
+    val goal: CreditGoal = CreditGoal(),
     val jurisdictionCode: String = "",
     val reports: List<CreditReport> = emptyList(),
     val accounts: List<CreditAccount> = emptyList(),

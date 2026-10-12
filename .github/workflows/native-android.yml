@@ -5,6 +5,12 @@ on:
     branches: [android-native-rebuild]
     paths:
       - "native-android/**"
+      - "convex/**"
+      - "src/**"
+      - "tests/**"
+      - "scripts/**"
+      - "package.json"
+      - "package-lock.json"
       - ".github/workflows/native-android.yml"
   workflow_dispatch:
 
@@ -12,6 +18,21 @@ permissions:
   contents: read
 
 jobs:
+  validate-backend-and-admin:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run build
+      - run: npx tsc --noEmit -p convex/tsconfig.json
+      - run: npm run test:launch
+      - run: npm run legal:check
+      - run: npm run audit:source-secrets
   build-native-apk:
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -38,6 +59,13 @@ jobs:
 
       - name: Build installable APK
         run: ./gradlew assembleDebug --stacktrace
+
+      - name: Upload unit test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: CreditRepairAI-native-unit-tests
+          path: native-android/app/build/reports/tests/testDebugUnitTest
 
       - name: Upload APK
         uses: actions/upload-artifact@v4

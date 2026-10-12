@@ -10,25 +10,33 @@ import java.net.URL
 import java.util.UUID
 
 fun interface SessionTokenProvider {
-    suspend fun bearerToken(): String?
+    suspend fun bearerToken(expectedSubject: String): String?
 }
 
 class CreditAgentGateway(
     private val endpoint: String,
     private val tokenProvider: SessionTokenProvider,
 ) {
-    val isConfigured: Boolean get() = endpoint.startsWith("https://")
+    /**
+     * The release secret may be either the Convex site origin or the complete
+     * /credit-agent endpoint. Accepting both keeps the Android configuration
+     * simple while ensuring a bare .convex.site value actually reaches the
+     * authenticated HTTP action.
+     */
+    private val resolvedEndpoint = resolveEndpoint(endpoint)
 
-    suspend fun answer(question: String, state: AppState): String = withContext(Dispatchers.IO) {
+    val isConfigured: Boolean get() = resolvedEndpoint.startsWith("https://")
+
+    suspend fun answer(question: String, state: AppState, expectedSubject: String): String = withContext(Dispatchers.IO) {
         check(isConfigured) { "The secure AI service has not been configured for this build." }
-        val token = tokenProvider.bearerToken()?.takeIf(String::isNotBlank)
+        val token = tokenProvider.bearerToken(expectedSubject)?.takeIf(String::isNotBlank)
             ?: error("Secure AI sign-in is not connected. No report data was sent.")
         val safeQuestion = SensitiveDataRedactor.redact(question)
         check(!SensitiveDataRedactor.containsHighRiskIdentifier(safeQuestion)) {
             "Remove sensitive identifiers such as an SSN, birth date, email, or phone number and try again."
         }
 
-        val connection = (URL(endpoint).openConnection() as HttpURLConnection).apply {
+        val connection = (URL(resolvedEndpoint).openConnection() as HttpURLConnection).apply {
             requestMethod = "POST"
             connectTimeout = 15_000
             readTimeout = 45_000
@@ -36,6 +44,7 @@ class CreditAgentGateway(
             setRequestProperty("Authorization", "Bearer $token")
             setRequestProperty("Content-Type", "application/json; charset=utf-8")
             setRequestProperty("Accept", "application/json")
+            instanceFollowRedirects = false
         }
         try {
             val body = JSONObject()
@@ -79,10 +88,10 @@ class CreditAgentGateway(
                     .put("status", SensitiveDataRedactor.redact(account.status))
                     .put("balance", account.balance ?: JSONObject.NULL)
                     .put("paymentStatus", SensitiveDataRedactor.redact(account.paymentStatus))
-                    .put("openedDate", account.openedDate)
-                    .put("accountType", account.accountType)
-                    .put("responsibility", account.responsibility)
-                    .put("dateReported", account.dateReported)
+                    .put("openedDate", SensitiveDataRedactor.redact(account.openedDate))
+                    .put("accountType", SensitiveDataRedactor.redact(account.accountType))
+                    .put("responsibility", SensitiveDataRedactor.redact(account.responsibility))
+                    .put("dateReported", SensitiveDataRedactor.redact(account.dateReported))
                     .put("originalCreditor", SensitiveDataRedactor.redact(account.originalCreditor))
                     .put("pastDue", account.pastDue ?: JSONObject.NULL)
                     .put("creditLimit", account.creditLimit ?: JSONObject.NULL)
@@ -95,12 +104,12 @@ class CreditAgentGateway(
                 put(JSONObject()
                     .put("id", finding.id)
                     .put("type", finding.type.name)
-                    .put("title", finding.title)
+                    .put("title", SensitiveDataRedactor.redact(finding.title))
                     .put("detail", SensitiveDataRedactor.redact(finding.detail))
                     .put("severity", finding.severity.name)
                     .put("creditor", SensitiveDataRedactor.redact(finding.creditor))
                     .put("bureaus", JSONArray(finding.bureaus.map { it.name.lowercase() }))
-                    .put("legalBasis", JSONArray(finding.legalBasis)))
+                    .put("legalBasis", JSONArray(finding.legalBasis.map(SensitiveDataRedactor::redact))))
             }
         })
         put("disputes", JSONArray().apply {
@@ -114,8 +123,19 @@ class CreditAgentGateway(
                     .put("status", dispute.status.name)
                     .put("createdAt", dispute.createdAt)
                     .put("sentAt", dispute.sentAt ?: JSONObject.NULL)
-                    .put("craResponseDueAt", dispute.craResponseDueAt ?: JSONObject.NULL))
+                    .put("craResponseDueAt", dispute.craResponseDueAt ?: JSONObject.NULL)
+                    .put("responseReceived", filings.any { it.disputeId == dispute.id && it.responseReceivedAt != null }))
             }
         })
+    }
+
+    companion object {
+        internal fun resolveEndpoint(rawEndpoint: String): String {
+            val trimmed = rawEndpoint.trim().removeSuffix("/")
+            val parsed = runCatching { java.net.URI(trimmed) }.getOrNull() ?: return ""
+            if (parsed.scheme != "https" || parsed.host.isNullOrBlank() || parsed.rawUserInfo != null || parsed.query != null || parsed.fragment != null) return ""
+            if (parsed.path !in listOf("", "/credit-agent")) return ""
+            return if (trimmed.endsWith("/credit-agent")) trimmed else "$trimmed/credit-agent"
+        }
     }
 }

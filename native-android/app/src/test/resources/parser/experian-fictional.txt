@@ -1,0 +1,14 @@
+Experian fictional fixture — no real consumer data
+Credit Score: 620
+Creditor: Fictional Cedar Bank
+Account Number: XXXX1234
+Status: Open
+Balance: $1,280
+Date Opened: 2020-01
+Date Reported: 2026-09
+Account Type: Revolving
+Credit Limit: $5,000
+Creditor: Fictional Birch Bank
+Account Number: XXXX5678
+Status: Paid
+Balance: $0

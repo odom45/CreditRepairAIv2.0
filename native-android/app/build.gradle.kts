@@ -1,9 +1,13 @@
+import java.net.URI
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
     id("com.google.gms.google-services")
 }
+
+fun javaString(value: String): String = "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r") + "\""
 
 android {
     namespace = "com.creditrepairai.v2"
@@ -20,7 +24,12 @@ android {
         vectorDrawables.useSupportLibrary = true
 
         val gateway = providers.gradleProperty("CREDIT_AI_GATEWAY_URL").orElse("").get()
-        buildConfigField("String", "AI_GATEWAY_URL", "\"${gateway.replace("\"", "\\\"")}\"")
+        buildConfigField("String", "AI_GATEWAY_URL", javaString(gateway))
+        buildConfigField("String", "PLAY_PRODUCT_ID", "\"creditrepairai_monthly\"")
+        buildConfigField("String", "SUPPORT_EMAIL", javaString(providers.gradleProperty("CREDIT_SUPPORT_EMAIL").orElse("").get()))
+        val paidAccess = providers.gradleProperty("CREDIT_PAID_ACCESS_ENABLED").orElse("false").get()
+        require(paidAccess in listOf("true", "false")) { "CREDIT_PAID_ACCESS_ENABLED must be true or false" }
+        buildConfigField("boolean", "PAID_ACCESS_ENABLED", paidAccess)
     }
 
     val releaseKeystoreFile = providers.environmentVariable("ANDROID_KEYSTORE_FILE").orNull
@@ -79,6 +88,17 @@ android {
     packaging.resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
 }
 
+val validateReleaseReadiness by tasks.registering {
+    doLast {
+        val gateway = providers.gradleProperty("CREDIT_AI_GATEWAY_URL").orElse("").get()
+        val url = runCatching { URI(gateway.trim().removeSuffix("/")) }.getOrNull()
+        check(url?.scheme == "https" && !url.host.isNullOrBlank() && url.rawUserInfo == null && url.query == null && url.fragment == null && url.path in listOf("", "/credit-agent")) { "Release requires a valid HTTPS site origin or /credit-agent endpoint." }
+        check(providers.gradleProperty("CREDIT_SUPPORT_EMAIL").orElse("").get().matches(Regex("[^\\s@]+@[^\\s@]+\\.[^\\s@]+"))) { "Release requires the owner's monitored CREDIT_SUPPORT_EMAIL." }
+        check(listOf("ANDROID_KEYSTORE_FILE", "ANDROID_KEYSTORE_PASSWORD", "ANDROID_KEY_ALIAS", "ANDROID_KEY_PASSWORD").all { !providers.environmentVariable(it).orNull.isNullOrBlank() }) { "Release requires owner-supplied upload signing configuration." }
+    }
+}
+tasks.matching { it.name == "preReleaseBuild" }.configureEach { dependsOn(validateReleaseReadiness) }
+
 dependencies {
     // Compose 1.12+ requires compileSdk 37 and AGP 9.1+. Keep this Android 36
     // build on the final Compose 1.11 BOM until the toolchain is upgraded.
@@ -99,6 +119,9 @@ dependencies {
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.2")
+    implementation("androidx.browser:browser:1.9.0")
+    implementation("androidx.work:work-runtime-ktx:2.11.0")
+    implementation("com.android.billingclient:billing:8.3.0")
     implementation(platform("com.google.firebase:firebase-bom:34.19.0"))
     implementation("com.google.firebase:firebase-auth")
     implementation("androidx.credentials:credentials:1.3.0")

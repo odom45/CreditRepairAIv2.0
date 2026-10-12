@@ -95,22 +95,22 @@ object CreditAnalyzer {
 
     fun impactPlan(findings: List<Finding>, disputes: List<com.creditrepairai.v2.model.Dispute>): List<ScoreImpactStage> = listOf(
         ScoreImpactStage(
-            window = "Now–7 days",
-            title = "Correct the file and lower utilization",
-            expectation = if (findings.isEmpty()) "Import all three reports and verify the extracted data." else "Review ${findings.size} flagged item(s), add evidence, and send only accurate disputes. Card-paydown updates may report on the next statement cycle.",
-            positiveInfluence = "Possible soon; no guaranteed score change",
+            window = "Prepare",
+            title = "Verify the original records",
+            expectation = if (findings.isEmpty()) "Import all three reports and verify the extracted data." else "Review ${findings.size} flagged item(s), compare reporting dates, and gather supporting records. A flag is not proof of an error.",
+            positiveInfluence = "Educational checklist; results are not guaranteed",
         ),
         ScoreImpactStage(
-            window = "8–45 days",
-            title = "Investigation and bureau updates",
-            expectation = if (disputes.isEmpty()) "Generate a dispute only for information you can identify as inaccurate or incomplete." else "Track ${disputes.size} dispute(s). Many FCRA investigations are generally completed within 30 days, with exceptions.",
-            positiveInfluence = "Depends on the item, scoring model, and outcome",
+            window = "Review and follow up",
+            title = "Track actual correspondence",
+            expectation = if (disputes.isEmpty()) "Prepare a draft only when you can identify a supported factual issue." else "Track ${disputes.size} dispute(s), keep receipts, and record the company's actual response. Check-ins are not response guarantees or legal deadlines.",
+            positiveInfluence = "No predicted deletion, score change, or response time",
         ),
         ScoreImpactStage(
-            window = "45–120 days",
-            title = "Build durable positive history",
-            expectation = "Keep every payment on time, maintain low revolving utilization, and avoid unnecessary hard inquiries while updated data propagates.",
-            positiveInfluence = "Typically gradual and individualized",
+            window = "Maintain records",
+            title = "Review goals and manual score history",
+            expectation = "Maintain payment records, compare dated reports, and record scores without assuming causation or predicting a lender decision.",
+            positiveInfluence = "Personal goals are preferences, not outcome forecasts",
         ),
     )
 

@@ -5,7 +5,6 @@ import { internalAction } from "./_generated/server";
 
 const TEST_USER = {
   email: "agent@test.local",
-  password: "TestAgent123!",
   name: "Test Agent",
 } as const;
 
@@ -16,6 +15,8 @@ export const seedTestUser = internalAction({
     message: v.string(),
   }),
   handler: async ctx => {
+    const password = process.env.CREDIT_TEST_USER_PASSWORD;
+    if (process.env.CREDIT_ENABLE_TEST_AUTH !== "true" || !password || password.length < 12) throw new Error("Test seeding is disabled or not configured.");
     try {
       await retrieveAccount(ctx, {
         provider: "test",
@@ -27,7 +28,7 @@ export const seedTestUser = internalAction({
     }
 
     try {
-      const hashedPassword = await new Scrypt().hash(TEST_USER.password);
+      const hashedPassword = await new Scrypt().hash(password);
       await createAccount(ctx, {
         provider: "test",
         account: {
