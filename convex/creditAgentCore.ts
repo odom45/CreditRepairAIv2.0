@@ -9,6 +9,8 @@ export type CreditAgentRequest = {
 
 type ResponseOutput = {
   type?: string;
+  status?: string;
+  results?: Array<{ file_id?: string; text?: string }>;
   name?: string;
   arguments?: string;
   call_id?: string;
@@ -17,6 +19,7 @@ type ResponseOutput = {
 
 type OpenAIResponse = {
   id?: string;
+  status?: string;
   output_text?: string;
   output?: ResponseOutput[];
 };
@@ -80,6 +83,7 @@ const noArgumentTool = (name: string, description: string) => ({
 });
 
 export async function runCreditAgent(request: CreditAgentRequest): Promise<string> {
+  const deadline = Date.now() + 60_000;
   validateRequest(request);
   request = { ...request, caseSnapshot: sanitizeSnapshot(request.caseSnapshot) };
   const apiKey = process.env.OPENAI_API_KEY;
@@ -121,21 +125,28 @@ export async function runCreditAgent(request: CreditAgentRequest): Promise<strin
       role: "user", content: [{ type: "input_text", text: `Question: ${request.question}\nSelected jurisdiction: ${jurisdictionCode || "not provided"}. Use the case tools for individualized context.` }],
   }];
   let searched = false;
+  let summarized = false;
   let response = await callResponsesApi(apiKey, {
     model: process.env.CREDIT_AGENT_MODEL || "gpt-5.6-terra",
     instructions,
     input: history,
     store: false,
-    include: ["reasoning.encrypted_content"],
+    include: ["reasoning.encrypted_content", "file_search_call.results"],
     tools,
     tool_choice: { type: "function", name: "get_case_summary" },
     max_output_tokens: 1800,
-  });
+  }, deadline);
 
   for (let round = 0; round < MAX_TOOL_ROUNDS; round += 1) {
     const calls = (response.output || []).filter((item) => item.type === "function_call");
-    searched ||= (response.output || []).some(item => item.type === "file_search_call");
-    if (calls.length === 0 && searched) return educationalAnswer(extractAnswer(response));
+    summarized ||= calls.some(item => item.name === "get_case_summary" && Boolean(item.call_id));
+    for (const search of (response.output || []).filter(item => item.type === "file_search_call")) {
+      if (search.status !== "completed" || !search.results?.some(result => result.file_id && result.text?.trim())) {
+        throw new PublicAgentError("The legal library did not return usable sources. Try again later; verify any legal question with a qualified professional.", 503);
+      }
+      searched = true;
+    }
+    if (calls.length === 0 && summarized && searched) return educationalAnswer(extractAnswer(response));
 
     const outputs = calls.map((call) => ({
       type: "function_call_output",
@@ -148,11 +159,11 @@ export async function runCreditAgent(request: CreditAgentRequest): Promise<strin
       instructions,
       input: history,
       store: false,
-      include: ["reasoning.encrypted_content"],
+      include: ["reasoning.encrypted_content", "file_search_call.results"],
       tools,
-      tool_choice: searched ? "auto" : { type: "file_search" },
+      tool_choice: !summarized ? { type: "function", name: "get_case_summary" } : searched ? "auto" : { type: "file_search" },
       max_output_tokens: 1800,
-    });
+    }, deadline);
   }
 
   throw new PublicAgentError("The AI service could not complete its case-tool checks.", 502);
@@ -228,20 +239,32 @@ function executeCaseTool(name: string, snapshot: JsonObject): unknown {
   }
 }
 
-async function callResponsesApi(apiKey: string, body: JsonObject): Promise<OpenAIResponse> {
-  const response = await fetch("https://api.openai.com/v1/responses", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-      "X-Client-Request-Id": crypto.randomUUID(),
-    },
-    body: JSON.stringify(body),
-  });
-  if (!response.ok) {
-    throw new PublicAgentError("The AI service is temporarily unavailable.", 502);
+async function callResponsesApi(apiKey: string, body: JsonObject, deadline: number): Promise<OpenAIResponse> {
+  const remaining = deadline - Date.now();
+  if (remaining <= 0) throw new PublicAgentError("The AI request timed out. Please try again.", 504);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), remaining);
+  try {
+    const response = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        "X-Client-Request-Id": crypto.randomUUID(),
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+    if (!response.ok) throw new PublicAgentError("The AI service is temporarily unavailable.", 502);
+    const result = (await response.json()) as OpenAIResponse;
+    if (result.status !== "completed") throw new PublicAgentError("The AI service did not complete its response. Please try again.", 502);
+    return result;
+  } catch (error) {
+    if (error instanceof PublicAgentError) throw error;
+    throw new PublicAgentError("The AI service is temporarily unavailable or timed out.", 502);
+  } finally {
+    clearTimeout(timer);
   }
-  return (await response.json()) as OpenAIResponse;
 }
 
 function extractAnswer(response: OpenAIResponse): string {
