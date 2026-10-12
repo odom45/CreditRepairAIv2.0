@@ -6,6 +6,9 @@ import androidx.credentials.ClearCredentialStateRequest
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
+import androidx.credentials.exceptions.NoCredentialException
+import androidx.credentials.exceptions.GetCredentialCancellationException
+import androidx.credentials.exceptions.GetCredentialException
 import com.creditrepairai.v2.R
 import com.creditrepairai.v2.ai.SessionTokenProvider
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
@@ -60,7 +63,15 @@ class FirebaseSession(
         val request = GetCredentialRequest.Builder()
             .addCredentialOption(googleIdOption)
             .build()
-        val credential = CredentialManager.create(activity).getCredential(activity, request).credential
+        val credential = try {
+            CredentialManager.create(activity).getCredential(activity, request).credential
+        } catch (_: NoCredentialException) {
+            error("No Google account credential is available. Add an account on this device or use email sign-in.")
+        } catch (_: GetCredentialCancellationException) {
+            error("Google sign-in canceled. You can try again or use email sign-in.")
+        } catch (_: GetCredentialException) {
+            error("Google sign-in is unavailable. Try again or use email sign-in.")
+        }
         require(credential is CustomCredential && credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
             "Google did not return a valid sign-in credential."
         }

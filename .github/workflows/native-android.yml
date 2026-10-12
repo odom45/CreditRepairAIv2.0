@@ -172,6 +172,19 @@ jobs:
           name: CreditRepairAI-native-unit-tests
           path: native-android/app/build/reports/tests/testDebugUnitTest
 
+      - name: Audit resolved Android runtime dependencies
+        run: |
+          ./gradlew :app:writeRuntimeDependencyInventory --stacktrace
+          node ../scripts/audit-android-dependencies.mjs app/build/reports/runtime-dependencies.json
+      - name: Upload Android dependency inventory and advisories
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: CreditRepairAI-android-dependency-audit
+          path: |
+            native-android/app/build/reports/runtime-dependencies.json
+            native-android/android-dependency-audit.json
+
       - name: Verify tester APK signature
         run: |
           APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -1)"

@@ -14,6 +14,9 @@ import org.junit.After
 import org.junit.Assert.*
 import org.junit.Test
 import java.io.File
+import com.tom_roush.pdfbox.pdmodel.PDDocument
+import com.tom_roush.pdfbox.pdmodel.encryption.AccessPermission
+import com.tom_roush.pdfbox.pdmodel.encryption.StandardProtectionPolicy
 
 /** Fictional PDFs generated on the test device; no network or consumer data. */
 class PdfParserInstrumentedTest {
@@ -58,5 +61,24 @@ class PdfParserInstrumentedTest {
         assertEquals("On-device OCR", parsed.report.extractionMethod)
         assertEquals(Bureau.EQUIFAX, parsed.report.bureau)
         assertTrue(parsed.extractedCharacters >= 80)
+    }
+    @Test fun encryptedFixtureWithEmptyUserPasswordStillParsesAfterCryptoUpgrade() = runBlocking {
+        val parser = CreditReportParser(context)
+        val input = fixture(false)
+        val encrypted = File(directory, "encrypted-fictional.pdf")
+        context.contentResolver.openInputStream(input)!!.use { stream ->
+            PDDocument.load(stream).use { pdf ->
+                val policy = StandardProtectionPolicy(java.util.UUID.randomUUID().toString(), "", AccessPermission())
+                policy.setEncryptionKeyLength(256)
+                policy.setPreferAES(true)
+                pdf.protect(policy)
+                pdf.save(encrypted)
+            }
+        }
+        val uri = FileProvider.getUriForFile(context, "${context.packageName}.test-fixtures", encrypted)
+        val parsed = parser.parse(uri, "Equifax-fictional.pdf")
+        assertEquals(Bureau.EQUIFAX, parsed.report.bureau)
+        assertEquals(640, parsed.report.score)
+        assertTrue(parsed.accounts.any { it.accountSuffix == "1234" })
     }
 }

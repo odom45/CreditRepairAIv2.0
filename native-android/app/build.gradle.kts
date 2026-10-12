@@ -130,6 +130,16 @@ dependencies {
     implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
     implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
     implementation("com.tom-roush:pdfbox-android:2.0.27.0")
+    constraints {
+        // PDFBox Android requests 1.72; keep the complete crypto family aligned
+        // with the supplier's security fixes without changing parser APIs.
+        listOf("bcprov", "bcpkix", "bcutil").forEach { component ->
+            implementation("org.bouncycastle:${component}-jdk15to18:1.86") {
+                version { strictly("1.86") }
+                because("Remove inherited cryptographic advisories, including unbounded PBE parameters")
+            }
+        }
+    }
     implementation("com.google.mlkit:text-recognition:16.0.1")
 
     testImplementation("junit:junit:4.13.2")
@@ -140,4 +150,18 @@ dependencies {
 
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
+}
+
+tasks.register("writeRuntimeDependencyInventory") {
+    doLast {
+        val modules = configurations.getByName("debugRuntimeClasspath").incoming.resolutionResult.allComponents
+            .mapNotNull { it.id as? org.gradle.api.artifacts.component.ModuleComponentIdentifier }
+            .distinctBy { "${it.group}:${it.module}:${it.version}" }
+            .sortedBy { "${it.group}:${it.module}" }
+        val output = layout.buildDirectory.file("reports/runtime-dependencies.json").get().asFile
+        output.parentFile.mkdirs()
+        output.writeText(modules.joinToString(prefix = "[", postfix = "]") {
+            "{\"name\":${javaString("${it.group}:${it.module}")},\"version\":${javaString(it.version)}}"
+        })
+    }
 }

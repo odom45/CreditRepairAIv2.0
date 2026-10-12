@@ -67,8 +67,9 @@ class MainViewModel(
     private val parser: CreditReportParser,
     private val agentGateway: CreditAgentGateway,
     private val session: NativeSession,
-    private val context: Context,
+    context: Context,
 ) : ViewModel() {
+    private val context: android.app.Application = context.applicationContext as android.app.Application
     private val caseFence = SessionFence(session.uid)
     private var aiJob: Job? = null
     private var filingHelpJob: Job? = null
