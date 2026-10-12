@@ -1,0 +1,40 @@
+name: Verify patched dependency lock
+on:
+  push:
+    branches: [android-native-rebuild]
+    paths: [".github/workflows/dependency-maintenance.yml"]
+permissions:
+  contents: read
+jobs:
+  patched-lock:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Resolve reviewed authentication patches and safe current ranges
+        run: |
+          node --input-type=module - <<'JS'
+          import fs from 'node:fs';
+          const p=JSON.parse(fs.readFileSync('package.json','utf8'));
+          p.dependencies['@auth/core']='0.41.3';
+          p.dependencies['@convex-dev/auth']='0.0.96';
+          p.overrides={...p.overrides,'postcss-selector-parser':'7.1.6'};
+          fs.writeFileSync('package.json',JSON.stringify(p,null,2)+'\n');
+          JS
+          npm update --package-lock-only --ignore-scripts
+          npm ci --ignore-scripts
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npm run test:launch
+      - run: node scripts/dependency-audit-report.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: CreditRepairAI-reviewed-dependency-lock
+          path: |
+            package.json
+            package-lock.json
+            dependency-audit.json
