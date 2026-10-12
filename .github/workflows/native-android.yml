@@ -29,6 +29,12 @@ jobs:
         with:
           node-version: "22"
       - run: npm ci --ignore-scripts
+      - name: Inspect dependency advisories
+        run: node scripts/dependency-audit-report.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CreditRepairAI-dependency-audit
+          path: dependency-audit.json
       - name: Verify existing protected configuration without exposing values
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -40,10 +46,47 @@ jobs:
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: node scripts/staging-preflight.mjs
+      - name: Verify existing owner signing credentials and public certificates
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: node scripts/signing-preflight.mjs
       - uses: actions/upload-artifact@v4
         with:
           name: CreditRepairAI-staging-preflight
-          path: staging-preflight.json
+          path: |
+            staging-preflight.json
+            signing-preflight.json
+  deploy-development:
+    needs: [validate-backend-and-admin, build-native-apk, native-device-tests]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: creditrepairai-authorized-development
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm ci --ignore-scripts
+      - name: Deploy checked backend to the authorized development deployment
+        env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
+        run: node scripts/deploy-development.mjs
+      - name: Verify deployed native routes
+        env:
+          CREDIT_AI_GATEWAY_URL: ${{ secrets.CREDIT_AI_GATEWAY_URL }}
+        run: node scripts/staging-preflight.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: CreditRepairAI-development-deployment
+          path: |
+            development-deployment.json
+            staging-preflight.json
   validate-backend-and-admin:
     runs-on: ubuntu-latest
     timeout-minutes: 15
