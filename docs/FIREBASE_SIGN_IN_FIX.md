@@ -7,7 +7,7 @@ The signed release and owner-signed tester APK use the existing Benjamin Odom up
 1. Open Firebase project **credit-repair-ai-v2**, Project settings → General → Your apps.
 2. Select Android package **com.creditrepairai.v2**. Add the public owner certificate fingerprints below, keeping other valid registrations.
 3. Select or register a separate Android app for **com.creditrepairai.v2.debug** in the same Firebase project. Add the same certificate because CI uses the existing owner key for tester signing. The two Android apps must have different Firebase app IDs.
-4. Authentication → Sign-in method: verify Google and Email/Password are enabled. Use the owner-approved support contact **admin@synergyfundai.com**.
+4. Authentication → Sign-in method: verify Google and Email/Password are enabled. Use **admin@synergyfundai.com** for app support; if Google's support-account chooser only offers the owner's Gmail, the owner also authorized **benjaminjodom45@gmail.com**.
 5. Download the real refreshed `google-services.json` for each Android app. Replace the release file at `native-android/app/google-services.json` and debug file at `native-android/app/src/debug/google-services.json`. Keep their web OAuth client; the Credential Manager request deliberately uses the **web** client ID.
 6. For a Play-delivered closed test, obtain **Play App Signing** SHA-1/SHA-256 from Play Console → App integrity and register those for the release Firebase app too. The upload-key certificate alone does not cover a Play re-signed APK.
 7. Run `node scripts/firebase-signing-readiness.mjs --require-ready`, build the applicable APK, and perform the native checks below. This local check detects downloaded-config mismatches; it cannot prove console provider settings or successful login.
