@@ -21,6 +21,8 @@ jobs:
           const p=JSON.parse(fs.readFileSync('package.json','utf8'));
           p.dependencies['@auth/core']='0.41.3';
           p.dependencies['@convex-dev/auth']='0.0.96';
+          // Platform binaries belong to parent-package optional dependencies, not direct pins.
+          for(const name of ['@rollup/rollup-linux-x64-gnu','@tailwindcss/oxide-linux-x64-gnu','@tailwindcss/oxide-linux-x64-musl']) delete p.devDependencies[name];
           p.overrides={...p.overrides,'postcss-selector-parser':'7.1.6'};
           fs.writeFileSync('package.json',JSON.stringify(p,null,2)+'\n');
           JS
