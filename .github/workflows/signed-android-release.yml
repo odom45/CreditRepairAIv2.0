@@ -1,12 +1,16 @@
 name: Signed Android release
 
 on:
+  push:
+    branches: [android-native-rebuild]
+    paths:
+      - ".github/workflows/signed-android-release.yml"
   workflow_dispatch:
     inputs:
       version_code:
         description: "Play version code (must exceed the previous release)"
         required: true
-        default: "1"
+        default: "20261012"
       version_name:
         description: "User-visible version name"
         required: true
@@ -23,7 +27,7 @@ jobs:
       run:
         working-directory: native-android
     env:
-      CREDIT_SUPPORT_EMAIL: ${{ vars.CREDIT_SUPPORT_EMAIL }}
+      CREDIT_SUPPORT_EMAIL: ${{ vars.CREDIT_SUPPORT_EMAIL || 'admin@synergyfundai.com' }}
       CREDIT_PAID_ACCESS_ENABLED: ${{ vars.CREDIT_PAID_ACCESS_ENABLED || 'false' }}
       ANDROID_KEYSTORE_FILE: ${{ github.workspace }}/native-android/creditrepair-upload.jks
       ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -45,8 +49,8 @@ jobs:
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           CREDIT_AI_GATEWAY_URL: ${{ secrets.CREDIT_AI_GATEWAY_URL }}
-          VERSION_CODE: ${{ inputs.version_code }}
-          VERSION_NAME: ${{ inputs.version_name }}
+          VERSION_CODE: ${{ inputs.version_code || '20261012' }}
+          VERSION_NAME: ${{ inputs.version_name || '2.0.0' }}
         run: |
           test -n "$KEYSTORE_BASE64"
           test -n "$ANDROID_KEYSTORE_PASSWORD"
@@ -68,8 +72,8 @@ jobs:
       - name: Build signed Play bundle and tester APK
         env:
           CREDIT_AI_GATEWAY_URL: ${{ secrets.CREDIT_AI_GATEWAY_URL }}
-          VERSION_CODE: ${{ inputs.version_code }}
-          VERSION_NAME: ${{ inputs.version_name }}
+          VERSION_CODE: ${{ inputs.version_code || '20261012' }}
+          VERSION_NAME: ${{ inputs.version_name || '2.0.0' }}
         run: ./gradlew bundleRelease assembleRelease -PCREDIT_AI_GATEWAY_URL="$CREDIT_AI_GATEWAY_URL" -PCREDIT_VERSION_CODE="$VERSION_CODE" -PCREDIT_VERSION_NAME="$VERSION_NAME" -PCREDIT_SUPPORT_EMAIL="$CREDIT_SUPPORT_EMAIL" -PCREDIT_PAID_ACCESS_ENABLED="$CREDIT_PAID_ACCESS_ENABLED" --stacktrace
 
       - name: Verify signatures
