@@ -10,6 +10,7 @@ const schema = defineSchema({
   }).index("by_owner", ["owner"]).index("by_token", ["token"]),
   billingAudit: defineTable({ actor: v.string(), subscriptionId: v.string(), action: v.string(), at: v.number(), result: v.string() }).index("by_actor", ["actor"]).index("by_subscription", ["subscriptionId"]),
   agentRateLimits: defineTable({ owner: v.string(), windowStart: v.number(), count: v.number() }).index("by_owner", ["owner"]),
+  billingDeletionMarkers: defineTable({ ownerHash: v.string() }).index("by_owner_hash", ["ownerHash"]),
   users: defineTable({
     name: v.optional(v.string()),
     email: v.optional(v.string()),

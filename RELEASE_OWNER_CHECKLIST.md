@@ -12,6 +12,7 @@ Review snapshot: 2026-10-12. Code implemented is not equivalent to production ve
 - [x] Play monthly client, server purchase ownership/expiry/state verification, acknowledgment, restoration, hourly lifecycle refresh, admin authorization/cancel/refund-and-revoke.
 - [x] Five-page onboarding, in-app privacy/terms/support and local/account deletion paths.
 - [x] Session/generation fences prevent stale AI/import/billing completions after account switch or deletion; storage ownership marker survives local clearing.
+- [x] Serializable server deletion guard prevents in-flight billing refresh from recreating deleted purchase records; a minimal hashed marker is disclosed in the privacy draft and requires retention review.
 - [x] Fictional parser, chunking, state-machine, entitlement and session regression tests; backend policy tests.
 - [x] CI definitions cover native tests/build plus backend/admin typecheck, tests, legal registry and source-token scan. Signed release checks owner configuration and signatures.
 

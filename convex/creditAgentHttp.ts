@@ -17,7 +17,7 @@ export const creditAgentHttp = httpAction(async (ctx, request) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity || identity.issuer !== "https://securetoken.google.com/credit-repair-ai-v2") throw new PublicAgentError("Firebase sign-in is required.", 401);
     if (identity.emailVerified !== true) throw new PublicAgentError("Verify your account email, then sign in again before asking AI.", 403);
-    if (!await ctx.runMutation(internal.billingData.allowAgentRequest, { owner: identity.subject })) throw new PublicAgentError("Educational AI request limit reached. Try again later.", 429);
+    if (!await ctx.runAction(internal.playBilling.allowAgentRequest, { owner: identity.subject })) throw new PublicAgentError("Account access is unavailable or the educational AI request limit was reached.", 429);
     if (process.env.CREDIT_PAID_ACCESS_ENABLED === "true") {
       const entitlement = await ctx.runAction(internal.playBilling.status, { owner: identity.subject });
       if (!entitlement.active || entitlement.expiresAt <= Date.now()) throw new PublicAgentError("Verified software-access subscription required.", 402);

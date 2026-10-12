@@ -15,6 +15,7 @@ async function google(path: string, method = "GET", data?: unknown): Promise<Pla
   return response.data;
 }
 export const verify = internalAction({ args: { owner: v.string(), token: v.string() }, handler: async (ctx, args) => {
+  const ownership = { ...args, ownerHash: createHash("sha256").update(args.owner).digest("hex") };
   if (!args.token || args.token.length > 4096) throw new Error("Invalid purchase token.");
   let purchase: PlaySubscription;
   try { purchase = await google(`/purchases/subscriptionsv2/tokens/${encodeURIComponent(args.token)}`); }
@@ -26,22 +27,29 @@ export const verify = internalAction({ args: { owner: v.string(), token: v.strin
     const existing = await ctx.runQuery(internal.billingData.byOwner, { owner: args.owner });
     if (!existing.some(row => row.token === args.token)) throw new Error("Unknown retired purchase.");
     const expired = { productId: MONTHLY_PRODUCT, state: "EXPIRED_UNAVAILABLE", active: false, expiresAt: 0 };
-    await ctx.runMutation(internal.billingData.upsert, { ...args, ...expired });
+    await ctx.runMutation(internal.billingData.upsert, { ...ownership, ...expired });
     return expired;
   }
   if (purchase.externalAccountIdentifiers?.obfuscatedExternalAccountId !== createHash("sha256").update(args.owner).digest("hex")) throw new Error("Purchase account does not match.");
   const entitlement = evaluateSubscription(purchase, Date.now());
   if (entitlement.productId !== MONTHLY_PRODUCT) throw new Error("Unexpected subscription product.");
   // Reserve ownership without access; acknowledge before persisting an active grant.
-  const reserved = await ctx.runMutation(internal.billingData.upsert, { ...args, ...entitlement, active: false });
+  const reserved = await ctx.runMutation(internal.billingData.upsert, { ...ownership, ...entitlement, active: false });
   if (!reserved) return { ...entitlement, active: false, expiresAt: 0, state: "REPLACED" };
   // Only purchased/active entitlements are acknowledged. Pending payments never grant access.
   if (entitlement.active && purchase.acknowledgementState === "ACKNOWLEDGEMENT_STATE_PENDING") {
     await google(`/purchases/subscriptions/${MONTHLY_PRODUCT}/tokens/${encodeURIComponent(args.token)}:acknowledge`, "POST", {});
   }
-  const granted = await ctx.runMutation(internal.billingData.upsert, { ...args, ...entitlement, linkedToken: entitlement.active ? purchase.linkedPurchaseToken : undefined });
+  const granted = await ctx.runMutation(internal.billingData.upsert, { ...ownership, ...entitlement, linkedToken: entitlement.active ? purchase.linkedPurchaseToken : undefined });
   if (!granted) return { ...entitlement, active: false, expiresAt: 0, state: "REPLACED" };
   return entitlement;
+} });
+export const deleteOwner = internalAction({ args: { owner: v.string(), actor: v.string() }, handler: async (ctx, args) => {
+  await ctx.runMutation(internal.billingData.deleteOwner, { ...args, ownerHash: createHash("sha256").update(args.owner).digest("hex") });
+  return { success: true };
+} });
+export const allowAgentRequest = internalAction({ args: { owner: v.string() }, handler: async (ctx, args): Promise<boolean> => {
+  return ctx.runMutation(internal.billingData.allowAgentRequest, { ...args, ownerHash: createHash("sha256").update(args.owner).digest("hex") });
 } });
 export const status = internalAction({ args: { owner: v.string() }, handler: async (ctx, args): Promise<{ active: boolean; expiresAt: number; state: string }> => {
   const records = await ctx.runQuery(internal.billingData.byOwner, args);

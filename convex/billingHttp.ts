@@ -13,7 +13,7 @@ export const billingHttp = httpAction(async (ctx, request) => {
     let result;
     if (path === "/account/delete") {
       // Delete app records; the native client then asks Firebase to delete the login with recent authentication.
-      await ctx.runMutation(internal.billingData.deleteOwner, { owner: identity.subject, actor: identity.tokenIdentifier });
+      await ctx.runAction(internal.playBilling.deleteOwner, { owner: identity.subject, actor: identity.tokenIdentifier });
       result = { success: true };
     } else if (path === "/billing/status") result = await ctx.runAction(internal.playBilling.status, { owner: identity.subject });
     else {
