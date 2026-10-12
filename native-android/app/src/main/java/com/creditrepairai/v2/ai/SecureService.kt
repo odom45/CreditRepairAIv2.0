@@ -19,11 +19,7 @@ class SecureService(endpoint: String, private val session: SessionTokenProvider)
         try {
             connection.outputStream.use { it.write(body.toString().toByteArray(Charsets.UTF_8)) }
             val success = connection.responseCode in 200..299
-            val response = (if (success) connection.inputStream else connection.errorStream)?.bufferedReader()?.use { reader ->
-                val buffer = CharArray(64001); var count = 0
-                while (count < buffer.size) { val read = reader.read(buffer, count, buffer.size - count); if (read < 0) break; count += read }
-                require(count <= 64000) { "Secure response exceeded its size limit." }; String(buffer, 0, count)
-            }.orEmpty()
+            val response = (if (success) connection.inputStream else connection.errorStream)?.bufferedReader()?.use { it.readBoundedResponse() }.orEmpty()
             if (!success) error("Secure service could not complete this action (HTTP ${connection.responseCode}).")
             JSONObject(response)
         } finally { connection.disconnect() }

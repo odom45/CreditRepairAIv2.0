@@ -18,7 +18,7 @@ Review snapshot: 2026-10-12. Code implemented is not equivalent to production ve
 
 ## Gates not yet proven
 
-- [x] Both remote CI jobs passed on `e7a1a4f`, run `38223703681`, including the account-deletion guard. The subsequent inline filing-help change requires a separate final CI result.
+- [x] Both remote CI jobs passed on `e7a1a4f`, run `38223703681`, including the account-deletion guard, and on `fb7c4a8`, run `38224835895`, including inline filing help. The subsequent bounded-response fix requires a final CI result.
 - [ ] Follow `docs/PARSER_VALIDATION.md` on actual devices using permissioned, fully redacted reports. Full UI/device/large-font/TalkBack checks are not covered by pure unit tests.
 - [ ] Stage and verify Firebase → Convex → OpenAI with a fictional case and a verified-email account.
 - [ ] Stage Play license-tester scenarios: purchase, pending, canceled checkout, restore, expiry, grace, hold, account switch, replacement and administrator refund. Do not use a real charge for testing.

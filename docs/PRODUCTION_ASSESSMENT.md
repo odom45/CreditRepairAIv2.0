@@ -6,6 +6,18 @@ Review date: 2026-10-12. Scope: the current `android-native-rebuild` workspace, 
 
 Targeted scans covered the root/build/manifest/workflows and the actual authentication, state, billing, persistence and linked HTTP/authorization files. The whole repository was not read into the review at once. Automated credential-pattern scans are separately bounded checks, not a full manual repository/security audit.
 
+Repository mapping from the build and entry-point scans:
+
+| Root / build entry | Responsibility and connection |
+|---|---|
+| `native-android/settings.gradle.kts`, `build.gradle.kts`, `app/build.gradle.kts` | Single native `:app`; Kotlin/Compose, Firebase Auth, Play Billing, PDFBox/ML Kit, WorkManager and native test configuration. |
+| `native-android/app/src/main/AndroidManifest.xml` | Native `MainActivity`, explicit PDF intents, network/notification permissions; cleartext/backup disabled. No browser automation service or WebView. |
+| `native-android/app/src/main/java/com/creditrepairai/v2/` | `ui` → `MainViewModel` → local `analysis`/`data` and authenticated `ai`/`billing`; `guidance` holds persisted checklist and filing logic. |
+| `convex/schema.ts`, `auth.config.ts`, `http.ts` | Server schema, identity configuration and authenticated HTTP routes; `creditAgent*`, `playBilling.ts` and `billingData.ts` handle native agent/access/deletion. |
+| `src/`, root `package.json` / `package-lock.json` | Separate React web prototype and admin UI; locked npm build/typecheck/test scripts. |
+| `legal-library/`, `scripts/`, `tests/` | Versioned legal sources and check tooling; backend guardrail/storage regression tests. |
+| `.github/workflows/native-android.yml`, `signed-android-release.yml`, `deploy-legal-agent.yml` | Debug/native/backend gates, owner-key signed release, protected agent deployment. |
+
 | Review dimension | Weight | Earned | Evidence/limit |
 |---|---:|---:|---|
 | Native implementation and unit/build gates | 35 | 30 | Major requested screens and contracts implemented; synthetic tests and debug compilation are available. No complete device walkthrough. |
@@ -28,13 +40,13 @@ Structural health: one native `:app` Gradle module with package-separated UI, se
 
 **The additions are in the code being reviewed; they are not deferred until after this review. A 100% acceptance claim remains withheld because the platform adaptation and the listed engineering proof are not complete launch evidence.**
 
-Verified locally including the inline filing-help follow-up: **29 native unit tests passed and the debug APK assembled in a clean build**; frontend build/Convex typecheck and **eight backend policy/storage tests** passed on the unchanged backend source; legal registry format/review-age check passed; current source and 295 reachable historical blobs up to 1 MB had no private-key/API-token/signing-file signatures. GitHub run `38222558289` passed both native and backend/admin jobs for the first published patch set (`36d7197`). Run `38223703681` also passed both jobs for the deletion-race guard (`e7a1a4f`) and uploaded the debug APK/test reports. The inline filing-help follow-up has its own remote validation gate. Firebase client configuration is intentionally excluded from secret findings and requires console restrictions. Instrumented/device tests remain separate gates.
+Verified locally including inline filing help and bounded-response handling: **32 native unit tests passed and the debug APK assembled**; frontend build/Convex typecheck and **eight backend policy/storage tests** passed on the unchanged backend source; legal registry format/review-age check passed; current source and 295 reachable historical blobs up to 1 MB had no private-key/API-token/signing-file signatures. GitHub run `38222558289` passed both native and backend/admin jobs for the first published patch set (`36d7197`). Run `38223703681` passed both jobs for the deletion-race guard (`e7a1a4f`). Run `38224835895` passed both jobs for inline filing help (`fb7c4a8`). The bounded-response follow-up requires its own final remote result. Firebase client configuration is intentionally excluded from secret findings and requires console restrictions. Instrumented/device tests remain separate gates.
 
 Additional Android lint was attempted but could not resolve uncached instrumentation/lint dependencies; an online retry returned **Network is unreachable** for dependency hosts. It is **unverified**, not a clean lint result. Instrumented tests have been added for actual encrypted repository behavior and onboarding, but have not been run. No manual device-flow, live purchase/refund, real dispute, complaint submission or Play upload occurred.
 
 ### 🛑 2. Critical Blockers & Safety Vulnerabilities (Qodo & CodeRabbit Lens)
 
-The following are confirmed code findings from the pre-patch inspection. Regions below refer to the current corrected source where possible; pre-patch regions are explicitly identified. A fixed finding is not an outstanding exploitable behavior proven on a live deployment.
+The following are confirmed code findings from the pre-patch inspection and follow-up review. Regions below refer to the current corrected source where possible; pre-patch regions are explicitly identified. A fixed finding is not an outstanding exploitable behavior proven on a live deployment. Native paths shown as `native-android/.../` use the exact prefix `native-android/app/src/main/java/com/creditrepairai/v2/`.
 
 | Severity/status | File and region | Trigger and consequence | Correction/evidence |
 |---|---|---|---|
@@ -46,6 +58,7 @@ The following are confirmed code findings from the pre-patch inspection. Regions
 | High — patched | `convex/viktorTools.ts`, public search/image handlers (around 47–81) | Unauthenticated callers could invoke an external, potentially billable tool using server credentials; upstream error text could be exposed. | Disabled by default; exact server admin allowlist required; text size bounded; upstream failure body not returned. |
 | High release gate — pending live proof | `convex/playBilling.ts`, 17–62; `convex/billingData.ts`, upsert | Acknowledgment failure could leave persisted active access; refreshing an old replacement token could resurrect it; a retired lookup could prevent later subscription status checks. | Reserve without access → acknowledge → grant. REPLACED is terminal in the store; linked tokens invalidated only after a valid active replacement. Known retired Google 410 tokens are marked unavailable. Must validate on a staging backend/Play license account. |
 | Medium — patched | `native-android/.../analysis/CreditReportParser.kt`, 129–153 and OCR page loop | Uppercase labels such as `YOUR SCORE:` were parsed as creditor headings; adjacent fields could bleed across accounts. Malformed extremely tall pages could request huge bitmaps. | Narrowed heading recognition, bounded account windows and OCR dimensions; retained the fixture expectation and fixed code rather than weakening the test. |
+| Medium memory safety — patched | `native-android/.../ai/CreditAgentGateway.kt`, 57–58; shared `ai/BoundedResponse.kt`, 6–22 | `readText().take(64000)` allocated the whole response before truncating it; an oversized upstream response could exhaust memory. | A shared bounded reader stops at the limit plus one character and rejects overflow instead of parsing truncated JSON. Tests include an infinite source and exact-boundary input. Billing/deletion use the same reader. |
 | Production blocker — pending | workflows, owner settings, device checks | Remote CI/signed release, correct production deployment, support mailbox, actual Google OAuth fingerprints and Play service-account access are not proven for this snapshot. | Release fails on missing gateway/support/signing; owner checklist gives exact configuration and staging order. No launch-ready claim until evidence exists. |
 
 Privacy controls preserved: no WebView login instrumentation, no portal DOM inspection, no accessibility/overlay service, no bureau/government credential collection, no autofill and no auto-submission. Custom Tabs cannot silently intercept browser downloads; PDF handoff is deliberately user-selected Share/Open with or the document picker. Partial Tab UI support varies by browser; users may need to return to the saved checklist.

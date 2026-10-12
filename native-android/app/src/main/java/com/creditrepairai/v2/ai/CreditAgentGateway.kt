@@ -55,7 +55,7 @@ class CreditAgentGateway(
             connection.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
             val status = connection.responseCode
             val responseText = (if (status in 200..299) connection.inputStream else connection.errorStream)
-                ?.bufferedReader()?.use { it.readText().take(64_000) }.orEmpty()
+                ?.bufferedReader()?.use { it.readBoundedResponse() }.orEmpty()
             if (status !in 200..299) {
                 val publicMessage = runCatching { JSONObject(responseText).optString("error") }.getOrNull()
                     ?.takeIf(String::isNotBlank)
