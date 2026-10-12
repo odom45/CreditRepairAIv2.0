@@ -24,7 +24,7 @@ import java.io.File
 /** Generated fictional PDFs exercise the real Android importer, PDFBox and bundled ML Kit. */
 class SyntheticParserBatchTest {
     private val context = ApplicationProvider.getApplicationContext<Context>()
-    private val directory = File(context.cacheDir, "synthetic-batch").apply { mkdirs() }
+    private val directory = File(context.cacheDir, "fictional-parser-fixtures/synthetic-batch").apply { mkdirs() }
     private val parser = CreditReportParser(context)
     private val layouts = listOf("upper", "creditor", "company", "subscriber", "title-case", "split-values", "whitespace", "account-status", "no-score", "missing-balance", "inline-fields", "aliases")
     private val scans = listOf("upper", "creditor", "no-score", "split-values")
@@ -112,8 +112,9 @@ class SyntheticParserBatchTest {
             val start = System.currentTimeMillis()
             val row = JSONObject().put("id", case.id).put("bureau", case.bureau.name).put("layout", case.layout)
                 .put("scanned", case.scanned).put("encrypted", case.encrypted).put("multipage", case.multipage).put("expectedRejection", case.reject ?: JSONObject.NULL)
+            // A fixture/provider failure is a harness failure, never a safe parser rejection.
+            val uri = FileProvider.getUriForFile(context, "${context.packageName}.test-fixtures", pdf(case))
             try {
-                val uri = FileProvider.getUriForFile(context, "${context.packageName}.test-fixtures", pdf(case))
                 val parsed = parser.parse(uri, "synthetic.pdf") // bureau must come from content, not filename
                 val want = expected(case)
                 val got = parsed.accounts.map(::actual)
@@ -141,7 +142,11 @@ class SyntheticParserBatchTest {
             .put("fieldMatches", supported.sumOf { it.optInt("fieldMatches") }).put("fieldTotal", supported.size * 30)
             .put("elapsedMs", System.currentTimeMillis() - started).put("cases", results)
         File(context.filesDir, "parser-validation-$phase.json").writeText(summary.toString(2))
-        android.util.Log.i("SyntheticParserBatch", summary.toString())
+        // Gradle uninstalls the app after instrumentation. Preserve small numbered log
+        // chunks so the runner can reconstruct and validate the complete synthetic report.
+        summary.toString().chunked(1500).forEachIndexed { index, chunk ->
+            android.util.Log.i("ParserBatchChunk", "%05d:%s".format(index, chunk))
+        }
         directory.deleteRecursively()
         if(InstrumentationRegistry.getArguments().getString("parserEnforce") != "false") assertEquals("Inspect parser-validation-$phase.json; do not weaken independent fixture expectations", all.size, all.count { it.getBoolean("exactPass") })
     }
