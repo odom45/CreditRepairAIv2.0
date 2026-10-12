@@ -10,11 +10,11 @@ on:
       version_code:
         description: "Play version code (must exceed the previous release)"
         required: true
-        default: "20261012"
+        default: "20261013"
       version_name:
         description: "User-visible version name"
         required: true
-        default: "2.0.0"
+        default: "2.0.1"
 
 permissions:
   contents: read
@@ -49,8 +49,8 @@ jobs:
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           CREDIT_AI_GATEWAY_URL: ${{ secrets.CREDIT_AI_GATEWAY_URL }}
-          VERSION_CODE: ${{ inputs.version_code || '20261012' }}
-          VERSION_NAME: ${{ inputs.version_name || '2.0.0' }}
+          VERSION_CODE: ${{ inputs.version_code || '20261013' }}
+          VERSION_NAME: ${{ inputs.version_name || '2.0.1' }}
         run: |
           test -n "$KEYSTORE_BASE64"
           test -n "$ANDROID_KEYSTORE_PASSWORD"
@@ -72,8 +72,8 @@ jobs:
       - name: Build signed Play bundle and tester APK
         env:
           CREDIT_AI_GATEWAY_URL: ${{ secrets.CREDIT_AI_GATEWAY_URL }}
-          VERSION_CODE: ${{ inputs.version_code || '20261012' }}
-          VERSION_NAME: ${{ inputs.version_name || '2.0.0' }}
+          VERSION_CODE: ${{ inputs.version_code || '20261013' }}
+          VERSION_NAME: ${{ inputs.version_name || '2.0.1' }}
         run: ./gradlew bundleRelease assembleRelease -PCREDIT_AI_GATEWAY_URL="$CREDIT_AI_GATEWAY_URL" -PCREDIT_VERSION_CODE="$VERSION_CODE" -PCREDIT_VERSION_NAME="$VERSION_NAME" -PCREDIT_SUPPORT_EMAIL="$CREDIT_SUPPORT_EMAIL" -PCREDIT_PAID_ACCESS_ENABLED="$CREDIT_PAID_ACCESS_ENABLED" --stacktrace
 
       - name: Verify signatures
