@@ -40,7 +40,7 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
           CREDIT_AI_GATEWAY_URL: ${{ secrets.CREDIT_AI_GATEWAY_URL }}
-          CREDIT_SUPPORT_EMAIL: ${{ vars.CREDIT_SUPPORT_EMAIL }}
+          CREDIT_SUPPORT_EMAIL: ${{ vars.CREDIT_SUPPORT_EMAIL || 'admin@synergyfundai.com' }}
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
@@ -75,7 +75,11 @@ jobs:
       - name: Deploy checked backend to the authorized development deployment
         env:
           CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
-        run: node scripts/deploy-development.mjs
+          CREDIT_SUPPORT_EMAIL: ${{ vars.CREDIT_SUPPORT_EMAIL || 'admin@synergyfundai.com' }}
+        run: |
+          node --input-type=module -e 'if (!(process.env.CONVEX_DEPLOY_KEY || "").startsWith("dev:lovable-dinosaur-379|")) process.exit(1)'
+          npx convex env set CREDIT_SUPPORT_EMAIL "$CREDIT_SUPPORT_EMAIL"
+          node scripts/deploy-development.mjs
       - name: Verify deployed native routes
         env:
           CREDIT_AI_GATEWAY_URL: ${{ secrets.CREDIT_AI_GATEWAY_URL }}
@@ -105,7 +109,7 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: node scripts/configure-public-support.mjs
         env:
-          CREDIT_SUPPORT_EMAIL: ${{ vars.CREDIT_SUPPORT_EMAIL }}
+          CREDIT_SUPPORT_EMAIL: ${{ vars.CREDIT_SUPPORT_EMAIL || 'admin@synergyfundai.com' }}
       - run: npm run build
       - uses: actions/upload-artifact@v4
         with:
@@ -162,7 +166,7 @@ jobs:
       - name: Build installable APK
         env:
           CREDIT_AI_GATEWAY_URL: ${{ secrets.CREDIT_AI_GATEWAY_URL }}
-          CREDIT_SUPPORT_EMAIL: ${{ vars.CREDIT_SUPPORT_EMAIL }}
+          CREDIT_SUPPORT_EMAIL: ${{ vars.CREDIT_SUPPORT_EMAIL || 'admin@synergyfundai.com' }}
         run: ./gradlew assembleDebug --stacktrace -PCREDIT_AI_GATEWAY_URL="${CREDIT_AI_GATEWAY_URL:-https://lovable-dinosaur-379.convex.site}" -PCREDIT_SUPPORT_EMAIL="$CREDIT_SUPPORT_EMAIL"
 
       - name: Upload unit test reports
