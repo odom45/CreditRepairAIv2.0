@@ -93,3 +93,25 @@ The live prompt moved unchanged into `convex/creditAgentConfig.ts`; all 20 backe
 Firebase and Play Console could not be authenticated in this task because the Google login pages returned connection errors. The downloaded main/debug Firebase configs still lack the owner certificate's matching Android OAuth registration and share one Firebase app ID; registration/refreshed genuine configs and native login acceptance remain owner-account gates. Closed-testing enrollment/continuity and production access were not verified or completed.
 
 The local workspace disconnected after the final CI builds. New chat-local APK/AAB export/persistent attachment could not be completed; the verified source, documentation and artifact ZIPs remain in GitHub. No nonexistent local download is asserted.
+
+## Engineering completion follow-up — 2026-10-15
+
+Application changes were tested at `50fa8993fdcd5266056c1bc192c767a8c9e88582`. Release commit `52a87564d3576db501d7344ee7ccc827d0f71e24` has identical native/backend/web application source; its changes improve release acceptance and handoff documentation. No independent external review is implied.
+
+- [Native validation run 38819153544](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/38819153544): backend/admin validation, protected-configuration preflight, native unit/build/signature checks, device tests and lint passed. The application suite has 48 JVM tests, 31 backend regressions and 18 device scenarios. The device report contains zero failures/errors/skips and Android lint has zero errors/fatal issues, 29 warnings.
+- Strict synthetic parser validation passed: 54/54 supported reports exactly correct, 1,620/1,620 evaluated fields, all 6 unsupported inputs safely rejected. These are generated fixtures on an API-35 emulator; current real bureau layouts and OEM devices remain unverified.
+- [API-35 signed release run 38818163236](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/38818163236) and [API-36 signed release run 38819153558](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/38819153558) passed assembly, APK/AAB signing verification, installation of the prior 2.0.1 APK, in-place update to 2.0.2 and release-process launch. No Firebase account or Play purchase was exercised by that install test.
+- The downloaded release APK was independently checked for ZIP integrity, APK v2/v3 signatures, the existing owner certificate, correct package/version/SDK, 16 KB ZIP alignment and the new yearly, one-dispute, editable-draft and END_DRAFT code markers. The downloaded AAB passed ZIP integrity and its certificate matches the owner certificate. Both downloaded artifact archive digests matched GitHub.
+- The prior shared `CreditRepairAI-2.0.1.apk` was inspected directly: 48,161,563 bytes, valid ZIP and APK signature, package `com.creditrepairai.v2`, code 20261013, existing owner certificate. Its SHA-256 is `58b5ffc62c5ce669a4e0de63781f276a3885a1628dd4c51fc274be914603c62b`. No file corruption was found. This does not reveal the certificate or installer status of the app actually installed on the user's phone.
+- Updated backend/policy source deployed successfully to the authorized development deployment in [run 38818163257](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/38818163257). Its subsequent real AI smoke failed with HTTP 429 `credit_balance_exhausted`. The overall run is therefore not green; no funded live AI or production deployment is claimed.
+
+Delivered release: package `com.creditrepairai.v2`, version `2.0.2`, code `20261015`, existing owner upload certificate.
+
+| File | Bytes | SHA-256 |
+|---|---:|---|
+| CreditRepairAI-2.0.2.apk | 48,161,550 | `a2a6107dc90a8d32be9376b6f4c1547f60fde490d731602714f7ea359ed857dd` |
+| CreditRepairAI-2.0.2.aab | 28,278,125 | `580c1456065ae8031a6efc167d6221257a781603db295528857c47dde77d990c` |
+
+Implemented additions include reviewable AI field drafts with a completeness marker, stale-answer rejection, editable application with review reset, placeholder blocking, durable encrypted saves, monthly/yearly subscriptions, account/case-bound one-time purchases, consumption retry recovery, refund/account/deletion fences, independent server-side case scoping and synchronized policy drafts. Purchases remain disabled pending account setup and qualified review.
+
+Remaining account/external gates are Firebase certificate/app registrations and real native sign-in; Play products, service-account/admin permissions and license-tester lifecycles; actual production deployment configuration; a monitored support/deletion pathway; API credit; permissioned real reports/device diversity; qualified legal/security reviews and actual closed-testing evidence. The official Firebase integration was offered but no authenticated Firebase connection became available during this work. Code implementation and emulator results do not establish 100% commercial launch readiness.

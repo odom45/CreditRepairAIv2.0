@@ -29,4 +29,4 @@ Exercise both subscription periods and one-time purchases with Play test account
 
 ## Verification
 
-Results are recorded after running the changed source. Prior build/test counts are not treated as proof for these changes. See the linked CI runs in the verification record.
+The changed application source passed 48 JVM tests, 31 backend regressions, 18 device scenarios and the strict 60-case synthetic parser batch. Signed release install/update checks passed on API 35 and API 36 emulators. See [the verification record](VERIFICATION_RESULTS.md#engineering-completion-follow-up--2026-10-15) for exact source commits, CI runs, limits and release digests. Live AI remains blocked by exhausted API credit; Firebase/Play/production acceptance remains unverified.
