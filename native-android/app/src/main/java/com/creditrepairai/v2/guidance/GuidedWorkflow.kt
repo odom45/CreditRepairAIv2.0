@@ -39,10 +39,12 @@ object FilingAnswerParser {
     private val labels = listOf("WHAT_HAPPENED", "COMPANY_RESPONSE", "REQUESTED_REVIEW", "EVIDENCE")
     private val marker = Regex("(?m)^(WHAT_HAPPENED|COMPANY_RESPONSE|REQUESTED_REVIEW|EVIDENCE):[ \\t]*$")
     fun parse(answer: String, contextKey: String): FilingAnswerDraft {
-        val matches = marker.findAll(answer).toList()
+        require(answer.trimEnd().endsWith("\nEND_DRAFT")) { "The AI draft was incomplete. Retry; no saved facts were changed." }
+        val complete = answer.trimEnd().removeSuffix("\nEND_DRAFT")
+        val matches = marker.findAll(complete).toList()
         require(matches.map { it.groupValues[1] } == labels) { "The AI did not return complete draft fields. Retry; no saved facts were changed." }
         val values = matches.mapIndexed { index, match ->
-            answer.substring(match.range.last + 1, matches.getOrNull(index + 1)?.range?.first ?: answer.length).trim()
+            complete.substring(match.range.last + 1, matches.getOrNull(index + 1)?.range?.first ?: complete.length).trim()
         }
         require(values.all { it.isNotBlank() && it.length <= 2000 }) { "Draft fields were empty or too long. Retry with a shorter factual description." }
         return FilingAnswerDraft(contextKey, values[0], values[1], values[2], values[3])
@@ -106,6 +108,7 @@ object FilingGuide {
             COMPANY_RESPONSE:
             REQUESTED_REVIEW:
             EVIDENCE:
+            End with END_DRAFT on its own line after the evidence field.
             Keep each field below 650 characters. For a bureau filing, COMPANY_RESPONSE may say [NOT APPLICABLE].
             Include only documents the user actually listed in EVIDENCE; otherwise use [ADD SUPPORTING RECORDS].
             Put source citations within a relevant field if needed. No extra headings, JSON or code fences.

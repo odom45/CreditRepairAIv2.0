@@ -15,6 +15,9 @@ import com.creditrepairai.v2.ai.CreditAgentGateway
 import com.creditrepairai.v2.analysis.CreditReportParser
 import com.creditrepairai.v2.auth.NativeSession
 import com.creditrepairai.v2.data.AppRepository
+import com.creditrepairai.v2.guidance.FilingGuide
+import com.creditrepairai.v2.guidance.FilingRecord
+import com.creditrepairai.v2.guidance.FilingAnswerDraft
 import com.creditrepairai.v2.guidance.FilingPortal
 import com.creditrepairai.v2.model.DisputeStatus
 import com.creditrepairai.v2.ui.theme.CreditRepairTheme
@@ -71,6 +74,29 @@ class FilingFlowInstrumentedTest {
         }
         compose.onNodeWithText("I received a company response").performScrollTo().performClick()
         compose.runOnIdle { assertNotNull(viewModel.uiState.value.data.filings.single().responseReceivedAt) }
+    }
+    @Test fun applyingAiDraftRequiresReplacingPlaceholdersAndReviewingBeforeCopy() {
+        lateinit var viewModel: MainViewModel
+        compose.runOnIdle {
+            viewModel = model(); viewModel.acceptPolicies(true, true); viewModel.completeOnboarding(); viewModel.loadDemo()
+            viewModel.createDispute(viewModel.uiState.value.data.findings.first())
+            val dispute = viewModel.uiState.value.data.disputes.single()
+            val record = FilingRecord(disputeId = dispute.id, portal = FilingPortal.EQUIFAX)
+            val draft = FilingAnswerDraft(FilingGuide.contextKey(dispute, record), "Fictional drafted explanation", "[NOT APPLICABLE]", "Please investigate the reported balance", "[ADD SUPPORTING RECORDS]")
+            viewModel.saveFiling(record.copy(answerDraft = draft))
+        }
+        compose.setContent { CreditRepairTheme { val ui by viewModel.uiState.collectAsState(); FilingScreen(ui, viewModel, FilingPortal.EQUIFAX) } }
+        compose.onNodeWithText("Use these drafts in my editable fields").performScrollTo().performClick()
+        compose.runOnIdle {
+            val record = viewModel.uiState.value.data.filings.single()
+            assertEquals("Fictional drafted explanation", record.problem)
+            assertFalse(record.reviewed); assertNull(record.answerDraft)
+        }
+        compose.onNodeWithText("I reviewed the facts against my records").performScrollTo().performClick()
+        compose.runOnIdle { assertFalse(viewModel.uiState.value.data.filings.single().reviewed) }
+        compose.onNodeWithText("Supporting evidence checklist").performScrollTo().performTextReplacement("Fictional dated statement")
+        compose.onNodeWithText("I reviewed the facts against my records").performScrollTo().performClick()
+        compose.onNodeWithText("Copy Item / furnisher 1/1").performScrollTo().assertIsEnabled()
     }
     @Test fun mainWorkflowRequiresAgreementOnboardingAndKeepsSafeDemoNavigable() {
         lateinit var viewModel: MainViewModel

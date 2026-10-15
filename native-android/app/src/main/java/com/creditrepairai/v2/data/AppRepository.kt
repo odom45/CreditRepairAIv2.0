@@ -58,10 +58,10 @@ class AppRepository(context: Context) {
 
     fun save(state: AppState) {
         val encrypted = encrypt(encode(state).toString())
-        preferences.edit()
+        check(preferences.edit()
             .putString(KEY_ENCRYPTED_STATE, encrypted)
             .remove(KEY_LEGACY_STATE)
-            .apply()
+            .commit()) { "Encrypted case could not be saved." }
     }
 
     fun clear(preserveOwner: Boolean = true) {

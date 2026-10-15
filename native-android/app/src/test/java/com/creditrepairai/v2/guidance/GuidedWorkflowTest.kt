@@ -41,7 +41,7 @@ class GuidedWorkflowTest {
     @Test fun generatedAnswersRequireCompleteFieldsAndRejectStaleApplication() {
         val dispute = fictionalDispute()
         val record = FilingRecord(disputeId = dispute.id, portal = FilingPortal.CFPB, reviewed = true)
-        val answer = "Educational information only.\nWHAT_HAPPENED:\nThe balance differs.\nCOMPANY_RESPONSE:\n[ADD VERIFIED DETAILS]\nREQUESTED_REVIEW:\nPlease investigate the reported balance.\nEVIDENCE:\n[ADD SUPPORTING RECORDS]"
+        val answer = "Educational information only.\nWHAT_HAPPENED:\nThe balance differs.\nCOMPANY_RESPONSE:\n[ADD VERIFIED DETAILS]\nREQUESTED_REVIEW:\nPlease investigate the reported balance.\nEVIDENCE:\n[ADD SUPPORTING RECORDS]\nEND_DRAFT"
         val draft = FilingAnswerParser.parse(answer, FilingGuide.contextKey(dispute, record))
         assertNull(draft.apply(dispute, record.copy(problem = "Changed while pending")))
         val applied = draft.apply(dispute, record)!!
@@ -53,6 +53,9 @@ class GuidedWorkflowTest {
     }
     @Test(expected = IllegalArgumentException::class) fun rejectsPartialAiDraftInsteadOfOverwritingFacts() {
         FilingAnswerParser.parse("WHAT_HAPPENED:\nOnly one field", "context")
+    }
+    @Test(expected = IllegalArgumentException::class) fun rejectsTruncatedLastFieldEvenWhenAllHeadingsExist() {
+        FilingAnswerParser.parse("WHAT_HAPPENED:\nFacts\nCOMPANY_RESPONSE:\nNone\nREQUESTED_REVIEW:\nReview\nEVIDENCE:\nTruncated partial", "context")
     }
     @Test(expected = IllegalArgumentException::class) fun refusesSubmissionWithUnfilledAiPlaceholders() {
         FilingGuide.submitted(FilingRecord(disputeId = "d", portal = FilingPortal.CFPB, reviewed = true, evidence = "[ADD SUPPORTING RECORDS]"), "receipt", 1)
