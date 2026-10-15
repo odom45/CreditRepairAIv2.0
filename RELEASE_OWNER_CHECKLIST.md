@@ -2,6 +2,10 @@
 
 Review snapshot: 2026-10-12. Code implemented is not equivalent to production verified. Do not mark the application 100% launch-ready until every required gate below has evidence.
 
+## October 15 engineering update
+
+The current source adds AI-generated editable portal answers, monthly/yearly subscriptions and receipt-bound one-dispute access. Review [the completion record](docs/ENGINEERING_COMPLETION_2026-10-15.md) for implementation, Play product setup and remaining account gates. These additions supersede the older monthly-only implementation scope below; they do not mark live account integration complete. The signed release workflow now also triggers on native/backend source changes and verifies an in-place update from 2.0.1 before exporting artifacts.
+
 ## Implemented in the native-branch work
 
 - [x] Versioned full privacy/terms/educational disclaimer drafts; explicit acceptance and adult confirmation; separate affirmative AI-sharing choice with local/server enforcement and stale-choice protection. Qualified review still required; no blanket liability transfer is claimed.
@@ -96,10 +100,10 @@ Do not commit service-account JSON, private keys, upload keys, purchase tokens, 
 
 Play Console for `com.creditrepairai.v2` → Monetize → Products → Subscriptions:
 
-1. Configure `creditrepairai_monthly` with one auto-renewing monthly base plan (`P1M`) and the owner-approved price/territories. Current app intentionally selects the standard base plan, not trial/discount offers or annual/outcome products.
+1. Configure `creditrepairai_monthly` with one auto-renewing monthly base plan (`P1M`) and the owner-approved price/territories. The app selects standard auto-renewing base plans only; trial/discount offers are not used. Also configure `creditrepairai_yearly` with a standard P1Y plan and the owner-approved price, and `creditrepairai_dispute` with one standard buy option (no multi-quantity, rental or preorder options). One-time purchase consumption occurs only after the verified account/case binding is saved.
 2. Description: monthly software access to guided tools, AI assistance and education; results are not guaranteed. Cancel anytime through Google Play. Do not describe this as fee-for-deletion, representation or a promise to improve a score.
 3. Configure license testers and install an appropriately signed internal-test build. The `.debug` package is separate and is expected to report billing unavailable unless separately configured; local parsing/education remains available.
-4. Give the existing server service account the required app-level Play permissions and enable the Android Publisher API. Run the documented license-test lifecycle; never test actual customer refunds or real disputes here.
+4. Give the existing server service account the required app-level Play permissions and enable the Android Publisher API. Run the documented license-test lifecycle for both subscription periods and one-time case access, including pending, refund, repeat purchase for a different case, restore, account switch and deletion/retry; never test actual customer refunds or real disputes here.
 5. Admin refunds use Play's subscription revoke/full-refund API. They require explicit confirmation and server authorization. If the UI reports pending verification, inspect Play Console and refresh before retrying a financial operation.
 6. The server re-verifies on foreground/AI use and hourly cron. It does not claim RTDN delivery is configured; add a Pub/Sub integration later if immediate background lifecycle propagation is required. No access is granted for pending/hold/paused/expired states; canceled subscriptions can retain access until verified expiry.
 

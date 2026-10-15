@@ -91,7 +91,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh api repos/odom45/CreditRepairAIv2.0/actions/artifacts/11767788438/zip > "$RUNNER_TEMP/creditrepairai-previous.zip"
+          BASELINE_ID=11767788438
+          if ! gh api "repos/odom45/CreditRepairAIv2.0/actions/artifacts/$BASELINE_ID" --jq '.expired == false' | grep -qx true; then
+            BASELINE_ID="$(gh api 'repos/odom45/CreditRepairAIv2.0/actions/artifacts?name=CreditRepairAI-signed-release-apk&per_page=100' --jq '[.artifacts[] | select(.name == "CreditRepairAI-signed-release-apk" and .expired == false and .workflow_run.id != (env.GITHUB_RUN_ID | tonumber))] | sort_by(.created_at) | reverse | .[0].id')"
+          fi
+          case "$BASELINE_ID" in ''|null|*[!0-9]*) echo 'No unexpired prior signed APK is available for update acceptance.'; exit 1;; esac
+          gh api "repos/odom45/CreditRepairAIv2.0/actions/artifacts/$BASELINE_ID/zip" > "$RUNNER_TEMP/creditrepairai-previous.zip"
           mkdir -p "$RUNNER_TEMP/creditrepairai-previous"
           unzip -q "$RUNNER_TEMP/creditrepairai-previous.zip" -d "$RUNNER_TEMP/creditrepairai-previous"
           test -f "$RUNNER_TEMP/creditrepairai-previous/app-release.apk"
@@ -105,7 +110,7 @@ jobs:
       - name: Verify release installation and in-place update
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
         with:
-          api-level: 35
+          api-level: 36
           target: google_apis
           arch: x86_64
           working-directory: native-android

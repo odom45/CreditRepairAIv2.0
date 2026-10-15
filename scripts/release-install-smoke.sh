@@ -24,4 +24,6 @@ if adb logcat -d -s AndroidRuntime:E | grep -F "Process: $package,"; then
   echo 'Release process crashed after installation.' >&2
   exit 1
 fi
-printf '{"previousInstall":"passed","inPlaceUpdate":"passed","releaseLaunch":"passed","package":"%s","versionCode":%s,"scope":"API-35 emulator; no live sign-in or purchases"}\n' "$package" "$expected_code" > "$report"
+android_api=$(adb shell getprop ro.build.version.sdk | tr -d '\r')
+case "$android_api" in ''|*[!0-9]*) exit 1;; esac
+printf '{"previousInstall":"passed","inPlaceUpdate":"passed","releaseLaunch":"passed","package":"%s","versionCode":%s,"androidApi":%s,"scope":"emulator; no live sign-in or purchases"}\n' "$package" "$expected_code" "$android_api" > "$report"

@@ -68,3 +68,7 @@ Complete the closed-test record and obtain Google's production-access decision b
 | Empty/incorrect import | Inspect per-case metrics, extraction method and current bureau layout; do not invent missing account fields. |
 
 Secrets are handed over out of band through an owner-approved secure mechanism. This package contains configuration templates/schema/test evidence only, no consumer database export or credentials.
+
+## October 15 source update
+
+See [the engineering completion record](../ENGINEERING_COMPLETION_2026-10-15.md) for the new editable AI field-draft flow, annual subscriptions, verified case-specific one-time purchases, policy version 2026-10-15.1 and signed-release installation/update acceptance. The schema export now has 15 tables. Historical test/build results above apply only to their recorded commits; use the latest verification follow-up for the current release.

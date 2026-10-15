@@ -10,7 +10,7 @@ The terms explain that suggestions and purchases are optional, the user independ
 
 ## Counsel decisions still required
 
-- Determine CROA and applicable state credit-services coverage for the actual product, AI-guided drafts, advertising and monthly payment model. If applicable, implement required disclosures/contracts, fee timing and cancellation procedures before selling. A software/education label and disclaimer do not establish exemption.
+- Determine CROA and applicable state credit-services coverage for the actual product, AI-guided drafts, advertising and monthly/yearly/one-dispute payment models. If applicable, implement required disclosures/contracts, fee timing and cancellation procedures before selling. A software/education label and disclaimer do not establish exemption.
 - Approve or revise the proposed US$100/12-month-fee limitation, warranty disclaimer, consumer-rights exceptions, cancellation/refund wording, companion-product incorporation and eligibility language for intended jurisdictions.
 - Approve privacy categories, provider/contractual processing and transfers, public support/deletion pathways, retention schedules, and the minimal hashed deletion marker's currently indefinite retention. The code does not invent a legally required retention duration.
 - Review authentication/SDK processing, separate AI disclosure and revocation, agreement evidence, and accessibility of notice/acceptance. Native acceptance is encrypted and account scoped; the server records a document digest and server timestamp. A record is evidence of a client-reported affirmative action, not conclusive proof of enforceability.
@@ -27,3 +27,5 @@ The terms explain that suggestions and purchases are optional, the user independ
 ## Handoff package
 
 `PRIVACY.md`, `TERMS.md`, `DISCLAIMER.md`, their public HTML under `public/legal`, the native acceptance/disclosure screens, and `RELEASE_OWNER_CHECKLIST.md`. Public page files are build artifacts, not proof of hosting or a working mailbox. Do not publish for commercial use before contact/hosting and qualified review are complete.
+
+October 15 additions: review one-time access to one saved dispute, consumption after a durable receipt binding, refund/revocation behavior, and the limitation that purchase restoration does not recover deleted local report content. Privacy drafts disclose the hashed dispute binding and deletion of case-purchase records. All purchases remain disabled pending account setup and qualified review.

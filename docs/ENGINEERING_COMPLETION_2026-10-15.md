@@ -10,7 +10,7 @@ This change completes the missing native draft-answer and pricing-option paths i
 - Case-scoped chat and filing requests filter context on the device. The server independently scopes requests for case-only access. All-item planning still requires a subscription when paid mode is enabled.
 - Deletion removes case purchase records and prevents delayed verification from recreating them. Refunded/retired case tokens cannot be resurrected by delayed responses.
 - Policy drafts were updated together to describe these choices and the hashed case binding. They remain drafts for qualified review. Purchases remain disabled by default.
-- Release defaults are version 2.0.2, code 20261015. Signing uses the existing owner key. The release workflow now tests installing 2.0.1 and updating to the new signed release on a disposable API-35 emulator before exporting artifacts.
+- Release defaults are version 2.0.2, code 20261015. Signing uses the existing owner key. The release workflow now tests installing 2.0.1 and updating to the new signed release on a disposable emulator (API 35 and API 36 release checks are recorded separately) before exporting artifacts.
 
 ## Play configuration required
 
