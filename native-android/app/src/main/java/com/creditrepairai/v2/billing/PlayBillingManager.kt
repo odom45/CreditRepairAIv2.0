@@ -10,7 +10,11 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import org.json.JSONObject
 
-data class BillingUiState(val price: String = "", val available: Boolean = false, val busy: Boolean = false, val message: String = "Refresh to check Google Play.", val entitlement: Entitlement = Entitlement())
+data class PlanOffer(val price: String, val offerToken: String)
+data class BillingUiState(
+    val offers: Map<AccessPlan, PlanOffer> = emptyMap(), val busy: Boolean = false,
+    val message: String = "Refresh to check Google Play.", val entitlement: Entitlement = Entitlement(),
+)
 class PlayBillingManager(context: Context, private val service: SecureService, private val subject: () -> String?) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val state = MutableStateFlow(BillingUiState())
@@ -38,7 +42,7 @@ class PlayBillingManager(context: Context, private val service: SecureService, p
                 if (sessionFence.accepts(ticket, subject())) state.update { it.copy(entitlement = decode(json)) }
             }.onFailure {
                 if (it is CancellationException) throw it
-                if (sessionFence.accepts(ticket, subject())) state.update { it.copy(entitlement = Entitlement(), message = "Subscription verification unavailable. Refresh when connected.") }
+                if (sessionFence.accepts(ticket, subject())) state.update { it.copy(entitlement = Entitlement(), message = "Access verification unavailable. Refresh when connected.") }
             }
         }
         if (client.isReady) query(ticket) else if (!connecting) {
@@ -48,42 +52,66 @@ class PlayBillingManager(context: Context, private val service: SecureService, p
                     connecting = false
                     if (!sessionFence.accepts(ticket, subject())) return
                     if (result.responseCode == BillingClient.BillingResponseCode.OK) query(ticket)
-                    else state.update { it.copy(available = false, busy = false, message = "Google Play Billing is unavailable for this build/account. Local tools remain available.") }
+                    else state.update { it.copy(offers = emptyMap(), busy = false, message = "Google Play Billing is unavailable for this build/account. Local tools remain available.") }
                 }
-                override fun onBillingServiceDisconnected() { connecting = false; state.update { it.copy(available = false, message = "Google Play disconnected. Refresh to retry.") } }
+                override fun onBillingServiceDisconnected() { connecting = false; state.update { it.copy(offers = emptyMap(), busy = false, message = "Google Play disconnected. Refresh to retry.") } }
             })
         }
     }
-    private fun query(ticket: SessionFence.Ticket) {
-        client.queryProductDetailsAsync(QueryProductDetailsParams.newBuilder().setProductList(listOf(QueryProductDetailsParams.Product.newBuilder()
-            .setProductId(BuildConfig.PLAY_PRODUCT_ID).setProductType(BillingClient.ProductType.SUBS).build())).build()) { result, details ->
-            if (!sessionFence.accepts(ticket, subject())) return@queryProductDetailsAsync
-            val offer = details.productDetailsList.firstOrNull()?.subscriptionOfferDetails?.firstOrNull { it.offerId == null && it.pricingPhases.pricingPhaseList.singleOrNull()?.billingPeriod == "P1M" }
-            state.update { it.copy(available = result.responseCode == BillingClient.BillingResponseCode.OK && offer != null,
-                price = offer?.pricingPhases?.pricingPhaseList?.firstOrNull()?.formattedPrice.orEmpty(), message = if (offer == null) "Monthly plan is not configured in Play for this build/account." else "Monthly software access. Cancel anytime in Google Play. Results are not guaranteed.") }
+    private fun params(plan: AccessPlan) = QueryProductDetailsParams.Product.newBuilder()
+        .setProductId(plan.productId).setProductType(if (plan == AccessPlan.CASE) BillingClient.ProductType.INAPP else BillingClient.ProductType.SUBS).build()
+    private fun offer(product: ProductDetails, plan: AccessPlan): PlanOffer? {
+        if (plan == AccessPlan.CASE) {
+            // Only standard buy options; no rental/preorder/discount promises.
+            val selected = product.oneTimePurchaseOfferDetailsList?.singleOrNull {
+                it.offerId == null && it.rentalDetails == null && it.preorderDetails == null
+            } ?: return null
+            return PlanOffer(selected.formattedPrice, selected.offerToken)
         }
-        client.queryPurchasesAsync(QueryPurchasesParams.newBuilder().setProductType(BillingClient.ProductType.SUBS).build()) { result, purchases ->
-            if (sessionFence.accepts(ticket, subject()) && result.responseCode == BillingClient.BillingResponseCode.OK) process(purchases)
+        val selected = product.subscriptionOfferDetails?.singleOrNull {
+            it.offerId == null && it.pricingPhases.pricingPhaseList.singleOrNull()?.let { phase ->
+                phase.billingPeriod == plan.period && phase.recurrenceMode == ProductDetails.RecurrenceMode.INFINITE_RECURRING
+            } == true
+        } ?: return null
+        return PlanOffer(selected.pricingPhases.pricingPhaseList.single().formattedPrice, selected.offerToken)
+    }
+    private fun query(ticket: SessionFence.Ticket) {
+        AccessPlan.entries.forEach { plan ->
+            client.queryProductDetailsAsync(QueryProductDetailsParams.newBuilder().setProductList(listOf(params(plan))).build()) { result, details ->
+                if (!sessionFence.accepts(ticket, subject())) return@queryProductDetailsAsync
+                val selected = details.productDetailsList.singleOrNull { it.productId == plan.productId }?.let { offer(it, plan) }
+                state.update { current -> current.copy(offers = current.offers - plan +
+                    (if (result.responseCode == BillingClient.BillingResponseCode.OK && selected != null) mapOf(plan to selected) else emptyMap()),
+                    message = "Prices and eligibility come from Google Play. Restore to verify existing access.") }
+            }
+        }
+        listOf(BillingClient.ProductType.SUBS, BillingClient.ProductType.INAPP).forEach { type ->
+            client.queryPurchasesAsync(QueryPurchasesParams.newBuilder().setProductType(type).build()) { result, purchases ->
+                if (sessionFence.accepts(ticket, subject()) && result.responseCode == BillingClient.BillingResponseCode.OK) process(purchases)
+            }
         }
     }
-    fun purchase(activity: Activity) {
+    fun purchase(activity: Activity, plan: AccessPlan, disputeId: String? = null) {
         val uid = subject() ?: return
         val ticket = sessionFence.ticket()
-        if (!sessionFence.accepts(ticket, uid)) return
-        if (!BuildConfig.PAID_ACCESS_ENABLED || state.value.busy || state.value.entitlement.hasAccess(System.currentTimeMillis())) return
+        if (!sessionFence.accepts(ticket, uid) || !BuildConfig.PAID_ACCESS_ENABLED || state.value.busy) return
+        if (!client.isReady) { refresh(); return }
+        if (state.value.entitlement.hasAccess(System.currentTimeMillis())) return // Avoid simultaneous subscriptions/duplicate case purchase.
+        if (plan == AccessPlan.CASE && (disputeId.isNullOrBlank() || state.value.entitlement.hasCaseAccess(uid, disputeId, System.currentTimeMillis()))) return
+        val displayedOffer = state.value.offers[plan] ?: return
         state.update { it.copy(busy = true) }
-        // Fetch fresh details immediately before launch, not a stale cached ProductDetails.
-        client.queryProductDetailsAsync(QueryProductDetailsParams.newBuilder().setProductList(listOf(QueryProductDetailsParams.Product.newBuilder()
-            .setProductId(BuildConfig.PLAY_PRODUCT_ID).setProductType(BillingClient.ProductType.SUBS).build())).build()) { result, details ->
+        client.queryProductDetailsAsync(QueryProductDetailsParams.newBuilder().setProductList(listOf(params(plan))).build()) { result, details ->
             if (!sessionFence.accepts(ticket, subject())) return@queryProductDetailsAsync
-            val product = details.productDetailsList.firstOrNull()
-            val offer = product?.subscriptionOfferDetails?.firstOrNull { it.offerId == null && it.pricingPhases.pricingPhaseList.singleOrNull()?.billingPeriod == "P1M" }
-            if (result.responseCode != BillingClient.BillingResponseCode.OK || product == null || offer == null) {
-                state.update { it.copy(busy = false, message = "Monthly plan unavailable. Refresh to retry.") }
+            val product = details.productDetailsList.singleOrNull { it.productId == plan.productId }
+            val selected = product?.let { offer(it, plan) }
+            if (result.responseCode != BillingClient.BillingResponseCode.OK || product == null || selected == null || selected != displayedOffer) {
+                state.update { it.copy(busy = false, message = "Plan price or availability changed. Refresh and review before purchasing.") }
             } else scope.launch {
                 if (!sessionFence.accepts(ticket, subject())) return@launch
-                val launch = client.launchBillingFlow(activity, BillingFlowParams.newBuilder().setObfuscatedAccountId(BillingPolicy.accountId(uid))
-                    .setProductDetailsParamsList(listOf(BillingFlowParams.ProductDetailsParams.newBuilder().setProductDetails(product).setOfferToken(offer.offerToken).build())).build())
+                val flow = BillingFlowParams.newBuilder().setObfuscatedAccountId(BillingPolicy.accountId(uid))
+                    .setProductDetailsParamsList(listOf(BillingFlowParams.ProductDetailsParams.newBuilder().setProductDetails(product).setOfferToken(selected.offerToken).build()))
+                if (plan == AccessPlan.CASE) flow.setObfuscatedProfileId(BillingPolicy.caseId(uid, requireNotNull(disputeId)))
+                val launch = client.launchBillingFlow(activity, flow.build())
                 if (launch.responseCode != BillingClient.BillingResponseCode.OK) state.update { it.copy(busy = false, message = "Purchase could not start. No new access granted.") }
             }
         }
@@ -93,23 +121,29 @@ class PlayBillingManager(context: Context, private val service: SecureService, p
         val ticket = sessionFence.ticket()
         if (!sessionFence.accepts(ticket, uid)) return
         purchases.forEach { purchase ->
-            when (BillingPolicy.disposition(BuildConfig.PLAY_PRODUCT_ID in purchase.products, purchase.purchaseState == Purchase.PurchaseState.PURCHASED, purchase.purchaseState == Purchase.PurchaseState.PENDING)) {
-                PurchaseDisposition.IGNORE -> Unit
+            val product = purchase.products.singleOrNull()?.takeIf { id -> AccessPlan.entries.any { it.productId == id } }
+            when (BillingPolicy.disposition(product != null, purchase.purchaseState == Purchase.PurchaseState.PURCHASED, purchase.purchaseState == Purchase.PurchaseState.PENDING)) {
+                PurchaseDisposition.IGNORE -> state.update { it.copy(busy = false) }
                 PurchaseDisposition.PENDING -> state.update { it.copy(busy = false, message = "Payment pending. Access is not granted until verified.") }
                 PurchaseDisposition.VERIFY -> if (verifying.add(purchase.purchaseToken)) scope.launch {
                     try {
-                        service.post("/billing/verify", uid, JSONObject().put("purchaseToken", purchase.purchaseToken))
+                        service.post("/billing/verify", uid, JSONObject().put("purchaseToken", purchase.purchaseToken).put("productId", product))
                         val aggregate = service.post("/billing/status", uid)
-                        if (sessionFence.accepts(ticket, subject())) state.update { it.copy(busy = false, entitlement = decode(aggregate), message = "Subscription checked with Google Play.") }
+                        if (sessionFence.accepts(ticket, subject())) state.update { it.copy(busy = false, entitlement = decode(aggregate), message = "Access checked with Google Play.") }
                     } catch (error: Exception) {
                         if (error is CancellationException) throw error
-                        if (sessionFence.accepts(ticket, subject())) state.update { it.copy(busy = false, entitlement = Entitlement(), message = "Verification unavailable. Refresh to retry; no unverified access granted.") }
+                        if (sessionFence.accepts(ticket, subject())) state.update { it.copy(busy = false, entitlement = Entitlement(), message = "Verification unavailable. Restore to retry; no unverified access granted.") }
                     } finally { verifying.remove(purchase.purchaseToken) }
                 }
             }
         }
+        if (purchases.isEmpty()) state.update { it.copy(busy = false) }
     }
-    private fun decode(json: JSONObject) = Entitlement(json.optBoolean("active"), json.optLong("expiresAt"), json.optString("state", "Not subscribed"))
+    private fun decode(json: JSONObject): Entitlement {
+        val hashes = json.optJSONArray("caseHashes")
+        return Entitlement(json.optBoolean("active"), json.optLong("expiresAt"), json.optString("state", "Not subscribed"),
+            (0 until (hashes?.length() ?: 0)).mapNotNull { hashes?.optString(it)?.takeIf { value -> value.matches(Regex("[a-f0-9]{64}")) } }.toSet())
+    }
     fun reset() { sessionFence.invalidate(subject()); scope.coroutineContext.cancelChildren(); verifying.clear(); state.value = BillingUiState() }
     fun close() { client.endConnection(); scope.cancel() }
 }

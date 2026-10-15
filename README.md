@@ -2,6 +2,10 @@
 
 AI-powered 3-bureau credit report analysis and legal dispute generation.
 
+## Native branch engineering update — 2026-10-15
+
+Native filing now has reviewable AI-generated field drafts; source supports monthly/yearly subscriptions and server-bound one-dispute purchases, with purchases disabled until account setup and review. Version 2.0.2 adds signed-release install/update acceptance. Current validation and account-dependent gates are tracked in [engineering completion](docs/ENGINEERING_COMPLETION_2026-10-15.md). The older release record below describes earlier tested source, not verification of these changes.
+
 ## Native branch release status — 2026-10-12
 
 The native branch now implements persisted acquisition/filing guides, encrypted AI explanations alongside the filing steps, user-reviewed copy/paste drafts, receipt/response tracking, goals and AI explanations, Play monthly software-access billing, server-authorized subscription management, onboarding and policy screens. Session/privacy hardening and regression checks were added. Final source `2472e382` passed 37 unit, 20 backend and 15 API-35 device tests, debug assembly/signature checks and lint (zero errors, 29 warnings). npm and resolved Android dependency scans report zero advisories. Complete manual/device diversity, permissioned real layouts, native Firebase/Play integration, signed release and external reviews remain required. Custom Tab PDF downloads use an explicit user-selected Open/Share/import handoff.

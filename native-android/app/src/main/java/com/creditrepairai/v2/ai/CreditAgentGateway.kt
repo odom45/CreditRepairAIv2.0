@@ -27,7 +27,7 @@ class CreditAgentGateway(
 
     val isConfigured: Boolean get() = resolvedEndpoint.startsWith("https://")
 
-    suspend fun answer(question: String, state: AppState, expectedSubject: String): String = withContext(Dispatchers.IO) {
+    suspend fun answer(question: String, state: AppState, expectedSubject: String, caseScopeId: String? = null): String = withContext(Dispatchers.IO) {
         check(isConfigured) { "The secure AI service has not been configured for this build." }
         val token = tokenProvider.bearerToken(expectedSubject)?.takeIf(String::isNotBlank)
             ?: error("Secure AI sign-in is not connected. No report data was sent.")
@@ -50,7 +50,8 @@ class CreditAgentGateway(
             val body = JSONObject()
                 .put("clientRequestId", UUID.randomUUID().toString())
                 .put("question", safeQuestion)
-                .put("caseSnapshot", state.toSafeAgentJson())
+                .put("caseSnapshot", state.forCase(caseScopeId).toSafeAgentJson())
+                .apply { if (caseScopeId != null) put("caseScopeId", caseScopeId) }
                 .toString()
             connection.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
             val status = connection.responseCode
@@ -66,6 +67,14 @@ class CreditAgentGateway(
         } finally {
             connection.disconnect()
         }
+    }
+
+    private fun AppState.forCase(caseId: String?): AppState {
+        if (caseId == null) return this
+        val dispute = disputes.singleOrNull { it.id == caseId } ?: error("The selected dispute is no longer available.")
+        return copy(disputes = listOf(dispute), findings = findings.filter { it.id == dispute.findingId },
+            accounts = accounts.filter { it.creditor == dispute.creditor && it.bureau in dispute.bureaus },
+            reports = reports.filter { it.bureau in dispute.bureaus }, filings = filings.filter { it.disputeId == caseId })
     }
 
     private fun AppState.toSafeAgentJson(): JSONObject = JSONObject().apply {

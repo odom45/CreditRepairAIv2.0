@@ -11,6 +11,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -796,6 +797,7 @@ private fun CfpbScreen(data: AppState) {
 @Composable
 private fun AssistantScreen(ui: AppUiState, viewModel: MainViewModel) {
     val data = ui.data
+    var caseScopeId by rememberSaveable { mutableStateOf<String?>(null) }
     var input by rememberSaveable { mutableStateOf("") }
     Column(Modifier.fillMaxSize()) {
         EducationLabel()
@@ -806,6 +808,10 @@ private fun AssistantScreen(ui: AppUiState, viewModel: MainViewModel) {
             if (ui.isAgentEndpointConfigured) Emerald400 else Amber400,
             modifier = Modifier.padding(16.dp),
         )
+        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FilterChip(selected = caseScopeId == null, onClick = { caseScopeId = null }, label = { Text("All items") })
+            data.disputes.forEach { dispute -> FilterChip(selected = caseScopeId == dispute.id, onClick = { caseScopeId = dispute.id }, label = { Text(dispute.creditor) }) }
+        }
         LazyColumn(
             modifier = Modifier.weight(1f).fillMaxWidth(),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
@@ -837,7 +843,7 @@ private fun AssistantScreen(ui: AppUiState, viewModel: MainViewModel) {
                 enabled = !ui.isAssistantThinking,
             )
             FloatingActionButton(
-                onClick = { if (viewModel.askAssistant(input)) input = "" },
+                onClick = { if (viewModel.askAssistant(input, caseScopeId = caseScopeId)) input = "" },
                 containerColor = Blue500,
             ) {
                 if (ui.isAssistantThinking) CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
@@ -946,7 +952,7 @@ private fun SettingsScreen(ui: AppUiState, viewModel: MainViewModel, onSubscript
     var jurisdictionCode by remember(data.jurisdictionCode) { mutableStateOf(data.jurisdictionCode) }
     ScreenList {
         item { Hero("Privacy & settings", "Control local credit data and review connection status.", Icons.Default.Settings) }
-        item { Button(onClick = onSubscription, modifier = Modifier.fillMaxWidth()) { Text("Monthly plan, restore & cancel") } }
+        item { Button(onClick = onSubscription, modifier = Modifier.fillMaxWidth()) { Text("Access plans, restore & cancel") } }
         item { OutlinedButton(onClick = onPolicies, modifier = Modifier.fillMaxWidth()) { Text("Privacy policy, terms & support") } }
         item { OutlinedButton(onClick = onAgreements, modifier = Modifier.fillMaxWidth()) { Text("Review agreement choices") } }
         item { OutlinedButton(onClick = viewModel::reviewAiSharing, modifier = Modifier.fillMaxWidth()) { Text("AI data sharing: ${if (ui.data.policyAcceptance?.allowsAi == true) "enabled" else "off"} — change") } }

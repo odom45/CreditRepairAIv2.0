@@ -1,6 +1,6 @@
 # CreditRepairAI Educational disclaimer
 
-Version: 2026-10-12.2 · Operator: 3six0 Studios LLC
+Version: 2026-10-15.1 · Operator: 3six0 Studios LLC
 
 **Review draft — commercial release requires qualified legal review**
 

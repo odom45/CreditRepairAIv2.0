@@ -10,19 +10,20 @@ on:
       version_code:
         description: "Play version code (must exceed the previous release)"
         required: true
-        default: "20261013"
+        default: "20261015"
       version_name:
         description: "User-visible version name"
         required: true
-        default: "2.0.1"
+        default: "2.0.2"
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   signed-release:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 55
     defaults:
       run:
         working-directory: native-android
@@ -49,8 +50,8 @@ jobs:
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           CREDIT_AI_GATEWAY_URL: ${{ secrets.CREDIT_AI_GATEWAY_URL }}
-          VERSION_CODE: ${{ inputs.version_code || '20261013' }}
-          VERSION_NAME: ${{ inputs.version_name || '2.0.1' }}
+          VERSION_CODE: ${{ inputs.version_code || '20261015' }}
+          VERSION_NAME: ${{ inputs.version_name || '2.0.2' }}
         run: |
           test -n "$KEYSTORE_BASE64"
           test -n "$ANDROID_KEYSTORE_PASSWORD"
@@ -72,8 +73,8 @@ jobs:
       - name: Build signed Play bundle and tester APK
         env:
           CREDIT_AI_GATEWAY_URL: ${{ secrets.CREDIT_AI_GATEWAY_URL }}
-          VERSION_CODE: ${{ inputs.version_code || '20261013' }}
-          VERSION_NAME: ${{ inputs.version_name || '2.0.1' }}
+          VERSION_CODE: ${{ inputs.version_code || '20261015' }}
+          VERSION_NAME: ${{ inputs.version_name || '2.0.2' }}
         run: ./gradlew bundleRelease assembleRelease -PCREDIT_AI_GATEWAY_URL="$CREDIT_AI_GATEWAY_URL" -PCREDIT_VERSION_CODE="$VERSION_CODE" -PCREDIT_VERSION_NAME="$VERSION_NAME" -PCREDIT_SUPPORT_EMAIL="$CREDIT_SUPPORT_EMAIL" -PCREDIT_PAID_ACCESS_ENABLED="$CREDIT_PAID_ACCESS_ENABLED" --stacktrace
 
       - name: Verify signatures
@@ -83,6 +84,39 @@ jobs:
           APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -1)"
           test -x "$APKSIGNER"
           "$APKSIGNER" verify --verbose --print-certs app/build/outputs/apk/release/app-release.apk
+
+      - name: Download previous owner-signed release for update acceptance
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api repos/odom45/CreditRepairAIv2.0/actions/artifacts/11767788438/zip > "$RUNNER_TEMP/creditrepairai-previous.zip"
+          mkdir -p "$RUNNER_TEMP/creditrepairai-previous"
+          unzip -q "$RUNNER_TEMP/creditrepairai-previous.zip" -d "$RUNNER_TEMP/creditrepairai-previous"
+          test -f "$RUNNER_TEMP/creditrepairai-previous/app-release.apk"
+
+      - name: Enable emulator acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Verify release installation and in-place update
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          working-directory: native-android
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
+          script: ../scripts/release-install-smoke.sh "$RUNNER_TEMP/creditrepairai-previous/app-release.apk" app/build/outputs/apk/release/app-release.apk "${{ inputs.version_code || '20261015' }}" "$GITHUB_WORKSPACE/release-install-smoke.json"
+
+      - name: Upload release acceptance evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: CreditRepairAI-release-install-acceptance
+          path: release-install-smoke.json
+          if-no-files-found: error
 
       - name: Upload signed AAB
         uses: actions/upload-artifact@v4

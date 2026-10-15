@@ -39,8 +39,8 @@ import com.creditrepairai.v2.ai.SecureService
 import com.creditrepairai.v2.legal.PolicyAcceptance
 
 sealed interface PendingAiRequest {
-    data class Chat(val prompt: String, val saveAsPlan: Boolean) : PendingAiRequest
-    data class Filing(val record: FilingRecord) : PendingAiRequest
+    data class Chat(val prompt: String, val saveAsPlan: Boolean, val caseScopeId: String? = null) : PendingAiRequest
+    data class Filing(val record: FilingRecord, val draftAnswers: Boolean = false) : PendingAiRequest
 }
 
 data class FilingHelpStatus(
@@ -76,6 +76,7 @@ class MainViewModel(
     private var activeImportJob: Job? = null
     init { repository.selectOwner(session.uid) }
     val service = SecureService(BuildConfig.AI_GATEWAY_URL, session) { _uiState.value.data.policyAcceptance }
+    val signedInSubject: String? get() = session.uid
     val billing = PlayBillingManager(context, service) { session.uid }
     private val importLock = Mutex()
     private val _uiState = MutableStateFlow(
@@ -308,16 +309,16 @@ class MainViewModel(
         }
     }
 
-    fun askAssistant(prompt: String, saveAsPlan: Boolean = false): Boolean {
+    fun askAssistant(prompt: String, saveAsPlan: Boolean = false, caseScopeId: String? = null): Boolean {
         val owner = session.uid ?: return false
         val ticket = caseFence.ticket()
         if (!caseFence.accepts(ticket, owner)) return false
         val cleaned = SensitiveDataRedactor.redact(prompt.trim())
         if (cleaned.isBlank()) return false
         if (_uiState.value.isAssistantThinking) return false
-        if (!allowAiOrDisclose(PendingAiRequest.Chat(cleaned, saveAsPlan))) return false
-        if (BuildConfig.PAID_ACCESS_ENABLED && !billing.ui.value.entitlement.hasAccess(System.currentTimeMillis())) {
-            _uiState.update { it.copy(notice = "A verified monthly software-access subscription is required for AI assistance. Manage it in Settings.") }
+        if (!allowAiOrDisclose(PendingAiRequest.Chat(cleaned, saveAsPlan, caseScopeId))) return false
+        if (BuildConfig.PAID_ACCESS_ENABLED && !(if (caseScopeId != null && !saveAsPlan) billing.ui.value.entitlement.hasCaseAccess(owner, caseScopeId, System.currentTimeMillis()) else billing.ui.value.entitlement.hasAccess(System.currentTimeMillis()))) {
+            _uiState.update { it.copy(notice = "Choose a purchased dispute for case AI, or a monthly/yearly subscription for all-item assistance. Manage access in Settings.") }
             return false
         }
 
@@ -333,7 +334,7 @@ class MainViewModel(
             val answer = runCatching {
                 service.syncPolicy(owner, requireNotNull(stateWithQuestion.policyAcceptance))
                 if (!caseFence.accepts(ticket, session.uid) || _uiState.value.data.policyAcceptance?.allowsAi != true) throw CancellationException()
-                agentGateway.answer(cleaned, stateWithQuestion, owner)
+                agentGateway.answer(cleaned, stateWithQuestion, owner, caseScopeId)
             }
                 .getOrElse { error ->
                     if (error is CancellationException) throw error
@@ -399,8 +400,8 @@ class MainViewModel(
         _uiState.update { it.copy(data = updated, showAiDisclosure = false, pendingAiRequest = null,
             isAssistantThinking = false, filingHelp = FilingHelpStatus(), notice = if (!enabled) "AI sharing is disabled on this device. Local tools remain available." else null) }
         if (enabled && pending != null) when (pending) {
-            is PendingAiRequest.Chat -> askAssistant(pending.prompt, pending.saveAsPlan)
-            is PendingAiRequest.Filing -> explainFiling(pending.record)
+            is PendingAiRequest.Chat -> askAssistant(pending.prompt, pending.saveAsPlan, pending.caseScopeId)
+            is PendingAiRequest.Filing -> explainFiling(pending.record, pending.draftAnswers)
         } else session.uid?.let { owner ->
             val ticket = caseFence.ticket()
             viewModelScope.launch { runCatching { service.syncPolicy(owner, choice) }.onFailure {
@@ -411,12 +412,18 @@ class MainViewModel(
     }
     fun updateAcquisition(state: AcquisitionState) = mutate(null) { it.copy(acquisition = state) }
     fun saveFiling(record: FilingRecord) = mutate(null) { it.copy(filings = it.filings.filterNot { old -> old.id == record.id } + record) }
-    fun explainFiling(record: FilingRecord) {
+    fun draftFilingAnswers(record: FilingRecord) = explainFiling(record, draftAnswers = true)
+    fun applyFilingAnswers(record: FilingRecord) {
+        val current = _uiState.value.data.filings.firstOrNull { it.id == record.id } ?: return
+        val dispute = _uiState.value.data.disputes.firstOrNull { it.id == current.disputeId } ?: return
+        current.answerDraft?.apply(dispute, current)?.let(::saveFiling)
+    }
+    fun explainFiling(record: FilingRecord, draftAnswers: Boolean = false) {
         if (filingHelpJob?.isActive == true) return
         val owner = session.uid ?: return
         val ticket = caseFence.ticket()
         if (!caseFence.accepts(ticket, owner)) return
-        if (!allowAiOrDisclose(PendingAiRequest.Filing(record))) return
+        if (!allowAiOrDisclose(PendingAiRequest.Filing(record, draftAnswers))) return
         // Save a new checklist before requesting help; never send an unsaved case.
         if (_uiState.value.data.filings.none { it.id == record.id }) saveFiling(record)
         val snapshot = _uiState.value.data
@@ -424,8 +431,8 @@ class MainViewModel(
         val dispute = snapshot.disputes.firstOrNull { it.id == saved.disputeId } ?: return
         val request = FilingGuide.request(dispute, saved)
         val status = FilingHelpStatus(saved.id, saved.step, request.contextKey)
-        if (BuildConfig.PAID_ACCESS_ENABLED && !billing.ui.value.entitlement.hasAccess(System.currentTimeMillis())) {
-            _uiState.update { it.copy(filingHelp = status.copy(error = "Verified monthly access is required for AI assistance. Open Settings to manage your plan.")) }
+        if (BuildConfig.PAID_ACCESS_ENABLED && !billing.ui.value.entitlement.hasCaseAccess(owner, saved.disputeId, System.currentTimeMillis())) {
+            _uiState.update { it.copy(filingHelp = status.copy(error = "A verified subscription or access for this dispute is required. Open Settings to choose a plan.")) }
             return
         }
         _uiState.update { it.copy(filingHelp = status.copy(thinking = true)) }
@@ -433,7 +440,7 @@ class MainViewModel(
             val answer = try {
                 service.syncPolicy(owner, requireNotNull(snapshot.policyAcceptance))
                 if (!caseFence.accepts(ticket, session.uid) || _uiState.value.data.policyAcceptance?.allowsAi != true) throw CancellationException()
-                agentGateway.answer(SensitiveDataRedactor.redact(request.prompt), snapshot, owner)
+                agentGateway.answer(SensitiveDataRedactor.redact(if (draftAnswers) FilingGuide.answerPrompt(dispute, saved) else request.prompt), snapshot, owner, saved.disputeId)
             } catch (error: Exception) {
                 if (error is CancellationException) throw error
                 if (caseFence.accepts(ticket, session.uid)) _uiState.update {
@@ -445,8 +452,16 @@ class MainViewModel(
             val current = _uiState.value.data
             val currentRecord = current.filings.firstOrNull { it.id == request.recordId }
             val currentDispute = current.disputes.firstOrNull { it.id == saved.disputeId }
-            val explained = if (currentRecord != null && currentDispute != null)
-                request.apply(currentDispute, currentRecord, answer) else null
+            val explained = if (currentRecord != null && currentDispute != null &&
+                FilingGuide.contextKey(currentDispute, currentRecord) == request.contextKey) {
+                if (draftAnswers) {
+                    val draft = runCatching { FilingAnswerParser.parse(answer, request.contextKey) }.getOrElse {
+                        _uiState.update { it.copy(filingHelp = status.copy(error = "AI draft fields were incomplete. Retry; your saved facts were kept.")) }
+                        return@launch
+                    }
+                    currentRecord.copy(answerDraft = draft)
+                } else request.apply(currentDispute, currentRecord, answer)
+            } else null
             if (explained == null) {
                 _uiState.update { it.copy(filingHelp = FilingHelpStatus(), notice = "The filing details changed. Ask again to explain the current step.") }
                 return@launch

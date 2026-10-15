@@ -38,6 +38,31 @@ class GuidedWorkflowTest {
     @Test(expected = IllegalArgumentException::class) fun filingHelpRejectsWrongDispute() {
         FilingGuide.request(fictionalDispute(), FilingRecord(disputeId = "wrong", portal = FilingPortal.EQUIFAX))
     }
+    @Test fun generatedAnswersRequireCompleteFieldsAndRejectStaleApplication() {
+        val dispute = fictionalDispute()
+        val record = FilingRecord(disputeId = dispute.id, portal = FilingPortal.CFPB, reviewed = true)
+        val answer = "Educational information only.\nWHAT_HAPPENED:\nThe balance differs.\nCOMPANY_RESPONSE:\n[ADD VERIFIED DETAILS]\nREQUESTED_REVIEW:\nPlease investigate the reported balance.\nEVIDENCE:\n[ADD SUPPORTING RECORDS]"
+        val draft = FilingAnswerParser.parse(answer, FilingGuide.contextKey(dispute, record))
+        assertNull(draft.apply(dispute, record.copy(problem = "Changed while pending")))
+        val applied = draft.apply(dispute, record)!!
+        assertEquals("The balance differs.", applied.problem)
+        assertFalse(applied.reviewed)
+        assertFalse(FilingGuide.canReview(applied))
+        assertTrue(FilingGuide.canReview(applied.copy(companyResponse = "No response received as of my review.", evidence = "Dated statement")))
+        assertNull(applied.answerDraft)
+    }
+    @Test(expected = IllegalArgumentException::class) fun rejectsPartialAiDraftInsteadOfOverwritingFacts() {
+        FilingAnswerParser.parse("WHAT_HAPPENED:\nOnly one field", "context")
+    }
+    @Test(expected = IllegalArgumentException::class) fun refusesSubmissionWithUnfilledAiPlaceholders() {
+        FilingGuide.submitted(FilingRecord(disputeId = "d", portal = FilingPortal.CFPB, reviewed = true, evidence = "[ADD SUPPORTING RECORDS]"), "receipt", 1)
+    }
+    @Test fun generatedAnswerPromptRemainsWithinQuestionContract() {
+        val dispute = fictionalDispute().copy(creditor = "x".repeat(4000), reason = "x".repeat(4000))
+        val record = FilingRecord(disputeId = dispute.id, portal = FilingPortal.CFPB,
+            problem = "x".repeat(4000), companyResponse = "x".repeat(4000), resolution = "x".repeat(4000), evidence = "x".repeat(4000))
+        assertTrue(FilingGuide.answerPrompt(dispute, record).length <= 4000)
+    }
     @Test fun acquisitionTransitionsClampAndUnknownDoesNotCount() {
         var state = AcquisitionState().back().capture(Bureau.UNKNOWN)
         assertEquals(3, state.missing.size)

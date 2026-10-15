@@ -5,6 +5,7 @@ import { CREDIT_AGENT_CONFIG } from "./creditAgentConfig";
 export type CreditAgentRequest = {
   clientRequestId: string;
   question: string;
+  caseScopeId?: string;
   caseSnapshot: JsonObject;
 };
 

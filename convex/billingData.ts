@@ -46,6 +46,7 @@ export const deleteOwner = internalMutation({ args: { owner: v.string(), ownerHa
     for (const audit of await ctx.db.query("billingAudit").withIndex("by_subscription", q => q.eq("subscriptionId", item._id)).collect()) await ctx.db.delete(audit._id);
     await ctx.db.delete(item._id);
   }
+  for (const item of await ctx.db.query("playCasePurchases").withIndex("by_owner", q => q.eq("owner", args.owner)).collect()) await ctx.db.delete(item._id);
   for (const item of await ctx.db.query("billingAudit").withIndex("by_actor", q => q.eq("actor", args.actor)).collect()) await ctx.db.delete(item._id);
   for (const item of await ctx.db.query("agentRateLimits").withIndex("by_owner", q => q.eq("owner", args.owner)).collect()) await ctx.db.delete(item._id);
 } });

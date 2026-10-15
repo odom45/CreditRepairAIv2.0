@@ -1,19 +1,12 @@
 "use node";
 import { createHash } from "node:crypto";
-import { GoogleAuth } from "google-auth-library";
+import { playRequest } from "./playApi";
 import { action, internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
-import { evaluateSubscription, isBillingAdmin, MONTHLY_PRODUCT, type PlaySubscription } from "./billingPolicy";
+import { evaluateSubscription, isBillingAdmin, MONTHLY_PRODUCT, SUBSCRIPTION_PRODUCTS, type PlaySubscription } from "./billingPolicy";
 
-const base = "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/com.creditrepairai.v2";
-async function google(path: string, method = "GET", data?: unknown): Promise<PlaySubscription> {
-  const credentials = process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON;
-  if (!credentials) throw new Error("Play server verification is not configured.");
-  const client = await new GoogleAuth({ credentials: JSON.parse(credentials), scopes: ["https://www.googleapis.com/auth/androidpublisher"] }).getClient();
-  const response = await client.request<PlaySubscription>({ url: base + path, method: method as "GET" | "POST", data, timeout: 15000 });
-  return response.data;
-}
+const google = (path: string, method = "GET", data?: unknown) => playRequest<PlaySubscription>(path, method, data);
 export const verify = internalAction({ args: { owner: v.string(), token: v.string() }, handler: async (ctx, args) => {
   const ownership = { ...args, ownerHash: createHash("sha256").update(args.owner).digest("hex") };
   if (!args.token || args.token.length > 4096) throw new Error("Invalid purchase token.");
@@ -32,13 +25,13 @@ export const verify = internalAction({ args: { owner: v.string(), token: v.strin
   }
   if (purchase.externalAccountIdentifiers?.obfuscatedExternalAccountId !== createHash("sha256").update(args.owner).digest("hex")) throw new Error("Purchase account does not match.");
   const entitlement = evaluateSubscription(purchase, Date.now());
-  if (entitlement.productId !== MONTHLY_PRODUCT) throw new Error("Unexpected subscription product.");
+  if (!SUBSCRIPTION_PRODUCTS.includes(entitlement.productId)) throw new Error("Unexpected subscription product.");
   // Reserve ownership without access; acknowledge before persisting an active grant.
   const reserved = await ctx.runMutation(internal.billingData.upsert, { ...ownership, ...entitlement, active: false });
   if (!reserved) return { ...entitlement, active: false, expiresAt: 0, state: "REPLACED" };
   // Only purchased/active entitlements are acknowledged. Pending payments never grant access.
   if (entitlement.active && purchase.acknowledgementState === "ACKNOWLEDGEMENT_STATE_PENDING") {
-    await google(`/purchases/subscriptions/${MONTHLY_PRODUCT}/tokens/${encodeURIComponent(args.token)}:acknowledge`, "POST", {});
+    await google(`/purchases/subscriptions/${entitlement.productId}/tokens/${encodeURIComponent(args.token)}:acknowledge`, "POST", {});
   }
   const granted = await ctx.runMutation(internal.billingData.upsert, { ...ownership, ...entitlement, linkedToken: entitlement.active ? purchase.linkedPurchaseToken : undefined });
   if (!granted) return { ...entitlement, active: false, expiresAt: 0, state: "REPLACED" };
@@ -51,14 +44,15 @@ export const deleteOwner = internalAction({ args: { owner: v.string(), actor: v.
 export const allowAgentRequest = internalAction({ args: { owner: v.string() }, handler: async (ctx, args): Promise<boolean> => {
   return ctx.runMutation(internal.billingData.allowAgentRequest, { ...args, ownerHash: createHash("sha256").update(args.owner).digest("hex") });
 } });
-export const status = internalAction({ args: { owner: v.string() }, handler: async (ctx, args): Promise<{ active: boolean; expiresAt: number; state: string }> => {
+export const status = internalAction({ args: { owner: v.string() }, handler: async (ctx, args): Promise<{ active: boolean; expiresAt: number; state: string; caseHashes: string[] }> => {
   const records = await ctx.runQuery(internal.billingData.byOwner, args);
   const verified = [];
   for (const record of records) {
     if (["REPLACED", "EXPIRED_UNAVAILABLE"].includes(record.state)) continue;
     verified.push(await ctx.runAction(internal.playBilling.verify, { owner: args.owner, token: record.token }));
   }
-  return verified.sort((a, b) => Number(b.active) - Number(a.active) || b.expiresAt - a.expiresAt)[0] || { active: false, expiresAt: 0, state: "Not subscribed" };
+  const subscription = verified.sort((a, b) => Number(b.active) - Number(a.active) || b.expiresAt - a.expiresAt)[0] || { active: false, expiresAt: 0, state: "Not subscribed" };
+  return { ...subscription, caseHashes: await ctx.runAction(internal.caseBilling.status, args) };
 } });
 export const refreshBatch = internalAction({ args: { cursor: v.union(v.string(), v.null()) }, handler: async (ctx, args) => {
   const page = await ctx.runQuery(internal.billingData.batch, args);

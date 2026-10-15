@@ -1,5 +1,6 @@
 import { httpAction } from "./_generated/server";
 import { internal } from "./_generated/api";
+import { CASE_PRODUCT, SUBSCRIPTION_PRODUCTS } from "./billingPolicy";
 import { accountHash } from "./policyHttp";
 
 export const billingHttp = httpAction(async (ctx, request) => {
@@ -22,7 +23,9 @@ export const billingHttp = httpAction(async (ctx, request) => {
       if (!agreement.accepted) return new Response(JSON.stringify({ error: "Current terms must be accepted before purchase verification." }), { status: 409, headers });
       const body = JSON.parse(raw);
       if (typeof body.purchaseToken !== "string") return new Response("{}", { status: 400, headers });
-      result = await ctx.runAction(internal.playBilling.verify, { owner: identity.subject, token: body.purchaseToken });
+      if (body.productId === CASE_PRODUCT) result = await ctx.runAction(internal.caseBilling.verify, { owner: identity.subject, token: body.purchaseToken });
+      else if (body.productId === undefined || SUBSCRIPTION_PRODUCTS.includes(body.productId)) result = await ctx.runAction(internal.playBilling.verify, { owner: identity.subject, token: body.purchaseToken });
+      else return new Response(JSON.stringify({ error: "Unknown product." }), { status: 400, headers });
     }
     return new Response(JSON.stringify(result), { headers });
   } catch { return new Response(JSON.stringify({ error: "Secure billing/account action could not complete." }), { status: 503, headers }); }

@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.creditrepairai.v2.*
+import com.creditrepairai.v2.billing.AccessPlan
 import com.creditrepairai.v2.guidance.*
 import com.creditrepairai.v2.model.*
 import com.creditrepairai.v2.ui.theme.*
@@ -152,7 +153,21 @@ fun FilingScreen(ui: AppUiState, viewModel: MainViewModel, initialPortal: Filing
             Text(FilingGuide.steps[record.step].second)
             val help = ui.filingHelp.takeIf { it.recordId == record.id && it.step == record.step && it.contextKey == FilingGuide.contextKey(dispute, record) }
             TextButton(onClick = { viewModel.explainFiling(record) }, enabled = !ui.filingHelp.thinking) { Text("Ask AI to explain this step") }
-            if (help?.thinking == true) Text("Preparing an explanation for this saved step…")
+            TextButton(onClick = { viewModel.draftFilingAnswers(record) }, enabled = !ui.filingHelp.thinking) { Text("Draft editable answers with AI") }
+            if (help?.thinking == true) Text("Preparing help using your saved facts…")
+            record.answerDraft?.takeIf { it.contextKey == FilingGuide.contextKey(dispute, record) }?.let { draft ->
+                Card(Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("AI draft answers — review before using", fontWeight = FontWeight.Bold)
+                        Text("What happened: ${draft.problem}")
+                        if (portal == FilingPortal.CFPB) Text("Company response: ${draft.companyResponse}")
+                        Text("Requested review: ${draft.resolution}")
+                        Text("Evidence: ${draft.evidence}")
+                        Text("Using these drafts replaces the editable fields below. Fill every placeholder and verify every statement before marking reviewed.")
+                        Button(onClick = { viewModel.applyFilingAnswers(record) }) { Text("Use these drafts in my editable fields") }
+                    }
+                }
+            }
             help?.error?.let { Text(it, color = Amber400) }
             FilingGuide.currentExplanation(dispute, record)?.let { answer ->
                 Card(Modifier.fillMaxWidth()) {
@@ -167,7 +182,8 @@ fun FilingScreen(ui: AppUiState, viewModel: MainViewModel, initialPortal: Filing
             if (!ready) Text("First record the reporting company's response, or wait until the saved 45-day check-in date. CFPB guidance is not a guarantee of eligibility; verify current portal requirements.", color = Amber400)
             Button(onClick = { browserError = if (PortalBrowser.open(context, portal.url)) "" else "A compatible browser is unavailable. Try a trusted browser." }, enabled = ready && record.reviewed, modifier = Modifier.fillMaxWidth()) { Text("Open official ${portal.label} portal") }
             if (browserError.isNotEmpty()) Text(browserError, color = Amber400)
-            FilterChip(selected = record.reviewed, onClick = { viewModel.saveFiling(record.copy(reviewed = !record.reviewed)) }, label = { Text("I reviewed the facts against my records") })
+            FilterChip(selected = record.reviewed, onClick = { viewModel.saveFiling(record.copy(reviewed = !record.reviewed && FilingGuide.canReview(record))) }, label = { Text("I reviewed the facts against my records") })
+            if (!FilingGuide.canReview(record)) Text("Replace bracketed placeholders with verified details before marking these answers reviewed.", color = Amber400)
             OutlinedTextField(value = record.problem, onValueChange = { viewModel.saveFiling(record.copy(problem = it.take(4000), reviewed = false)) }, label = { Text("What happened — factual explanation") }, placeholder = { Text(dispute.reason) }, minLines = 3, modifier = Modifier.fillMaxWidth())
             if (portal == FilingPortal.CFPB) OutlinedTextField(value = record.companyResponse, onValueChange = { viewModel.saveFiling(record.copy(companyResponse = it.take(3000), reviewed = false)) }, label = { Text("Actual company response") }, minLines = 2, modifier = Modifier.fillMaxWidth())
             OutlinedTextField(value = record.resolution, onValueChange = { viewModel.saveFiling(record.copy(resolution = it.take(2000), reviewed = false)) }, label = { Text("Requested review / correction") }, modifier = Modifier.fillMaxWidth())
@@ -217,21 +233,41 @@ fun PlanningScreen(data: AppState, viewModel: MainViewModel, onAssistant: () -> 
 @Composable
 fun SubscriptionScreen(viewModel: MainViewModel) {
     val state by viewModel.billing.ui.collectAsStateWithLifecycle()
+    val app by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    var selectedId by rememberSaveable { mutableStateOf("") }
+    val selected = app.data.disputes.firstOrNull { it.id == selectedId }
+    val subscribed = state.entitlement.hasAccess(System.currentTimeMillis())
     LaunchColumn {
-        Text("Monthly software access", style = MaterialTheme.typography.headlineMedium)
-        Text("Guided tools, AI assistance, and education — not paid deletion, representation, approval, or a score change. Results are not guaranteed.")
+        Text("Choose software access", style = MaterialTheme.typography.headlineMedium)
+        Text("Monthly or yearly access covers AI assistance for all your items. A one-time purchase covers AI assistance for one selected dispute across its bureau and CFPB guides. Local organization and tracking remain available for all items.")
         EducationLabel()
         Text("Plan state: ${state.entitlement.state}")
         if (state.entitlement.expiresAt > 0) Text("Play access expiry: ${java.text.DateFormat.getDateInstance().format(java.util.Date(state.entitlement.expiresAt))}")
         Text(state.message)
         if (!BuildConfig.PAID_ACCESS_ENABLED) Text("Purchases are disabled pending owner configuration and compliance review. No charge can be started in this build.", color = Amber400)
-        Button(onClick = { (context as? Activity)?.let(viewModel.billing::purchase) }, enabled = BuildConfig.PAID_ACCESS_ENABLED && state.available && !state.busy && !state.entitlement.hasAccess(System.currentTimeMillis()), modifier = Modifier.fillMaxWidth()) {
-            Text(if (state.price.isBlank()) "Monthly plan unavailable" else "Subscribe for ${state.price} / month")
+        listOf(AccessPlan.MONTHLY, AccessPlan.YEARLY).forEach { plan ->
+            val price = state.offers[plan]?.price
+            Button(onClick = { (context as? Activity)?.let { viewModel.billing.purchase(it, plan) } },
+                enabled = BuildConfig.PAID_ACCESS_ENABLED && price != null && !state.busy && !subscribed, modifier = Modifier.fillMaxWidth()) {
+                Text(if (price == null) "${plan.label} plan unavailable" else "${plan.label}: $price / ${if (plan == AccessPlan.MONTHLY) "month" else "year"}")
+            }
         }
-        Text("Renews monthly until canceled. Cancel anytime through Google Play; cancellation normally stops the next renewal, not the current access period. Google Play shows the final price and terms before you accept.")
+        Text("Subscriptions renew for the displayed period until canceled. Cancel in Google Play; cancellation normally stops the next renewal. An existing subscriber should manage that subscription before choosing another plan.")
+        Text("One dispute — one-time purchase", style = MaterialTheme.typography.titleLarge)
+        if (app.data.disputes.isEmpty()) Text("Create a dispute from Analysis to choose it here.")
+        app.data.disputes.forEach { dispute ->
+            FilterChip(selected = selectedId == dispute.id, onClick = { selectedId = dispute.id }, label = { Text(dispute.creditor) })
+        }
+        val covered = selected != null && state.entitlement.hasCaseAccess(viewModel.signedInSubject.orEmpty(), selected.id, System.currentTimeMillis())
+        if (covered) Text("Your selected dispute already has access. No additional purchase is needed.")
+        val casePrice = state.offers[AccessPlan.CASE]?.price
+        Button(onClick = { (context as? Activity)?.let { viewModel.billing.purchase(it, AccessPlan.CASE, selected?.id) } },
+            enabled = BuildConfig.PAID_ACCESS_ENABLED && selected != null && casePrice != null && !state.busy && !covered,
+            modifier = Modifier.fillMaxWidth()) { Text(if (casePrice == null) "One-dispute purchase unavailable" else "Selected dispute: $casePrice once") }
+        Text("One-time access does not renew and does not cover other disputes or a whole-report plan. It is tied to this account and saved dispute. Clearing local cases removes the saved draft; purchase restoration does not restore deleted report data. No deletion, score change or outcome is promised. Google Play shows final terms before you accept.")
         OutlinedButton(onClick = viewModel.billing::refresh, modifier = Modifier.fillMaxWidth()) { Text("Restore purchases / refresh status") }
-        OutlinedButton(onClick = { PortalBrowser.open(context, "https://play.google.com/store/account/subscriptions?sku=${BuildConfig.PLAY_PRODUCT_ID}&package=com.creditrepairai.v2") }, modifier = Modifier.fillMaxWidth()) { Text("Manage or cancel in Google Play") }
+        OutlinedButton(onClick = { PortalBrowser.open(context, "https://play.google.com/store/account/subscriptions?package=com.creditrepairai.v2") }, modifier = Modifier.fillMaxWidth()) { Text("Manage or cancel subscriptions in Google Play") }
     }
 }
 @Composable

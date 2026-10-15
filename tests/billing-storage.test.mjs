@@ -14,6 +14,10 @@ const policyBundle = buildSync({ entryPoints: ["convex/policyAcceptance.ts"], bu
 const policyModule = { exports: {} };
 runInNewContext(policyBundle, { module: policyModule, exports: policyModule.exports, require: createRequire(import.meta.url), process, console });
 const policyHandlers = policyModule.exports;
+const caseBundle = buildSync({ entryPoints: ["convex/caseBillingData.ts"], bundle: true, platform: "node", format: "cjs", packages: "external", write: false }).outputFiles[0].text;
+const caseModule = { exports: {} };
+runInNewContext(caseBundle, { module: caseModule, exports: caseModule.exports, require: createRequire(import.meta.url), process, console });
+const caseHandlers = caseModule.exports;
 const { POLICY_VERSION, POLICY_DIGEST } = await import("../convex/policyDocuments.ts");
 const agreement = (aiSharing = false, choiceAt = Date.now()) => ({ ownerHash: "hash-fictional-A", version: POLICY_VERSION, digest: POLICY_DIGEST, termsAccepted: true, aiSharing, choiceAt });
 function database() {
@@ -87,4 +91,28 @@ test("acceptance cannot be backdated by the server timestamp or pinned far into 
   await assert.rejects(policyHandlers.accept._handler(ctx, agreement(true, Date.now() + 3600000)), /date/);
   const before = Date.now(); await policyHandlers.accept._handler(ctx, agreement(false, before - 1000));
   assert.ok(ctx.db.tables.get("policyAcceptances")[0].acceptedAt >= before);
+});
+
+const caseRecord = () => ({ owner: "fictional-A", ownerHash: "hash-fictional-A", token: "case-token", caseHash: "a".repeat(64), state: "PURCHASED", active: false });
+test("a case purchase cannot move between accounts or cases", async () => {
+  const ctx = { db: database() }; const receipt = caseRecord();
+  await caseHandlers.upsert._handler(ctx, receipt);
+  await assert.rejects(caseHandlers.upsert._handler(ctx, { ...receipt, owner: "fictional-B" }), /different account or case/);
+  await assert.rejects(caseHandlers.upsert._handler(ctx, { ...receipt, caseHash: "b".repeat(64) }), /different account or case/);
+  await assert.rejects(caseHandlers.upsert._handler(ctx, { ...receipt, token: "bad", caseHash: "unhashed" }), /Invalid case/);
+});
+test("case refunds stay terminal under delayed successful purchase verification", async () => {
+  const ctx = { db: database() }; const receipt = caseRecord();
+  await caseHandlers.upsert._handler(ctx, { ...receipt, active: true });
+  await caseHandlers.upsert._handler(ctx, { ...receipt, state: "REFUNDED" });
+  assert.equal(await caseHandlers.upsert._handler(ctx, receipt), false);
+  assert.equal(await caseHandlers.upsert._handler(ctx, { ...receipt, active: true }), false);
+  assert.equal(ctx.db.tables.get("playCasePurchases")[0].active, false);
+});
+test("account deletion removes case receipts and blocks in-flight restoration", async () => {
+  const ctx = { db: database() }; const receipt = caseRecord();
+  await caseHandlers.upsert._handler(ctx, receipt);
+  await handlers.deleteOwner._handler(ctx, { owner: receipt.owner, ownerHash: receipt.ownerHash, actor: "fictional-actor" });
+  assert.equal(ctx.db.tables.get("playCasePurchases").length, 0);
+  await assert.rejects(caseHandlers.upsert._handler(ctx, receipt), /deletion/);
 });

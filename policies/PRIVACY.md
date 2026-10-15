@@ -1,6 +1,6 @@
 # CreditRepairAI Privacy policy
 
-Version: 2026-10-12.2 · Operator: 3six0 Studios LLC
+Version: 2026-10-15.1 · Operator: 3six0 Studios LLC
 
 **Review draft — commercial release requires qualified legal review**
 
@@ -22,11 +22,11 @@ Before an AI request, a separate disclosure asks whether you allow sharing. With
 
 ## Providers, purchases and agreement records
 
-Google Play processes subscriptions and payment details. Convex stores purchase tokens, account association, product, verification state/expiry and limited administrative audit records needed for access verification and authorized subscription management. The server also stores the current agreement version, document digest, AI-sharing choice and server timestamp against a hashed account identifier. Rate-limit records help prevent abuse. The native app has no advertising or analytics SDK and does not sell case information. We use providers to operate the service, process requested purchases and protect it; we may respond to legal obligations. Providers have their own published retention and processing terms.
+Google Play processes subscriptions, one-time purchases and payment details. Convex stores purchase tokens, account association, product, verification state/expiry, hashed dispute bindings for one-time access, and limited administrative audit records needed for access verification and authorized subscription management. The server also stores the current agreement version, document digest, AI-sharing choice and server timestamp against a hashed account identifier. Rate-limit records help prevent abuse. The native app has no advertising or analytics SDK and does not sell case information. We use providers to operate the service, process requested purchases and protect it; we may respond to legal obligations. Providers have their own published retention and processing terms.
 
 ## Retention and deletion
 
-Local case data remains until you clear it, sign out, switch accounts or remove the app. Clearing a case destroys its prior encryption key; current agreement/onboarding choices may be saved separately in a newly encrypted empty case. Account deletion removes Convex subscription, acceptance, rate-limit and relevant audit records, then asks Firebase to delete the login; a recent sign-in may be required. If either step fails, the app reports incomplete deletion and permits retry. A minimal hashed deletion marker remains to block delayed server work from recreating deleted records; it has no reports, purchase tokens or contact details. It currently has no automatic expiry. Qualified review must determine and approve its retention and any necessary legal/security retention before launch.
+Local case data remains until you clear it, sign out, switch accounts or remove the app. Clearing a case destroys its prior encryption key; current agreement/onboarding choices may be saved separately in a newly encrypted empty case. Account deletion removes Convex subscription, one-time purchase, acceptance, rate-limit and relevant audit records, then asks Firebase to delete the login; a recent sign-in may be required. If either step fails, the app reports incomplete deletion and permits retry. A minimal hashed deletion marker remains to block delayed server work from recreating deleted records; it has no reports, purchase tokens or contact details. It currently has no automatic expiry. Qualified review must determine and approve its retention and any necessary legal/security retention before launch.
 
 ## Vendor retention and your choices
 

@@ -2,6 +2,7 @@ package com.creditrepairai.v2.data
 
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.creditrepairai.v2.guidance.FilingAnswerDraft
 import com.creditrepairai.v2.guidance.CreditGoal
 import com.creditrepairai.v2.guidance.FilingGuide
 import com.creditrepairai.v2.guidance.FilingPortal
@@ -36,6 +37,17 @@ class AppRepositoryInstrumentedTest {
         assertFalse(prefs.all.values.joinToString().contains("Fictional private marker"))
         repository.selectOwner("fictional-owner-B")
         assertEquals("", repository.load().goal.description)
+    }
+    @Test fun aiDraftFieldsAreEncryptedAndRestoredWithoutMarkingReviewed() {
+        repository.selectOwner("fictional-owner-A")
+        val draft = FilingAnswerDraft("fictional-context", "Fictional private draft marker", "No response", "Please review", "Dated statement")
+        val record = FilingRecord(disputeId = "fictional-dispute", portal = FilingPortal.EQUIFAX, answerDraft = draft)
+        repository.save(AppState(filings = listOf(record)))
+        val restored = AppRepository(context).load().filings.single()
+        assertEquals(draft, restored.answerDraft)
+        assertFalse(restored.reviewed)
+        val prefs = context.getSharedPreferences("credit_repair_private", android.content.Context.MODE_PRIVATE)
+        assertFalse(prefs.all.values.joinToString().contains("Fictional private draft marker"))
     }
     @Test fun savedFilingExplanationIsEncryptedAndRestored() {
         repository.selectOwner("fictional-owner-A")

@@ -2,6 +2,7 @@ import { httpAction } from "./_generated/server";
 import { PublicAgentError, runCreditAgent, type CreditAgentRequest } from "./creditAgentCore";
 import { internal } from "./_generated/api";
 import { accountHash } from "./policyHttp";
+import { scopeCaseSnapshot } from "./caseScope";
 
 const jsonHeaders = {
   "Content-Type": "application/json; charset=utf-8",
@@ -21,14 +22,22 @@ export const creditAgentHttp = httpAction(async (ctx, request) => {
     const agreement = await ctx.runQuery(internal.policyAcceptance.current, { ownerHash: await accountHash(identity.subject) });
     if (!agreement.accepted || !agreement.aiSharing) throw new PublicAgentError("Current terms and affirmative AI-sharing consent are required.", 403);
     if (!await ctx.runAction(internal.playBilling.allowAgentRequest, { owner: identity.subject })) throw new PublicAgentError("Account access is unavailable or the educational AI request limit was reached.", 429);
-    if (process.env.CREDIT_PAID_ACCESS_ENABLED === "true") {
-      const entitlement = await ctx.runAction(internal.playBilling.status, { owner: identity.subject });
-      if (!entitlement.active || entitlement.expiresAt <= Date.now()) throw new PublicAgentError("Verified software-access subscription required.", 402);
-    }
-
     const raw = await request.text();
     if (raw.length > 200_000) throw new PublicAgentError("Request is too large.", 413);
-    const body = JSON.parse(raw) as CreditAgentRequest;
+    let body: CreditAgentRequest;
+    try { body = JSON.parse(raw); } catch { throw new PublicAgentError("Invalid JSON request.", 400); }
+    if (!body || typeof body !== "object" || !body.caseSnapshot || typeof body.caseSnapshot !== "object") throw new PublicAgentError("A case snapshot is required.", 400);
+    if (process.env.CREDIT_PAID_ACCESS_ENABLED === "true") {
+      const entitlement = await ctx.runAction(internal.playBilling.status, { owner: identity.subject });
+      if (!entitlement.active || entitlement.expiresAt <= Date.now()) {
+        const caseId = body.caseScopeId;
+        if (typeof caseId !== "string" || !/^[A-Za-z0-9_-]{1,128}$/.test(caseId)) throw new PublicAgentError("Choose a purchased dispute or a subscription for AI access.", 402);
+        const caseHash = await accountHash(`${identity.subject}:${caseId}`);
+        if (!entitlement.caseHashes.includes(caseHash)) throw new PublicAgentError("Verified access for this dispute is required.", 402);
+        try { body = { ...body, caseSnapshot: scopeCaseSnapshot(body.caseSnapshot, caseId) }; }
+        catch { throw new PublicAgentError("Select the purchased dispute before asking AI.", 400); }
+      }
+    }
     const answer = await runCreditAgent(body);
     return new Response(JSON.stringify({ answer }), { status: 200, headers: jsonHeaders });
   } catch (error) {

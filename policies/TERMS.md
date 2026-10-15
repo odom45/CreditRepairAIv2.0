@@ -1,6 +1,6 @@
 # CreditRepairAI Terms of use
 
-Version: 2026-10-12.2 · Operator: 3six0 Studios LLC
+Version: 2026-10-15.1 · Operator: 3six0 Studios LLC
 
 **Review draft — commercial release requires qualified legal review**
 
@@ -22,7 +22,7 @@ Educational information only — not legal or financial advice. Reports, OCR, an
 
 ## Software access, billing and cancellation
 
-When enabled after review, a subscription purchases monthly access to software tools, AI assistance and education at the price shown by Google Play. It renews until canceled in Google Play and can be canceled there at any time. It does not purchase representation, a deletion, an approval or an outcome; there is no pay-per-deletion or result-based charge. Account deletion and subscription cancellation are distinct. Refund, cancellation, withdrawal and other consumer rights follow applicable law and the applicable store terms. Labeling a product software or education does not create an exemption from credit-services laws. If CROA or state law applies, required disclosures, contracts, payment restrictions and cancellation rights must be implemented before that offering is sold; this general agreement is not a substitute.
+When enabled after review, monthly or yearly subscriptions purchase access to software tools, AI assistance and education for all your items at the price and renewal interval shown by Google Play. Subscriptions renew until canceled in Google Play. A separate one-time purchase provides AI assistance for one selected saved dispute, including its bureau and CFPB filing guides; it does not renew or unlock other disputes or all-report planning. The purchase is tied to your account and that saved dispute through hashed identifiers. Purchase restoration does not restore deleted local report or dispute data. Local organization and tracking remain available for all items. Google Play shows final pricing and terms before purchase. It does not purchase representation, a deletion, an approval or an outcome; there is no pay-per-deletion or result-based charge. Account deletion and subscription cancellation are distinct. Refund, cancellation, withdrawal and other consumer rights follow applicable law and the applicable store terms. Labeling a product software or education does not create an exemption from credit-services laws. If CROA or state law applies, required disclosures, contracts, payment restrictions and cancellation rights must be implemented before that offering is sold; this general agreement is not a substitute.
 
 ## Acceptable use and third-party sites
 

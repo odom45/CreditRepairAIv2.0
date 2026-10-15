@@ -448,6 +448,69 @@
       }
     },
     {
+      "tableName": "playCasePurchases",
+      "indexes": [
+        {
+          "indexDescriptor": "by_owner",
+          "fields": [
+            "owner"
+          ]
+        },
+        {
+          "indexDescriptor": "by_token",
+          "fields": [
+            "token"
+          ]
+        }
+      ],
+      "stagedDbIndexes": [],
+      "searchIndexes": [],
+      "stagedSearchIndexes": [],
+      "vectorIndexes": [],
+      "stagedVectorIndexes": [],
+      "documentType": {
+        "type": "object",
+        "value": {
+          "owner": {
+            "fieldType": {
+              "type": "string"
+            },
+            "optional": false
+          },
+          "token": {
+            "fieldType": {
+              "type": "string"
+            },
+            "optional": false
+          },
+          "caseHash": {
+            "fieldType": {
+              "type": "string"
+            },
+            "optional": false
+          },
+          "state": {
+            "fieldType": {
+              "type": "string"
+            },
+            "optional": false
+          },
+          "active": {
+            "fieldType": {
+              "type": "boolean"
+            },
+            "optional": false
+          },
+          "checkedAt": {
+            "fieldType": {
+              "type": "number"
+            },
+            "optional": false
+          }
+        }
+      }
+    },
+    {
       "tableName": "billingAudit",
       "indexes": [
         {

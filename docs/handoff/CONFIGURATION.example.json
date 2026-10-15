@@ -10,7 +10,15 @@
     "supportEmail": "admin@synergyfundai.com",
     "paidAccessEnabled": false,
     "versionCode": "GREATER_THAN_ALL_PRIOR_PLAY_UPLOADS",
-    "firebaseConfigFiles": ["native-android/app/google-services.json", "native-android/app/src/debug/google-services.json"]
+    "firebaseConfigFiles": [
+      "native-android/app/google-services.json",
+      "native-android/app/src/debug/google-services.json"
+    ],
+    "playProducts": {
+      "monthly": "creditrepairai_monthly",
+      "yearly": "creditrepairai_yearly",
+      "oneTimeDispute": "creditrepairai_dispute"
+    }
   },
   "convexServerEnvironment": {
     "OPENAI_API_KEY": "SET_IN_PROTECTED_ENVIRONMENT_ONLY",

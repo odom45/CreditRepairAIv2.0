@@ -34,3 +34,5 @@ Admin calls (`billingData.adminList`, `playBilling.adminManage`) require exact `
 ## Migration/deletion
 
 No schema change is included in this hand-off. Validate additions on a fresh development deployment first; back up owned production data through the owner's authorized process before incompatible migrations. Reuse existing signing identity for updates and do not expose real consumer records, OAuth secrets, API keys or signing material in the buyer package. A source/schema export is not a database export.
+
+One-time dispute access is stored separately in `playCasePurchases` with owner, token, hashed dispute binding, verified state, activity and check time. It has `by_owner` and `by_token` indexes. Account deletion removes these receipts and retains only the existing minimal deletion marker. No report content is added to this table.
