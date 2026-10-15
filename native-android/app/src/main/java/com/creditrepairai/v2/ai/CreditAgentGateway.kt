@@ -39,7 +39,7 @@ class CreditAgentGateway(
         val connection = (URL(resolvedEndpoint).openConnection() as HttpURLConnection).apply {
             requestMethod = "POST"
             connectTimeout = 15_000
-            readTimeout = 45_000
+            readTimeout = 70_000
             doOutput = true
             setRequestProperty("Authorization", "Bearer $token")
             setRequestProperty("Content-Type", "application/json; charset=utf-8")

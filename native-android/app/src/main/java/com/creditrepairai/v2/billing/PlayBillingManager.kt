@@ -66,7 +66,8 @@ class PlayBillingManager(context: Context, private val service: SecureService, p
             val selected = product.oneTimePurchaseOfferDetailsList?.singleOrNull {
                 it.offerId == null && it.rentalDetails == null && it.preorderDetails == null
             } ?: return null
-            return PlanOffer(selected.formattedPrice, selected.offerToken)
+            val token = selected.offerToken?.takeIf { it.isNotBlank() } ?: return null
+            return PlanOffer(selected.formattedPrice, token)
         }
         val selected = product.subscriptionOfferDetails?.singleOrNull {
             it.offerId == null && it.pricingPhases.pricingPhaseList.singleOrNull()?.let { phase ->

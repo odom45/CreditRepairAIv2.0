@@ -5,6 +5,8 @@ on:
     branches: [android-native-rebuild]
     paths:
       - ".github/workflows/signed-android-release.yml"
+      - "native-android/**"
+      - "convex/**"
   workflow_dispatch:
     inputs:
       version_code:
