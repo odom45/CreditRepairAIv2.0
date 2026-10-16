@@ -67,4 +67,22 @@ class ReportTextParserTest {
         assertEquals(Bureau.EQUIFAX, parser.detectBureau("synthetic.pdf", "EQUI FAX CREDIT REPORT"))
         assertEquals(Bureau.UNKNOWN, parser.detectBureau("synthetic.pdf", "No known bureau header"))
     }
+    @Test fun fieldsAfterLongPaymentHistoryAreNotSilentlyDropped() {
+        val text = "Creditor: Fictional Bank\nAccount Number: XXXX1234\n" +
+            (1..60).joinToString("\n") { "Payment history month $it: current" } +
+            "\nBalance: $321\nCredit Limit: $4,000\nDate Opened: 01/2020"
+        val record = parser.parseAccounts(text, Bureau.EXPERIAN).single()
+        assertEquals(321, record.balance)
+        assertEquals(4000, record.creditLimit)
+        assertEquals("01/2020", record.openedDate)
+    }
+    @Test fun reportsOverAccountLimitFailInsteadOfReturningPartialSuccess() {
+        fun report(count: Int) = (1..count).joinToString("\n") {
+            "Creditor: Fictional Bank $it\nAccount Number: XXXX1234\nBalance: $100"
+        }
+        assertEquals(150, parser.parseAccounts(report(150), Bureau.EXPERIAN).size)
+        val error = runCatching { parser.parseAccounts(report(151), Bureau.EXPERIAN) }.exceptionOrNull()
+        assertTrue(error is IllegalArgumentException)
+        assertTrue(error!!.message!!.contains("no accounts were silently skipped"))
+    }
 }

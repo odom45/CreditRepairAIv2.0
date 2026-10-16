@@ -17,8 +17,8 @@ android {
         applicationId = "com.creditrepairai.v2"
         minSdk = 26
         targetSdk = 36
-        versionCode = providers.gradleProperty("CREDIT_VERSION_CODE").orElse("20261015").get().toInt()
-        versionName = providers.gradleProperty("CREDIT_VERSION_NAME").orElse("2.0.2").get()
+        versionCode = providers.gradleProperty("CREDIT_VERSION_CODE").orElse("20261016").get().toInt()
+        versionName = providers.gradleProperty("CREDIT_VERSION_NAME").orElse("2.0.3").get()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true

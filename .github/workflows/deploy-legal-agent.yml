@@ -1,4 +1,4 @@
-name: Deploy production legal agent
+name: Deploy configured production legal agent
 
 on:
   workflow_dispatch:
@@ -13,55 +13,34 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 20
     env:
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
-
+      CONVEX_DEPLOY_KEY: ${{ secrets.CREDIT_PRODUCTION_DEPLOY_KEY }}
+      CREDIT_PRODUCTION_DEPLOYMENT: ${{ vars.CREDIT_PRODUCTION_DEPLOYMENT }}
+      CREDIT_AI_GATEWAY_URL: ${{ vars.CREDIT_PRODUCTION_GATEWAY_URL }}
+      CREDIT_SUPPORT_EMAIL: ${{ vars.CREDIT_SUPPORT_EMAIL }}
+      CREDIT_PAID_ACCESS_ENABLED: ${{ vars.CREDIT_PAID_ACCESS_ENABLED || 'false' }}
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
           cache: npm
-
-      - name: Validate protected deployment credentials
-        run: |
-          test -n "$OPENAI_API_KEY"
-          test -n "$CONVEX_DEPLOY_KEY"
-
-      - name: Install exact dependencies
-        run: npm ci
-
-      - name: Validate legal source registry
-        run: npm run legal:check
-
-      - name: Create and verify versioned OpenAI vector store
-        id: legal_store
-        run: npm run legal:create-vector-store
-
-      - name: Configure production-only agent secrets
-        env:
-          VECTOR_STORE_ID: ${{ steps.legal_store.outputs.vector_store_id }}
-        run: |
-          test -n "$VECTOR_STORE_ID"
-          npx convex env set OPENAI_API_KEY "$OPENAI_API_KEY"
-          npx convex env set CREDIT_LEGAL_VECTOR_STORE_ID "$VECTOR_STORE_ID"
-          npx convex env set CREDIT_AGENT_MODEL "gpt-5.6-terra"
-
-      - name: Deploy Convex production functions
-        run: npx convex deploy --message "Deploy legal library ${{ steps.legal_store.outputs.library_version }}"
-
-      - name: Deployment summary
-        env:
-          VECTOR_STORE_ID: ${{ steps.legal_store.outputs.vector_store_id }}
-          LIBRARY_VERSION: ${{ steps.legal_store.outputs.library_version }}
-        run: |
-          {
-            echo "## Legal agent deployed"
-            echo "- Library version: $LIBRARY_VERSION"
-            echo "- Vector store: $VECTOR_STORE_ID"
-            echo "- Model: gpt-5.6-terra"
-            echo "- Previous vector stores were retained for rollback."
-          } >> "$GITHUB_STEP_SUMMARY"
+      - run: npm ci --ignore-scripts
+      - run: npm run typecheck
+      - run: npm run test:launch
+      - run: npm run legal:check
+      - run: npm run policies:check
+      - run: npm run audit:source-secrets
+      - name: Require genuine Firebase package and certificate registrations
+        run: node scripts/firebase-signing-readiness.mjs --require-ready
+      - name: Require existing production configuration and deploy checked source
+        run: node scripts/production-configuration.mjs --deploy
+      - name: Retain public deployment status without credentials
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: CreditRepairAI-production-configuration
+          path: |
+            production-configuration.json
+            firebase-signing-readiness.json

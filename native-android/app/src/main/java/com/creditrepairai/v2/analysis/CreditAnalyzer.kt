@@ -89,7 +89,7 @@ object CreditAnalyzer {
             }
         }
 
-        return findings.distinctBy { Triple(it.type, accountKey(it.creditor, ""), it.bureaus.sortedBy(Bureau::name)) }
+        return findings.distinctBy { Triple(it.type, it.accountIds.sorted(), it.bureaus.sortedBy(Bureau::name)) }
             .sortedWith(compareBy<Finding> { it.severity.ordinal }.thenBy { it.creditor })
     }
 
@@ -115,14 +115,18 @@ object CreditAnalyzer {
     )
 
     private fun accountKey(account: CreditAccount): String {
+        val creditor = account.creditor.lowercase(Locale.US).replace(Regex("[^a-z0-9]"), "")
+        val suffix = account.accountSuffix.filter(Char::isLetterOrDigit).uppercase(Locale.US)
+        if (suffix.isNotBlank()) return "$creditor:suffix:$suffix"
         val fallback = listOf(account.openedDate, account.accountType)
             .joinToString(":")
             .lowercase(Locale.US)
             .replace(Regex("[^a-z0-9:]"), "")
-        return accountKey(account.creditor, account.accountSuffix.ifBlank { fallback })
+        // An account type alone is not an identity. Retain the full opened-date
+        // fallback instead of comparing only its final four characters.
+        return if (account.openedDate.isNotBlank()) "$creditor:opened:$fallback"
+        else "$creditor:unmatched:${account.id}"
     }
-    private fun accountKey(creditor: String, suffix: String) =
-        creditor.lowercase(Locale.US).replace(Regex("[^a-z0-9]"), "") + ":" + suffix.takeLast(4)
 
     private fun normalizeStatus(status: String): String = status.lowercase(Locale.US)
         .replace("charge off", "charge-off").replace("paid in full", "paid").trim()

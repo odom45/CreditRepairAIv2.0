@@ -188,9 +188,12 @@ class ReportTextParser {
                     lines.getOrNull(index + 1)?.let { ACCOUNT_NUMBER.containsMatchIn(it) } == true)
         }
 
+        require(candidateIndexes.size <= 150) {
+            "Report exceeds 150 account sections. Import smaller report sections; no accounts were silently skipped."
+        }
         return candidateIndexes.mapIndexedNotNull { position, index ->
             val end = candidateIndexes.getOrNull(position + 1) ?: lines.size
-            val window = lines.subList(index, end).take(40)
+            val window = lines.subList(index, end)
             val headingMatch = ACCOUNT_HEADING.find(window.first())
             val creditor = sanitizeCreditor(
                 headingMatch?.groupValues?.getOrNull(1)?.takeIf(String::isNotBlank)
@@ -234,7 +237,7 @@ class ReportTextParser {
                 highBalance = highBalance,
                 remarks = remarks.take(200),
             )
-        }.take(150)
+        }
     }
 
     private fun extractValue(lines: List<String>, label: String): String? {

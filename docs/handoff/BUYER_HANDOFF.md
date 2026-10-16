@@ -72,3 +72,7 @@ Secrets are handed over out of band through an owner-approved secure mechanism. 
 ## October 15 source update
 
 See [the engineering completion record](../ENGINEERING_COMPLETION_2026-10-15.md) for the new editable AI field-draft flow, annual subscriptions, verified case-specific one-time purchases, policy version 2026-10-15.1 and signed-release installation/update acceptance. The schema export now has 15 tables. Historical test/build results above apply only to their recorded commits; use the latest verification follow-up for the current release.
+
+## 2.0.3 follow-up
+
+See [the follow-up record](../ENGINEERING_FOLLOWUP_2026-10-16.md) for parser/account-comparison corrections and protected production deployment configuration. The production workflow requires its own matching production key and existing server/vector-store settings; it does not reuse the development key or provision paid resources. A tester release is not proof of production/Firebase/Play acceptance.

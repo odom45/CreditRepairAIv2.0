@@ -6,6 +6,8 @@ import com.creditrepairai.v2.model.CreditAccount
 import com.creditrepairai.v2.model.CreditReport
 import com.creditrepairai.v2.model.FindingType
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Test
 
 class CreditAnalyzerTest {
@@ -35,5 +37,34 @@ class CreditAnalyzerTest {
         assertTrue(dispute.letter.contains("Example Bank"))
         assertTrue(dispute.letter.contains("15 U.S.C."))
         assertTrue(dispute.letter.contains("[YOUR FULL NAME]"))
+    }
+
+    @Test fun separateAccountsFromSameCreditorKeepEveryFinding() {
+        val records = listOf("1111", "2222").flatMap { suffix ->
+            listOf(
+                CreditAccount(creditor = "Example Bank", accountSuffix = suffix, bureau = Bureau.TRANSUNION, balance = 900),
+                CreditAccount(creditor = "Example Bank", accountSuffix = suffix, bureau = Bureau.EXPERIAN, balance = 400),
+            )
+        }
+        val findings = CreditAnalyzer.analyze(records, reports).filter { it.type == FindingType.BALANCE_MISMATCH }
+        assertEquals(2, findings.size)
+        assertEquals(records.map { it.id }.toSet(), findings.flatMap { it.accountIds }.toSet())
+    }
+
+    @Test fun missingSuffixKeepsFullOpenedDateWhenComparingAccounts() {
+        val records = listOf(
+            CreditAccount(creditor = "Example Bank", openedDate = "01/2020", accountType = "Revolving", bureau = Bureau.TRANSUNION, balance = 900),
+            CreditAccount(creditor = "Example Bank", openedDate = "02/2020", accountType = "Revolving", bureau = Bureau.EXPERIAN, balance = 400),
+        )
+        assertFalse(CreditAnalyzer.analyze(records, reports).any { it.type == FindingType.BALANCE_MISMATCH })
+    }
+
+    @Test fun missingIdentifiersDoNotTurnUnrelatedAccountsIntoDuplicates() {
+        val records = listOf(900, 400).map { balance ->
+            CreditAccount(creditor = "Example Bank", bureau = Bureau.TRANSUNION, accountType = "Revolving", balance = balance)
+        }
+        assertFalse(CreditAnalyzer.analyze(records, reports).any {
+            it.type == FindingType.POSSIBLE_DUPLICATE || it.type == FindingType.BALANCE_MISMATCH
+        })
     }
 }

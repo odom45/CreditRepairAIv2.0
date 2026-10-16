@@ -2,7 +2,12 @@ name: Measured synthetic Android PDF parser batch
 on:
   push:
     branches: [android-native-rebuild]
-    paths: [".github/workflows/parser-validation-batch.yml"]
+    paths:
+      - ".github/workflows/parser-validation-batch.yml"
+      - "native-android/app/src/main/java/com/creditrepairai/v2/analysis/**"
+      - "native-android/app/src/androidTest/java/com/creditrepairai/v2/analysis/**"
+      - "scripts/run-parser-batch.sh"
+      - "scripts/summarize-parser-batch.mjs"
   workflow_dispatch:
 permissions:
   contents: read
