@@ -2,6 +2,8 @@ package com.creditrepairai.v2.ui
 
 import android.app.Activity
 import android.content.Context
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.lifecycle.ViewModel
@@ -66,7 +68,7 @@ class AuthenticationInstrumentedTest {
         val session = Session()
         lateinit var vm: MainViewModel
         compose.runOnIdle { vm = model(session) }
-        compose.setContent { CreditRepairTheme { AuthenticationScreen(vm.uiState.value, vm) {} } }
+        compose.setContent { CreditRepairTheme { val ui by vm.uiState.collectAsState(); AuthenticationScreen(ui, vm) {} } }
         compose.runOnIdle { assertEquals(0, session.resetRequests) }
         compose.onNodeWithText("Forgot password? Send reset email").performScrollTo().assertIsNotEnabled()
         compose.onNodeWithText("Email", substring = false).performScrollTo().performTextInput("fictional@example.invalid")
