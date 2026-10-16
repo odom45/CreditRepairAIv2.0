@@ -46,3 +46,13 @@ Correct the owner-certificate registration in the existing Firebase project firs
 
 Official public-config validation semantics: https://docs.cloud.google.com/identity-platform/docs/reference/rest/v1/TopLevel/getProjects
 Official credential-error semantics: https://docs.cloud.google.com/identity-platform/docs/admin/email-enumeration-protection
+
+## 2.0.4 diagnostics and funded follow-up
+
+The certificate comparison was repeated at 2026-10-16T19:33:15Z with the explicit `androidPackageName`, `sha1Cert` and `firebaseAppId` query parameters. The owner certificate still returned `INVALID_CERT_HASH`; the older registered certificate returned HTTP 200. No server-side registration was changed.
+
+The earlier description of hidden generic UI errors applies to 2.0.3. Version 2.0.4 now provides safe support categories: `AUTH_CREDENTIALS`, `AUTH_PROVIDER_DISABLED`, `AUTH_APP_CONFIGURATION`, `AUTH_NETWORK`, `AUTH_RATE_LIMIT`, `AUTH_GOOGLE` and `AUTH_UNKNOWN`. Send the displayed category to support rather than a password, token or full log. Credential failures intentionally do not disclose whether an email account exists.
+
+On 2.0.4, password recovery is available from the sign-in screen. After creating an email account, open the verification link and use **I've verified my email — check again** in Settings or the AI screen; this reloads the user and refreshes the ID token. **Resend verification email** is a separate explicit action. These controls help diagnose and recover account access; they do not bypass a disabled provider or the missing certificate registration.
+
+The funded server-side fictional agent/retrieval check now passes with eight legal-source results, including the final output-filter/citation recovery run 38958991401. Full native sign-in and authenticated AI acceptance remain outstanding. See [the current engineering record](ENGINEERING_COMPLETION_2026-10-16.md).

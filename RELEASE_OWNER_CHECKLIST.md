@@ -2,6 +2,10 @@
 
 Review snapshot: 2026-10-12. Code implemented is not equivalent to production verified. Do not mark the application 100% launch-ready until every required gate below has evidence.
 
+## October 16 funded AI and authentication update
+
+The funded live agent/retrieval check now passes, including the output-filter/citation corrections verified in recovery run 38958991401; the previous exhausted-credit result below is historical. Native 2.0.4 adds actionable login errors, password recovery, the explicit Google button flow and email verification/token refresh. Current Firebase certificate checks still reject the owner's upload certificate. See [the current completion and acceptance record](docs/ENGINEERING_COMPLETION_2026-10-16.md) for exact evidence and remaining account gates.
+
 ## October 15 engineering update
 
 The current source adds AI-generated editable portal answers, monthly/yearly subscriptions and receipt-bound one-dispute access. Review [the completion record](docs/ENGINEERING_COMPLETION_2026-10-15.md) for implementation, Play product setup and remaining account gates. These additions supersede the older monthly-only implementation scope below; they do not mark live account integration complete. The signed release workflow now also triggers on native/backend source changes and verifies an in-place update from 2.0.1 before exporting artifacts.
@@ -31,7 +35,7 @@ The current source adds AI-generated editable portal answers, monthly/yearly sub
 - [x] Current application source `2472e38210ac525616c014a9b9c4b65f45a03476`: native/backend jobs, 37 JVM tests, 20 backend tests and owner-signed debug APK verification passed. [Final source run `38241196324`](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/38241196324). All 15 device tests and lint also passed; Android OSV completed across 213 modules with zero reported advisories. Development deployment succeeded, but the real AI smoke failed on exhausted API credit, so the overall run is not green.
 - [x] All 15 device scenarios, Android lint, resolved Android dependency scan and protected development deployment completed.
 - [x] Private comparison confirmed the GitHub OpenAI key already matches the server key; [key-check run `38241914828`](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/38241914828) passed.
-- [ ] Real retrieval smoke: restore existing API-project credit and rerun the failed deployment job. Current result is HTTP 429, `credit_balance_exhausted`; no grounded live answer was accepted.
+- [x] Real retrieval smoke: after funding, the October 16 rerun of run `38838060702` passed with three HTTP 200 responses and eight legal-source retrieval results. This was a fictional server-side agent check; native authenticated login/AI remains a separate acceptance requirement.
 - [ ] Follow `docs/PARSER_VALIDATION.md` on actual devices using permissioned, fully redacted reports. Full UI/device/large-font/TalkBack checks are not covered by pure unit tests.
 - [ ] Stage and verify Firebase → Convex → OpenAI with a fictional case and a verified-email account.
 - [ ] Stage Play license-tester scenarios: purchase, pending, canceled checkout, restore, expiry, grace, hold, account switch, replacement and administrator refund. Do not use a real charge for testing.
