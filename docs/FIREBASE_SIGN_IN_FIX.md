@@ -29,3 +29,20 @@ Current blocker: on 2026-10-12 this agent's Firebase and Play Console sign-in pa
 
 Official setup: https://firebase.google.com/docs/auth/android/google-signin
 Certificate registration: https://support.google.com/firebase/answer/9137403
+
+## Live diagnosis after both sign-in methods failed — 2026-10-16 UTC
+
+The owner reported that Google and email/password both fail in 2.0.3. No successful native sign-in is claimed.
+
+Read-only checks against the actual project's public Identity Toolkit configuration confirmed:
+
+- Querying `GET /v1/projects` with package `com.creditrepairai.v2`, the real Firebase app ID and the APK's owner SHA-1 returned HTTP 400 `INVALID_CERT_HASH`.
+- The same query using the older Android OAuth SHA-1 from the downloaded release configuration returned HTTP 200 for project number `287473718478`. This comparison confirms a live registration mismatch, rather than merely a stale local JSON warning.
+- A single email/password sign-in attempt using a randomly generated nonexistent `example.invalid` account returned HTTP 400 `INVALID_LOGIN_CREDENTIALS`. This demonstrates that the public key/email endpoint can be reached from the diagnostic environment. It does not validate the owner's credentials, successful Android SDK login or provider settings. No account was created, no user password was requested and no email was sent.
+
+Firebase's public configuration response does not disclose the enabled-provider flags to unauthenticated callers. The native UI currently replaces both exception details with generic text, so the exact email failure on the phone remains undiagnosed. Do not infer a wrong user password or claim that fingerprint registration alone has proven both methods fixed.
+
+Correct the owner-certificate registration in the existing Firebase project first, verify that Google and Email/Password are enabled, download genuine refreshed configurations, then test both methods on the exact signed APK. Do not re-sign with a new key or invent OAuth entries. Authenticated Firebase administration was still unavailable at this check, so no server setting was changed and no replacement binary is represented as a login fix.
+
+Official public-config validation semantics: https://docs.cloud.google.com/identity-platform/docs/reference/rest/v1/TopLevel/getProjects
+Official credential-error semantics: https://docs.cloud.google.com/identity-platform/docs/admin/email-enumeration-protection
