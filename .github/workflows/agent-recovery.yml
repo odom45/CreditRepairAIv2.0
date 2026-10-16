@@ -1,0 +1,43 @@
+name: Validate and deploy funded agent recovery
+on:
+  push:
+    branches: [android-native-rebuild]
+    paths: [".github/workflows/agent-recovery.yml"]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: creditrepairai-authorized-development
+  cancel-in-progress: false
+jobs:
+  validate-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run typecheck
+      - run: npm run test:launch
+      - run: npm run policies:check
+      - run: npm run legal:check
+      - run: npm run audit:source-secrets
+      - name: Deploy checked backend to the existing authorized development deployment
+        env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
+        run: node scripts/deploy-development.mjs
+      - name: Verify configured AI and existing legal retrieval
+        env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: node scripts/live-agent-smoke.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: CreditRepairAI-funded-agent-recovery
+          path: |
+            development-deployment.json
+            live-agent-smoke.json

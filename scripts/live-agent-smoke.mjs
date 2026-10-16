@@ -4,6 +4,7 @@ import { buildSync } from 'esbuild';
 import { randomUUID } from 'node:crypto';
 
 const report={fictionalDataOnly:true,authenticatedNativeFlowTested:false,passed:false,responseStatuses:[],apiErrorCodes:[],searchResultCount:0};
+let providerAnswer='';
 try {
   if(!(process.env.CONVEX_DEPLOY_KEY || '').startsWith('dev:lovable-dinosaur-379|') || !process.env.OPENAI_API_KEY)throw new Error('Protected development configuration required.');
   for(const key of ['OPENAI_API_KEY','CREDIT_LEGAL_VECTOR_STORE_ID','CREDIT_AGENT_MODEL']) {
@@ -19,6 +20,8 @@ try {
     if(String(args[0]).startsWith('https://api.openai.com/')) {
       report.responseStatuses.push(response.status);
       const data=await response.clone().json().catch(()=>null);
+      const outputText=(data?.output || []).flatMap(item=>item.content || []).filter(item=>item.type==='output_text').map(item=>item.text || '').join('\n');
+      if(outputText.trim())providerAnswer=outputText;
       const code=data?.error?.code;
       if(typeof code==='string' && /^[a-z0-9_]{1,80}$/.test(code))report.apiErrorCodes.push(code);
       for(const item of data?.output || [])if(item.type==='file_search_call' && item.status==='completed')report.searchResultCount+=(item.results || []).filter(r=>r.file_id && r.text?.trim()).length;
@@ -29,6 +32,10 @@ try {
   const {runCreditAgent}=await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
   const answer=await runCreditAgent({clientRequestId:randomUUID(),question:'Fictional software validation: explain why a difference between bureau-reported balances is only a review prompt. Describe what original records to compare and cite relevant FCRA provisions. Do not assert a proven error or promise an outcome.',caseSnapshot:{jurisdictionCode:'WA',reports:[],accounts:[],findings:[],disputes:[]}});
   report.educationalLabel=answer.includes('Educational information only');
+  report.rawAnswerLength=providerAnswer.length;
+  report.answerLength=answer.length;
+  report.rawFcraReference=/FCRA|1681|15 U\.S\.C/i.test(providerAnswer);
+  report.outcomeFilterRejected=answer.includes('did not pass the outcome-claim check');
   report.fcraReference=/FCRA|1681|15 U\.S\.C/i.test(answer);
   report.caseToolsAndFileSearchCompleted=true; // Core also requires non-empty, completed retrieval.
   report.passed=report.educationalLabel && report.fcraReference && report.searchResultCount>0 && answer.length>100;
