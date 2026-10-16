@@ -14,6 +14,7 @@ import com.creditrepairai.v2.data.AppRepository
 import com.creditrepairai.v2.auth.FirebaseSession
 import com.creditrepairai.v2.auth.NativeSession
 import com.creditrepairai.v2.auth.SessionFence
+import com.creditrepairai.v2.auth.AuthFeedback
 import com.creditrepairai.v2.legal.DisputeLetterGenerator
 import com.creditrepairai.v2.model.AppState
 import com.creditrepairai.v2.model.Bureau
@@ -56,6 +57,7 @@ data class AppUiState(
     val isAssistantThinking: Boolean = false,
     val isAgentEndpointConfigured: Boolean = false,
     val signedInEmail: String? = null,
+    val emailVerified: Boolean = false,
     val isAuthenticating: Boolean = false,
     val filingHelp: FilingHelpStatus = FilingHelpStatus(),
     val showAiDisclosure: Boolean = false,
@@ -84,6 +86,7 @@ class MainViewModel(
             data = repository.load(),
             isAgentEndpointConfigured = agentGateway.isConfigured,
             signedInEmail = session.email,
+            emailVerified = session.isEmailVerified,
         ),
     )
     val uiState: StateFlow<AppUiState> = _uiState.asStateFlow()
@@ -92,7 +95,7 @@ class MainViewModel(
             invalidateCase(owner)
             repository.selectOwner(owner)
             billing.reset()
-            _uiState.value = AppUiState(data = repository.load(), signedInEmail = session.email, isAgentEndpointConfigured = agentGateway.isConfigured)
+            _uiState.value = AppUiState(data = repository.load(), signedInEmail = session.email, emailVerified = session.isEmailVerified, isAgentEndpointConfigured = agentGateway.isConfigured)
         }
     }
 
@@ -106,7 +109,7 @@ class MainViewModel(
     }
 
     fun signInWithEmail(email: String, password: String, createAccount: Boolean) {
-        if (email.isBlank() || password.length < 6 || _uiState.value.isAuthenticating) return
+        if (email.isBlank() || password.isEmpty() || (createAccount && password.length < 6) || _uiState.value.isAuthenticating) return
         viewModelScope.launch {
             _uiState.update { it.copy(isAuthenticating = true, notice = null) }
             runCatching {
@@ -117,14 +120,16 @@ class MainViewModel(
                     it.copy(
                         data = repository.load(),
                         signedInEmail = session.email,
+                        emailVerified = session.isEmailVerified,
                         isAuthenticating = false,
                         notice = if (createAccount) "Account created. Check your email to verify it." else "Signed in securely.",
                     )
                 }
                 billing.refresh()
-            }.onFailure {
+            }.onFailure { error ->
+                if (error is CancellationException) throw error
                 _uiState.update { state ->
-                    state.copy(isAuthenticating = false, notice = "Sign-in did not complete. Check your details and try again.")
+                    state.copy(isAuthenticating = false, signedInEmail = session.email, emailVerified = session.isEmailVerified, notice = AuthFeedback.failureMessage(error))
                 }
             }
         }
@@ -137,12 +142,51 @@ class MainViewModel(
             runCatching { session.signInWithGoogle(activity) }
                 .onSuccess {
                     repository.selectOwner(session.uid)
-                    _uiState.update { it.copy(data = repository.load(), signedInEmail = session.email, isAuthenticating = false, notice = "Signed in with Google.") }
+                    _uiState.update { it.copy(data = repository.load(), signedInEmail = session.email, emailVerified = session.isEmailVerified, isAuthenticating = false, notice = "Signed in with Google.") }
                     billing.refresh()
                 }
-                .onFailure {
-                    _uiState.update { it.copy(isAuthenticating = false, notice = "Google sign-in did not complete. Try again or use email.") }
+                .onFailure { error ->
+                    if (error is CancellationException) throw error
+                    _uiState.update { it.copy(isAuthenticating = false, notice = AuthFeedback.failureMessage(error)) }
                 }
+        }
+    }
+
+    fun resetPassword(email: String) {
+        if (email.isBlank() || _uiState.value.isAuthenticating) return
+        viewModelScope.launch {
+            _uiState.update { it.copy(isAuthenticating = true, notice = null) }
+            try {
+                session.sendPasswordReset(email)
+                _uiState.update { it.copy(notice = "If this email has a password account, a reset email has been requested. Check your inbox and spam folder, then return to sign in.") }
+            } catch (error: Exception) {
+                if (error is CancellationException) throw error
+                _uiState.update { it.copy(notice = AuthFeedback.failureMessage(error)) }
+            } finally { _uiState.update { it.copy(isAuthenticating = false) } }
+        }
+    }
+
+    fun checkEmailVerification(resend: Boolean = false) {
+        if (session.uid == null || _uiState.value.isAuthenticating) return
+        val ticket = caseFence.ticket()
+        viewModelScope.launch {
+            _uiState.update { it.copy(isAuthenticating = true, notice = null) }
+            try {
+                session.refreshUser()
+                if (!caseFence.accepts(ticket, session.uid)) return@launch
+                if (resend && !session.isEmailVerified) session.resendVerification()
+                if (!caseFence.accepts(ticket, session.uid)) return@launch
+                _uiState.update { it.copy(emailVerified = session.isEmailVerified, notice = when {
+                    session.isEmailVerified -> "Email verified. Your sign-in token has been refreshed."
+                    resend -> "Verification email requested. Open its link, then tap I've verified my email."
+                    else -> "Email is not verified yet. Open the verification link in your inbox, then check again."
+                }) }
+            } catch (error: Exception) {
+                if (error is CancellationException) throw error
+                if (caseFence.accepts(ticket, session.uid)) _uiState.update { it.copy(notice = AuthFeedback.failureMessage(error)) }
+            } finally {
+                if (caseFence.accepts(ticket, session.uid)) _uiState.update { it.copy(isAuthenticating = false) }
+            }
         }
     }
 
@@ -379,6 +423,9 @@ class MainViewModel(
         mutate(null) { it.copy(policyAcceptance = it.policyAcceptance?.takeIf { old -> old.isCurrent } ?: acceptance) }
     }
     private fun allowAiOrDisclose(request: PendingAiRequest): Boolean {
+        if (!session.isEmailVerified) {
+            _uiState.update { it.copy(notice = "Verify your email before using AI. Open Settings to resend the link or refresh verification after opening it.") }; return false
+        }
         if (_uiState.value.data.policyAcceptance?.isCurrent != true) {
             _uiState.update { it.copy(notice = "Read and accept the current terms before using AI.") }; return false
         }

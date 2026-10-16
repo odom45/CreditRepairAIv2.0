@@ -37,10 +37,14 @@ class FilingFlowInstrumentedTest {
         val session = object : NativeSession {
             override val email = "fictional@example.invalid"
             override val uid = "fictional-device-flow-owner"
+            override val isEmailVerified = true
             override fun observeSession(onChange: (String?) -> Unit): () -> Unit = {}
             override suspend fun bearerToken(expectedSubject: String): String? = null
             override suspend fun signInWithEmail(email: String, password: String) = error("Offline fixture only")
             override suspend fun createAccount(email: String, password: String) = error("Offline fixture only")
+            override suspend fun sendPasswordReset(email: String) = error("Offline fixture only")
+            override suspend fun resendVerification() = error("Offline fixture only")
+            override suspend fun refreshUser() = Unit
             override suspend fun signInWithGoogle(activity: Activity) = error("Offline fixture only")
             override suspend fun deleteAccount() = error("Offline fixture only")
             override suspend fun signOut(context: Context) = Unit

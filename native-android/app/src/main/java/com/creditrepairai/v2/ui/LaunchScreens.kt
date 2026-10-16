@@ -35,6 +35,20 @@ import androidx.compose.foundation.selection.toggleable
 fun EducationLabel() { Text(EDUCATIONAL_LABEL, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), color = Amber400) }
 
 @Composable
+fun AccountVerificationCard(verified: Boolean, busy: Boolean, onCheck: () -> Unit, onResend: () -> Unit) {
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(if (verified) "Email verified" else "Verify your email for AI access", fontWeight = FontWeight.Bold)
+            if (!verified) {
+                Text("Open the verification link in your inbox, then check here. Local tools remain available while you verify.")
+                OutlinedButton(onClick = onCheck, enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text("I've verified my email — check again") }
+                OutlinedButton(onClick = onResend, enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text("Resend verification email") }
+            }
+        }
+    }
+}
+
+@Composable
 private fun LaunchColumn(content: @Composable ColumnScope.() -> Unit) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp), content = content)
 }

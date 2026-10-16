@@ -281,7 +281,7 @@ fun CreditRepairApp(viewModel: MainViewModel) {
 }
 
 @Composable
-private fun AuthenticationScreen(ui: AppUiState, viewModel: MainViewModel, onPolicies: () -> Unit) {
+internal fun AuthenticationScreen(ui: AppUiState, viewModel: MainViewModel, onPolicies: () -> Unit) {
     val context = LocalContext.current
     val activity = context as? Activity
     var email by rememberSaveable { mutableStateOf("") }
@@ -327,13 +327,16 @@ private fun AuthenticationScreen(ui: AppUiState, viewModel: MainViewModel, onPol
             Spacer(Modifier.height(12.dp))
             Button(
                 onClick = { viewModel.signInWithEmail(email, password, createAccount) },
-                enabled = !ui.isAuthenticating && email.contains("@") && password.length >= 6,
+                enabled = !ui.isAuthenticating && email.contains("@") && password.isNotEmpty() && (!createAccount || password.length >= 6),
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(if (createAccount) "Create account" else "Sign in")
             }
-            TextButton(onClick = { createAccount = !createAccount }, modifier = Modifier.fillMaxWidth()) {
+            TextButton(onClick = { createAccount = !createAccount }, enabled = !ui.isAuthenticating, modifier = Modifier.fillMaxWidth()) {
                 Text(if (createAccount) "Already have an account? Sign in" else "New here? Create an account")
+            }
+            if (!createAccount) TextButton(onClick = { viewModel.resetPassword(email) }, enabled = !ui.isAuthenticating && email.contains("@"), modifier = Modifier.fillMaxWidth()) {
+                Text("Forgot password? Send reset email")
             }
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                 HorizontalDivider(modifier = Modifier.weight(1f))
@@ -817,6 +820,9 @@ private fun AssistantScreen(ui: AppUiState, viewModel: MainViewModel) {
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
+            if (!ui.emailVerified) item {
+                AccountVerificationCard(false, ui.isAuthenticating, { viewModel.checkEmailVerification() }, { viewModel.checkEmailVerification(resend = true) })
+            }
             items(data.chat, key = { it.id }) { message ->
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = if (message.fromUser) Arrangement.End else Arrangement.Start) {
                     Surface(
@@ -952,6 +958,7 @@ private fun SettingsScreen(ui: AppUiState, viewModel: MainViewModel, onSubscript
     var jurisdictionCode by remember(data.jurisdictionCode) { mutableStateOf(data.jurisdictionCode) }
     ScreenList {
         item { Hero("Privacy & settings", "Control local credit data and review connection status.", Icons.Default.Settings) }
+        item { AccountVerificationCard(ui.emailVerified, ui.isAuthenticating, { viewModel.checkEmailVerification() }, { viewModel.checkEmailVerification(resend = true) }) }
         item { Button(onClick = onSubscription, modifier = Modifier.fillMaxWidth()) { Text("Access plans, restore & cancel") } }
         item { OutlinedButton(onClick = onPolicies, modifier = Modifier.fillMaxWidth()) { Text("Privacy policy, terms & support") } }
         item { OutlinedButton(onClick = onAgreements, modifier = Modifier.fillMaxWidth()) { Text("Review agreement choices") } }
