@@ -17,6 +17,7 @@ import com.creditrepairai.v2.auth.AuthFailure
 import com.creditrepairai.v2.auth.NativeSession
 import com.creditrepairai.v2.data.AppRepository
 import com.creditrepairai.v2.ui.theme.CreditRepairTheme
+import kotlinx.coroutines.CompletableDeferred
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Rule
@@ -34,13 +35,14 @@ class AuthenticationInstrumentedTest {
         var resetRequests = 0
         var resendRequests = 0
         var refreshRequests = 0
+        var refreshGate: CompletableDeferred<Unit>? = null
         override fun observeSession(onChange: (String?) -> Unit): () -> Unit = {}
         override suspend fun bearerToken(expectedSubject: String): String? = null
         override suspend fun signInWithEmail(email: String, password: String) { throw AuthFailure("ERROR_OPERATION_NOT_ALLOWED") }
         override suspend fun createAccount(email: String, password: String) { error("Offline fixture only") }
         override suspend fun sendPasswordReset(email: String) { resetRequests++ }
         override suspend fun resendVerification() { resendRequests++ }
-        override suspend fun refreshUser() { refreshRequests++ }
+        override suspend fun refreshUser() { refreshRequests++; refreshGate?.await() }
         override suspend fun signInWithGoogle(activity: Activity) { throw AuthFailure("GOOGLE_CANCELED") }
         override suspend fun deleteAccount() { error("Offline fixture only") }
         override suspend fun signOut(context: Context) { signedIn = false }
@@ -93,5 +95,27 @@ class AuthenticationInstrumentedTest {
         compose.runOnIdle { assertEquals(1, checks); assertEquals(0, resends) }
         compose.onNodeWithText("Resend verification email").performClick()
         compose.runOnIdle { assertEquals(1, resends) }
+    }
+    @Test fun clearingTheCaseWhileVerificationWaitsAllowsRetryAndRejectsTheOldReply() {
+        val session = Session(signedIn = true)
+        val gate = CompletableDeferred<Unit>()
+        session.refreshGate = gate
+        lateinit var vm: MainViewModel
+        compose.runOnIdle { vm = model(session); vm.checkEmailVerification() }
+        compose.waitUntil { vm.uiState.value.isAuthenticating }
+        compose.runOnIdle {
+            vm.clearData()
+            assertFalse(vm.uiState.value.isAuthenticating)
+            session.isEmailVerified = true
+            gate.complete(Unit)
+        }
+        compose.waitForIdle()
+        compose.runOnIdle {
+            assertFalse(vm.uiState.value.emailVerified)
+            session.refreshGate = null
+            vm.checkEmailVerification()
+        }
+        compose.waitUntil { vm.uiState.value.emailVerified }
+        assertEquals(2, session.refreshRequests)
     }
 }

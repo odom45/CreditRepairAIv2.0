@@ -103,7 +103,7 @@ class MainViewModel(
         caseFence.invalidate(owner)
         aiJob?.cancel()
         filingHelpJob?.cancel()
-        _uiState.update { it.copy(filingHelp = FilingHelpStatus(), showAiDisclosure = false, pendingAiRequest = null) }
+        _uiState.update { it.copy(filingHelp = FilingHelpStatus(), showAiDisclosure = false, pendingAiRequest = null, isAuthenticating = false) }
         activeImportJob?.cancel()
         FollowUpWorker.cancelAll(context)
     }
