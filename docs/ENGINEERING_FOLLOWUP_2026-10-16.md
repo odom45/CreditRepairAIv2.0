@@ -20,4 +20,4 @@ Run `node scripts/production-configuration.mjs` to check an explicitly selected 
 
 ## Verification
 
-Current-source results are recorded in `VERIFICATION_RESULTS.md` after checks complete. Earlier 2.0.2 test counts are historical evidence for that source, not a test result for this patch. No new production account, live authenticated sign-in, purchase, current consumer report or user-phone installation is claimed.
+Source `737ec444ac826bb888a008349af6ed40ab85fc42` passed 53 JVM tests, 39 backend/configuration tests, 18 device tests, the strict 60-case synthetic parser batch, and signed-release install/update acceptance on API 36. Exact CI links, limitations and release hashes are recorded in [the verification follow-up](VERIFICATION_RESULTS.md#203-completion-follow-up--2026-10-16-utc). The development deployment succeeded but its live AI check still failed at exhausted API credit. No new production account, live authenticated sign-in, purchase, current consumer report or user-phone installation is claimed.

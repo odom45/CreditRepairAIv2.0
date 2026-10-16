@@ -1,3 +1,5 @@
+> Historical assessment from October 12. For current 2.0.3 code, signing and test results, read [the latest verification record](VERIFICATION_RESULTS.md#203-completion-follow-up--2026-10-16-utc). The older counts and score below have not been recalculated and must not be presented as a current audit.
+
 ### 📊 1. Production Readiness Score
 
 **Engineering release-readiness estimate: 65/100. Verdict: HOLD production Play deployment.** This is a review score, not a probability that the application is secure and not a claim that only 65% of the features exist. A production verdict includes configuration, integration, device, signing and human review evidence; feature code presence is a different measure.
