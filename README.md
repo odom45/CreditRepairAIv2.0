@@ -2,6 +2,14 @@
 
 AI-powered 3-bureau credit report analysis and legal dispute generation.
 
+## Current native release — 2026-10-17
+
+Signed **2.0.5 / 20261018** tester APK and Play AAB are built with the existing owner certificate. This update prevents silently partial AI case snapshots, keeps a saved plan when AI fails, and protects filing receipts/responses from stale edits and repeat submissions. Verified native source `6440464c` passed **65 JVM tests, 26 Android device tests, lint with zero errors, and Android 16 release installation/update/launch**. The device run also passed the full 60-case synthetic parser batch: 54 supported reports, 1,620 core fields and six expected rejections. These fictional fixtures do not establish current real-bureau or owner-phone acceptance.
+
+Maintenance source `8cc79049` passed **47 backend/configuration/maintenance regressions**, typecheck, policy synchronization, source-pattern scan and official-source freshness checks. The existing development legal store now contains the amended Gorman opinion and corrected source card; no new store was created. A live fictional AI check passed with three HTTP-200 provider responses and 16 accepted source results. Read [the complete 2.0.5 verification record](docs/ENGINEERING_COMPLETION_2026-10-17.md).
+
+**Launch remains on hold:** Firebase package/certificate registration and native sign-in are unresolved. Production deployment, Play billing acceptance, owner-phone/current-report testing, operational support verification, independent legal/security reviews and the real-person closed test remain open. Purchases are disabled. The dated sections below are historical records; their old API-credit blockers and counts do not describe this latest verified snapshot.
+
 ## Native branch engineering update — 2026-10-15
 
 Native filing now has reviewable AI-generated field drafts; source supports monthly/yearly subscriptions and server-bound one-dispute purchases, with purchases disabled until account setup and review. Version 2.0.2 adds signed-release install/update acceptance. Current validation and account-dependent gates are tracked in [engineering completion](docs/ENGINEERING_COMPLETION_2026-10-15.md). The older release record below describes earlier tested source, not verification of these changes.

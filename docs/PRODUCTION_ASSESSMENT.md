@@ -1,3 +1,5 @@
+> Latest evidence: [2.0.5 completion record, October 17](ENGINEERING_COMPLETION_2026-10-17.md). The historical score below has not been recalculated. Firebase/native sign-in and external launch acceptance remain open.
+
 > Historical assessment from October 12. For current 2.0.3 code, signing and test results, read [the latest verification record](VERIFICATION_RESULTS.md#203-completion-follow-up--2026-10-16-utc). The older counts and score below have not been recalculated and must not be presented as a current audit.
 
 ### 📊 1. Production Readiness Score
