@@ -375,12 +375,12 @@ class MainViewModel(
         _uiState.update { it.copy(data = stateWithQuestion, isAssistantThinking = true, notice = null) }
 
         aiJob = viewModelScope.launch {
-            val answer = runCatching {
+            val result = runCatching {
                 service.syncPolicy(owner, requireNotNull(stateWithQuestion.policyAcceptance))
                 if (!caseFence.accepts(ticket, session.uid) || _uiState.value.data.policyAcceptance?.allowsAi != true) throw CancellationException()
                 agentGateway.answer(cleaned, stateWithQuestion, owner, caseScopeId)
             }
-                .getOrElse { error ->
+            val answer = result.getOrElse { error ->
                     if (error is CancellationException) throw error
                     "I could not use the secure legal agent: ${error.message ?: "service unavailable"}"
                 }
@@ -388,7 +388,7 @@ class MainViewModel(
             val current = _uiState.value.data
             val updated = current.copy(
                 chat = (current.chat + ChatMessage(fromUser = false, text = answer)).takeLast(40),
-                goal = if (saveAsPlan && current.goal.description == stateWithQuestion.goal.description && current.goal.targetMonths == stateWithQuestion.goal.targetMonths) current.goal.copy(aiPlan = answer) else current.goal,
+                goal = if (result.isSuccess && saveAsPlan && current.goal.description == stateWithQuestion.goal.description && current.goal.targetMonths == stateWithQuestion.goal.targetMonths) current.goal.copy(aiPlan = answer) else current.goal,
             )
             if (runCatching { repository.save(updated) }.isFailure) {
                 _uiState.update { it.copy(isAssistantThinking = false, notice = "Encrypted storage could not save the answer. Retry after checking device storage.") }; return@launch
@@ -458,7 +458,17 @@ class MainViewModel(
         }
     }
     fun updateAcquisition(state: AcquisitionState) = mutate(null) { it.copy(acquisition = state) }
-    fun saveFiling(record: FilingRecord) = mutate(null) { it.copy(filings = it.filings.filterNot { old -> old.id == record.id } + record) }
+    fun saveFiling(record: FilingRecord) {
+        val data = _uiState.value.data
+        if (data.disputes.none { it.id == record.disputeId } || record.step !in FilingGuide.steps.indices) return
+        val prior = data.filings.firstOrNull { it.id == record.id }
+        if (prior != null && (prior.disputeId != record.disputeId || prior.portal != record.portal)) return
+        if (data.filings.any { it.id != record.id && it.disputeId == record.disputeId && it.portal == record.portal }) return
+        // Editing a draft or handling a delayed UI event must not manufacture or erase history.
+        val saved = record.copy(confirmation = prior?.confirmation.orEmpty(), submittedAt = prior?.submittedAt,
+            responseReceivedAt = prior?.responseReceivedAt, reminder30 = prior?.reminder30, reminder45 = prior?.reminder45)
+        mutate(null) { it.copy(filings = it.filings.filterNot { old -> old.id == saved.id } + saved) }
+    }
     fun draftFilingAnswers(record: FilingRecord) = explainFiling(record, draftAnswers = true)
     fun applyFilingAnswers(record: FilingRecord) {
         val current = _uiState.value.data.filings.firstOrNull { it.id == record.id } ?: return
@@ -522,6 +532,12 @@ class MainViewModel(
         }
     }
     fun recordSubmission(record: FilingRecord, confirmation: String) {
+        val data = _uiState.value.data
+        val current = data.filings.firstOrNull { it.id == record.id } ?: return
+        val dispute = data.disputes.firstOrNull { it.id == current.disputeId } ?: return
+        if (current != record || (current.portal == FilingPortal.CFPB && !FilingGuide.cfpbReady(dispute, data.filings, System.currentTimeMillis()))) {
+            _uiState.update { it.copy(notice = "Filing details changed or the prior-dispute check is incomplete. Review the current saved filing before recording its receipt.") }; return
+        }
         val saved = runCatching { FilingGuide.submitted(record, confirmation, System.currentTimeMillis()) }.getOrElse {
             _uiState.update { it.copy(notice = "Review the facts and enter the actual portal receipt before recording a submission.") }; return
         }
@@ -532,7 +548,11 @@ class MainViewModel(
         rescheduleCheckins()
     }
     fun recordResponse(record: FilingRecord) {
-        saveFiling(record.copy(responseReceivedAt = System.currentTimeMillis()))
+        val current = _uiState.value.data.filings.firstOrNull { it.id == record.id } ?: return
+        if (current.disputeId != record.disputeId || current.portal != record.portal || current.submittedAt == null || current.responseReceivedAt != null) return
+        mutate("Company response recorded.") { state -> state.copy(filings = state.filings.map {
+            if (it.id == current.id) it.copy(responseReceivedAt = System.currentTimeMillis()) else it
+        }) }
         FollowUpWorker.cancelAll(context)
         rescheduleCheckins()
     }

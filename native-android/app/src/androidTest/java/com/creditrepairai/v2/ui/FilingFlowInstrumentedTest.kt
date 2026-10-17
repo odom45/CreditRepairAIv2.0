@@ -102,6 +102,46 @@ class FilingFlowInstrumentedTest {
         compose.onNodeWithText("I reviewed the facts against my records").performScrollTo().performClick()
         compose.onNodeWithText("Copy Item / furnisher 1/1").performScrollTo().assertIsEnabled()
     }
+    @Test fun staleEditorCannotEraseAReceiptOrResponseAndRepeatedSubmissionKeepsDates() {
+        compose.runOnIdle {
+            val model = model(); model.loadDemo(); model.createDispute(model.uiState.value.data.findings.first())
+            val dispute = model.uiState.value.data.disputes.single()
+            val draft = FilingRecord(disputeId = dispute.id, portal = FilingPortal.EQUIFAX, step = 6, reviewed = true)
+            model.saveFiling(draft)
+            model.recordSubmission(draft, "Fictional-original-receipt")
+            val submitted = model.uiState.value.data.filings.single()
+            assertNotNull(submitted.submittedAt)
+            model.recordSubmission(submitted, "Fictional-repeat-receipt")
+            assertEquals(submitted, model.uiState.value.data.filings.single())
+            model.recordResponse(submitted)
+            val responded = model.uiState.value.data.filings.single()
+            assertNotNull(responded.responseReceivedAt)
+            model.saveFiling(draft.copy(problem = "Edited after sending", reviewed = false))
+            val edited = model.uiState.value.data.filings.single()
+            assertEquals("Fictional-original-receipt", edited.confirmation)
+            assertEquals(responded.submittedAt, edited.submittedAt)
+            assertEquals(responded.responseReceivedAt, edited.responseReceivedAt)
+            assertEquals(responded.reminder45, edited.reminder45)
+            assertEquals("Edited after sending", AppRepository(context).load().filings.single().problem)
+        }
+    }
+    @Test fun editedOrDeletedFilingCannotUseAnOldReviewToRecordSubmission() {
+        compose.runOnIdle {
+            val model = model(); model.loadDemo(); model.createDispute(model.uiState.value.data.findings.first())
+            val dispute = model.uiState.value.data.disputes.single()
+            val reviewed = FilingRecord(disputeId = dispute.id, portal = FilingPortal.EQUIFAX, step = 6, reviewed = true)
+            model.saveFiling(reviewed)
+            model.saveFiling(reviewed.copy(problem = "New facts", reviewed = false))
+            model.recordSubmission(reviewed, "Fictional-stale-receipt")
+            assertNull(model.uiState.value.data.filings.single().submittedAt)
+            model.recordResponse(reviewed)
+            assertNull(model.uiState.value.data.filings.single().responseReceivedAt)
+            model.deleteDispute(dispute.id)
+            model.saveFiling(reviewed)
+            model.recordSubmission(reviewed, "Fictional-deleted-receipt")
+            assertTrue(model.uiState.value.data.filings.isEmpty())
+        }
+    }
     @Test fun mainWorkflowRequiresAgreementOnboardingAndKeepsSafeDemoNavigable() {
         lateinit var viewModel: MainViewModel
         compose.runOnIdle { viewModel = model() }

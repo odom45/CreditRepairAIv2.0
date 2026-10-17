@@ -1,6 +1,7 @@
 package com.creditrepairai.v2.ai
 
 import com.creditrepairai.v2.model.AppState
+import com.creditrepairai.v2.guidance.FilingGuide
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -29,6 +30,7 @@ class CreditAgentGateway(
 
     suspend fun answer(question: String, state: AppState, expectedSubject: String, caseScopeId: String? = null): String = withContext(Dispatchers.IO) {
         check(isConfigured) { "The secure AI service has not been configured for this build." }
+        val snapshot = state.forAgentCase(caseScopeId)
         val token = tokenProvider.bearerToken(expectedSubject)?.takeIf(String::isNotBlank)
             ?: error("Secure AI sign-in is not connected. No report data was sent.")
         val safeQuestion = SensitiveDataRedactor.redact(question)
@@ -50,7 +52,7 @@ class CreditAgentGateway(
             val body = JSONObject()
                 .put("clientRequestId", UUID.randomUUID().toString())
                 .put("question", safeQuestion)
-                .put("caseSnapshot", state.forCase(caseScopeId).toSafeAgentJson())
+                .put("caseSnapshot", snapshot.toSafeAgentJson())
                 .apply { if (caseScopeId != null) put("caseScopeId", caseScopeId) }
                 .toString()
             connection.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
@@ -69,14 +71,6 @@ class CreditAgentGateway(
         }
     }
 
-    private fun AppState.forCase(caseId: String?): AppState {
-        if (caseId == null) return this
-        val dispute = disputes.singleOrNull { it.id == caseId } ?: error("The selected dispute is no longer available.")
-        return copy(disputes = listOf(dispute), findings = findings.filter { it.id == dispute.findingId },
-            accounts = accounts.filter { it.creditor == dispute.creditor && it.bureau in dispute.bureaus },
-            reports = reports.filter { it.bureau in dispute.bureaus }, filings = filings.filter { it.disputeId == caseId })
-    }
-
     private fun AppState.toSafeAgentJson(): JSONObject = JSONObject().apply {
         put("jurisdictionCode", jurisdictionCode)
         put("reports", JSONArray().apply {
@@ -89,7 +83,7 @@ class CreditAgentGateway(
             }
         })
         put("accounts", JSONArray().apply {
-            accounts.take(200).forEach { account ->
+            accounts.forEach { account ->
                 put(JSONObject()
                     .put("creditor", SensitiveDataRedactor.redact(account.creditor))
                     .put("accountSuffix", account.accountSuffix.takeLast(4))
@@ -109,7 +103,7 @@ class CreditAgentGateway(
             }
         })
         put("findings", JSONArray().apply {
-            findings.take(100).forEach { finding ->
+            findings.forEach { finding ->
                 put(JSONObject()
                     .put("id", finding.id)
                     .put("type", finding.type.name)
@@ -122,7 +116,7 @@ class CreditAgentGateway(
             }
         })
         put("disputes", JSONArray().apply {
-            disputes.take(100).forEach { dispute ->
+            disputes.forEach { dispute ->
                 put(JSONObject()
                     .put("id", dispute.id)
                     .put("findingId", dispute.findingId)
@@ -133,7 +127,7 @@ class CreditAgentGateway(
                     .put("createdAt", dispute.createdAt)
                     .put("sentAt", dispute.sentAt ?: JSONObject.NULL)
                     .put("craResponseDueAt", dispute.craResponseDueAt ?: JSONObject.NULL)
-                    .put("responseReceived", filings.any { it.disputeId == dispute.id && it.responseReceivedAt != null }))
+                    .put("responseReceived", FilingGuide.hasBureauResponse(dispute, filings, System.currentTimeMillis())))
             }
         })
     }

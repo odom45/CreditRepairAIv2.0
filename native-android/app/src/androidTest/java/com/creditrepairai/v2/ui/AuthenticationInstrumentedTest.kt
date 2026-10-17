@@ -17,6 +17,7 @@ import com.creditrepairai.v2.auth.AuthFailure
 import com.creditrepairai.v2.auth.NativeSession
 import com.creditrepairai.v2.data.AppRepository
 import com.creditrepairai.v2.ui.theme.CreditRepairTheme
+import com.creditrepairai.v2.guidance.CreditGoal
 import kotlinx.coroutines.CompletableDeferred
 import org.junit.After
 import org.junit.Assert.*
@@ -117,5 +118,19 @@ class AuthenticationInstrumentedTest {
         }
         compose.waitUntil { vm.uiState.value.emailVerified }
         assertEquals(2, session.refreshRequests)
+    }
+    @Test fun unavailableAgentKeepsThePreviouslySavedPlan() {
+        val session = Session(signedIn = true).apply { isEmailVerified = true }
+        lateinit var vm: MainViewModel
+        compose.runOnIdle {
+            vm = model(session); vm.acceptPolicies(true, true); vm.completeOnboarding(); vm.setAiSharing(true)
+            vm.saveGoal(CreditGoal("Fictional goal", 12, "Previously reviewed plan"))
+            vm.buildGoalPlan()
+        }
+        compose.waitUntil { !vm.uiState.value.isAssistantThinking && vm.uiState.value.data.chat.last().text.startsWith("I could not use") }
+        compose.runOnIdle {
+            assertEquals("Previously reviewed plan", vm.uiState.value.data.goal.aiPlan)
+            assertEquals("Previously reviewed plan", AppRepository(context).load().goal.aiPlan)
+        }
     }
 }

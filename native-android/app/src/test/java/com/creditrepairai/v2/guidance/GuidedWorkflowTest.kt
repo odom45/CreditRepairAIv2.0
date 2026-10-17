@@ -92,13 +92,27 @@ class GuidedWorkflowTest {
         assertFalse(FilingGuide.cfpbReady(draft, emptyList(), 100))
         assertFalse(FilingGuide.cfpbReady(draft.copy(sentAt = 1, craResponseDueAt = 200), emptyList(), 100))
         assertTrue(FilingGuide.cfpbReady(draft.copy(sentAt = 1, craResponseDueAt = 200), emptyList(), 200))
-        assertTrue(FilingGuide.cfpbReady(draft.copy(sentAt = 1), listOf(FilingRecord(disputeId = draft.id, portal = FilingPortal.EQUIFAX, responseReceivedAt = 5)), 100))
+        assertTrue(FilingGuide.cfpbReady(draft.copy(sentAt = 1), listOf(FilingRecord(disputeId = draft.id, portal = FilingPortal.EQUIFAX, submittedAt = 1, responseReceivedAt = 5)), 100))
+    }
+    @Test fun cfpbResponseCannotStandInForAPriorBureauResponse() {
+        val dispute = fictionalDispute().copy(sentAt = 10, craResponseDueAt = 200)
+        val record = FilingRecord(disputeId = dispute.id, portal = FilingPortal.CFPB, submittedAt = 10, responseReceivedAt = 20)
+        assertFalse(FilingGuide.cfpbReady(dispute, listOf(record), 100))
+        assertFalse(FilingGuide.hasBureauResponse(dispute, listOf(record.copy(portal = FilingPortal.EQUIFAX, submittedAt = null)), 100))
+        assertFalse(FilingGuide.hasBureauResponse(dispute, listOf(record.copy(portal = FilingPortal.EQUIFAX, responseReceivedAt = 201)), 100))
+        assertTrue(FilingGuide.hasBureauResponse(dispute, listOf(record.copy(portal = FilingPortal.EQUIFAX)), 100))
     }
     @Test fun submissionCreatesCheckinsNotOutcomeDates() {
-        val record = FilingGuide.submitted(FilingRecord(disputeId = "d", portal = FilingPortal.EQUIFAX, reviewed = true), "Fictional-receipt", 1000)
+        val record = FilingGuide.submitted(FilingRecord(disputeId = "d", portal = FilingPortal.EQUIFAX, step = 6, reviewed = true), "Fictional-receipt", 1000)
         assertEquals(1000L, record.submittedAt)
         assertEquals(1000L + 30L * 86400000, record.reminder30)
         assertEquals(1000L + 45L * 86400000, record.reminder45)
+    }
+    @Test fun submittedReceiptCannotBeRecordedTwiceOrBeforeTheFinalStep() {
+        val record = FilingRecord(disputeId = "d", portal = FilingPortal.EQUIFAX, step = 6, reviewed = true)
+        val saved = FilingGuide.submitted(record, "Fictional-receipt", 1000)
+        assertTrue(runCatching { FilingGuide.submitted(saved, "Second-receipt", 2000) }.isFailure)
+        assertTrue(runCatching { FilingGuide.submitted(record.copy(step = 5), "Early-receipt", 1000) }.isFailure)
     }
     @Test(expected = IllegalArgumentException::class) fun cannotRecordUnreviewedSubmission() { FilingGuide.submitted(FilingRecord(disputeId = "d", portal = FilingPortal.CFPB), "receipt", 0) }
     @Test fun plannerUsesActualFindingsAndMissingReports() {

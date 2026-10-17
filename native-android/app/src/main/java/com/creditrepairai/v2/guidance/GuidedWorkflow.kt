@@ -163,15 +163,23 @@ object FilingGuide {
     }
     fun currentExplanation(dispute: Dispute, record: FilingRecord): String? = record.explanation
         ?.takeIf { it.step == record.step && it.contextKey == contextKey(dispute, record) }?.text
+    fun hasBureauResponse(dispute: Dispute, records: List<FilingRecord>, now: Long): Boolean =
+        dispute.sentAt?.let { sent -> sent > 0 && sent <= now && records.any {
+            it.disputeId == dispute.id && it.portal != FilingPortal.CFPB &&
+                it.submittedAt?.let { submitted -> submitted > 0 && submitted <= now &&
+                    it.responseReceivedAt?.let { response -> response >= submitted && response >= sent && response <= now } == true
+                } == true
+        } } == true
     fun cfpbReady(dispute: Dispute, records: List<FilingRecord>, now: Long): Boolean =
-        dispute.sentAt != null && (records.any { it.disputeId == dispute.id && it.responseReceivedAt != null } ||
+        dispute.sentAt?.let { it > 0 && it <= now } == true && (hasBureauResponse(dispute, records, now) ||
             dispute.craResponseDueAt?.let { it <= now } == true)
     fun canReview(record: FilingRecord): Boolean =
         !listOf(record.problem, record.companyResponse, record.resolution, record.evidence).any {
             Regex("\\[(?:ADD|YOUR|INSERT|VERIFY)\\b", RegexOption.IGNORE_CASE).containsMatchIn(it)
         }
     fun submitted(record: FilingRecord, confirmation: String, now: Long): FilingRecord {
-        require(record.reviewed && canReview(record) && confirmation.isNotBlank())
+        require(record.reviewed && canReview(record) && record.step == steps.lastIndex &&
+            record.submittedAt == null && confirmation.isNotBlank() && now > 0)
         return record.copy(confirmation = confirmation.trim().take(120), submittedAt = now, step = 6,
             reminder30 = now + 30L * 86400000, reminder45 = now + 45L * 86400000)
     }
