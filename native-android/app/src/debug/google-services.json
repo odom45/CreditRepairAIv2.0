@@ -9,10 +9,63 @@
       "client_info": {
         "mobilesdk_app_id": "1:287473718478:android:6c8b8089f0502981c02c9f",
         "android_client_info": {
+          "package_name": "com.creditrepairai.v2"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "287473718478-98m6smke1ateli8ruk0ngb9mno19d3js.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.creditrepairai.v2",
+            "certificate_hash": "205fff3ef1e10e141d7dd861adc1aaf01963a550"
+          }
+        },
+        {
+          "client_id": "287473718478-tl2ejgh867pglsrskirponujvli5stbd.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.creditrepairai.v2",
+            "certificate_hash": "b03616117fd6a0379277071b2635e41964746a87"
+          }
+        },
+        {
+          "client_id": "287473718478-pjtf11jpvbes5t1e8vuvtvd0ugmri37v.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDAa1YN6dwST9GzkzTyTqwK2c1zqAJkKKE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "287473718478-pjtf11jpvbes5t1e8vuvtvd0ugmri37v.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:287473718478:android:1ba4f3b577b0e3edc02c9f",
+        "android_client_info": {
           "package_name": "com.creditrepairai.v2.debug"
         }
       },
       "oauth_client": [
+        {
+          "client_id": "287473718478-743k4pjrdg1kjdbpuot5v91s3keqo37u.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.creditrepairai.v2.debug",
+            "certificate_hash": "b03616117fd6a0379277071b2635e41964746a87"
+          }
+        },
         {
           "client_id": "287473718478-pjtf11jpvbes5t1e8vuvtvd0ugmri37v.apps.googleusercontent.com",
           "client_type": 3

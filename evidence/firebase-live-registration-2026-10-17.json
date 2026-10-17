@@ -1,0 +1,39 @@
+{
+  "checkedAt": "2026-10-17T14:57:10.160364+00:00",
+  "checks": [
+    {
+      "package": "com.creditrepairai.v2",
+      "check": "registered",
+      "status": 200,
+      "projectMatches": true,
+      "errorCode": null
+    },
+    {
+      "package": "com.creditrepairai.v2",
+      "check": "invalid-control",
+      "status": 400,
+      "projectMatches": false,
+      "errorCode": "INVALID_CERT_HASH"
+    },
+    {
+      "package": "com.creditrepairai.v2.debug",
+      "check": "registered",
+      "status": 200,
+      "projectMatches": true,
+      "errorCode": null
+    },
+    {
+      "package": "com.creditrepairai.v2.debug",
+      "check": "invalid-control",
+      "status": 400,
+      "projectMatches": false,
+      "errorCode": "INVALID_CERT_HASH"
+    }
+  ],
+  "webClientConsistent": true,
+  "consoleProviders": {
+    "emailPassword": "ENABLED",
+    "google": "ENABLED"
+  },
+  "nativePhoneLogin": "NOT_YET_VERIFIED"
+}

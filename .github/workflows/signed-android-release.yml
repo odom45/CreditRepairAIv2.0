@@ -12,11 +12,11 @@ on:
       version_code:
         description: "Play version code (must exceed the previous release)"
         required: true
-        default: "20261018"
+        default: "20261019"
       version_name:
         description: "User-visible version name"
         required: true
-        default: "2.0.5"
+        default: "2.0.6"
 
 permissions:
   contents: read
@@ -52,8 +52,8 @@ jobs:
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           CREDIT_AI_GATEWAY_URL: ${{ secrets.CREDIT_AI_GATEWAY_URL }}
-          VERSION_CODE: ${{ inputs.version_code || '20261018' }}
-          VERSION_NAME: ${{ inputs.version_name || '2.0.5' }}
+          VERSION_CODE: ${{ inputs.version_code || '20261019' }}
+          VERSION_NAME: ${{ inputs.version_name || '2.0.6' }}
         run: |
           test -n "$KEYSTORE_BASE64"
           test -n "$ANDROID_KEYSTORE_PASSWORD"
@@ -75,8 +75,8 @@ jobs:
       - name: Build signed Play bundle and tester APK
         env:
           CREDIT_AI_GATEWAY_URL: ${{ secrets.CREDIT_AI_GATEWAY_URL }}
-          VERSION_CODE: ${{ inputs.version_code || '20261018' }}
-          VERSION_NAME: ${{ inputs.version_name || '2.0.5' }}
+          VERSION_CODE: ${{ inputs.version_code || '20261019' }}
+          VERSION_NAME: ${{ inputs.version_name || '2.0.6' }}
         run: ./gradlew bundleRelease assembleRelease -PCREDIT_AI_GATEWAY_URL="$CREDIT_AI_GATEWAY_URL" -PCREDIT_VERSION_CODE="$VERSION_CODE" -PCREDIT_VERSION_NAME="$VERSION_NAME" -PCREDIT_SUPPORT_EMAIL="$CREDIT_SUPPORT_EMAIL" -PCREDIT_PAID_ACCESS_ENABLED="$CREDIT_PAID_ACCESS_ENABLED" --stacktrace
 
       - name: Verify signatures
@@ -116,7 +116,7 @@ jobs:
           working-directory: native-android
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
-          script: ../scripts/release-install-smoke.sh "$RUNNER_TEMP/creditrepairai-previous/app-release.apk" app/build/outputs/apk/release/app-release.apk "${{ inputs.version_code || '20261018' }}" "$GITHUB_WORKSPACE/release-install-smoke.json"
+          script: ../scripts/release-install-smoke.sh "$RUNNER_TEMP/creditrepairai-previous/app-release.apk" app/build/outputs/apk/release/app-release.apk "${{ inputs.version_code || '20261019' }}" "$GITHUB_WORKSPACE/release-install-smoke.json"
 
       - name: Upload release acceptance evidence
         uses: actions/upload-artifact@v4

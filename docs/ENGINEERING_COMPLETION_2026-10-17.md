@@ -44,7 +44,7 @@ Both files use package `com.creditrepairai.v2`, version `2.0.5`, version code `2
 
 ## Remaining account and external acceptance
 
-1. Genuine Firebase package/certificate registrations and refreshed configurations, correct providers, and Google/email sign-in on the exact signed APK. The existing downloaded configs still lack the owner signing certificate and incorrectly share one Firebase app ID. The last live certificate check returned `INVALID_CERT_HASH`; this update cannot register a certificate by editing local JSON.
+1. Registration/configuration portion completed in the later [Firebase repair](FIREBASE_REPAIR_2026-10-17.md): genuine distinct app registrations, owner fingerprints, downloaded configurations and enabled providers verified. Google/email sign-in on the updated signed APK still requires native phone acceptance.
 2. Verified native sign-in → email verification → separate AI consent → Convex → AI, including owner-phone and deletion/re-authentication failure paths. Emulator offline identities and server-side fictional AI checks do not establish this chain.
 3. Explicit production deployment credentials/configuration and protected production acceptance. The working tester gateway remains the authorized development deployment.
 4. Play products, server-account permissions and real license-test purchase/restore/expiry/refund behavior before enabling purchases. No charge or refund was performed here.

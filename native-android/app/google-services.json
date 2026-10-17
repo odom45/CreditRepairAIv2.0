@@ -22,6 +22,14 @@
           }
         },
         {
+          "client_id": "287473718478-tl2ejgh867pglsrskirponujvli5stbd.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.creditrepairai.v2",
+            "certificate_hash": "b03616117fd6a0379277071b2635e41964746a87"
+          }
+        },
+        {
           "client_id": "287473718478-pjtf11jpvbes5t1e8vuvtvd0ugmri37v.apps.googleusercontent.com",
           "client_type": 3
         }
