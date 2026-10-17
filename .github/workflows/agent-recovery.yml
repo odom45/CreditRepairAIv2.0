@@ -25,6 +25,10 @@ jobs:
       - run: npm run policies:check
       - run: npm run legal:check
       - run: npm run audit:source-secrets
+      - name: Refresh the corrected official opinion in the existing legal store
+        env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
+        run: node scripts/refresh-gorman-source.mjs
       - name: Deploy checked backend to the existing authorized development deployment
         env:
           CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
@@ -41,3 +45,4 @@ jobs:
           path: |
             development-deployment.json
             live-agent-smoke.json
+            legal-source-refresh.json

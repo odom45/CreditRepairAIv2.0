@@ -1,0 +1,48 @@
+{
+  "reviewedOn": "2026-10-17",
+  "scope": "Official opinion identity, source version and bounded existing synopsis comparison only. No citator, later-history or attorney treatment approval.",
+  "treatmentStatus": "ATTORNEY_REVIEW_PENDING",
+  "cases": [
+    {
+      "id": "safeco-v-burr-2007",
+      "url": "https://tile.loc.gov/storage-services/service/ll/usrep/usrep551/usrep551047/usrep551047.pdf",
+      "result": "OFFICIAL_PDF_RETRIEVED_AND_SYNOPSIS_COMPARED"
+    },
+    {
+      "id": "transunion-v-ramirez-2021",
+      "url": "https://www.supremecourt.gov/opinions/20pdf/20-297_4g25.pdf",
+      "result": "OFFICIAL_PDF_RETRIEVED_AND_SYNOPSIS_COMPARED"
+    },
+    {
+      "id": "usda-v-kirtz-2024",
+      "url": "https://www.supremecourt.gov/opinions/23pdf/601us1r03_4gcj.pdf",
+      "result": "OFFICIAL_PDF_RETRIEVED_AND_SYNOPSIS_COMPARED"
+    },
+    {
+      "id": "sessa-v-trans-union-2023",
+      "url": "https://www.govinfo.gov/content/pkg/USCOURTS-ca2-22-00087/pdf/USCOURTS-ca2-22-00087-0.pdf",
+      "result": "OFFICIAL_PDF_RETRIEVED_AND_SYNOPSIS_COMPARED"
+    },
+    {
+      "id": "gorman-v-wolpoff-2009",
+      "url": "https://www.govinfo.gov/content/pkg/USCOURTS-ca9-06-17226/pdf/USCOURTS-ca9-06-17226-1.pdf",
+      "result": "OFFICIAL_PDF_RETRIEVED_AND_SYNOPSIS_COMPARED"
+    },
+    {
+      "id": "hinkle-v-midland-2016",
+      "url": "https://www.govinfo.gov/content/pkg/USCOURTS-ca11-15-10398/pdf/USCOURTS-ca11-15-10398-0.pdf",
+      "result": "OFFICIAL_PDF_RETRIEVED_AND_SYNOPSIS_COMPARED"
+    },
+    {
+      "id": "marchisio-v-carrington-2019",
+      "url": "https://media.ca11.uscourts.gov/opinions/pub/files/201710584.pdf",
+      "result": "OFFICIAL_PDF_RETRIEVED_AND_SYNOPSIS_COMPARED"
+    },
+    {
+      "id": "losch-v-nationstar-2021",
+      "url": "https://www.govinfo.gov/content/pkg/USCOURTS-ca11-20-10695/pdf/USCOURTS-ca11-20-10695-0.pdf",
+      "result": "OFFICIAL_PDF_RETRIEVED_AND_SYNOPSIS_COMPARED"
+    }
+  ],
+  "correction": "Gorman source changed from the January 12 original opinion to the October 21 amended opinion matching the existing citation and date."
+}

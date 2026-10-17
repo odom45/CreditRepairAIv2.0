@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "reviewedOn": "2026-09-16",
+  "reviewedOn": "2026-10-17",
   "reviewIntervalDays": 30,
   "usePolicy": "EDUCATIONAL_PRECEDENT_WITH_SCOPE_CHECK",
   "treatmentStatus": "ATTORNEY_REVIEW_PENDING",
@@ -60,7 +60,7 @@
       "court": "United States Court of Appeals for the Ninth Circuit",
       "decidedOn": "2009-10-21",
       "precedentialScope": "NINTH_CIRCUIT",
-      "officialOpinionUrl": "https://www.govinfo.gov/content/pkg/USCOURTS-ca9-06-17226/pdf/USCOURTS-ca9-06-17226-0.pdf",
+      "officialOpinionUrl": "https://www.govinfo.gov/content/pkg/USCOURTS-ca9-06-17226/pdf/USCOURTS-ca9-06-17226-1.pdf",
       "holding": "A furnisher's section 1681s-2(b) investigation may not be unreasonable or cursory, and its scope depends on the specific information in the CRA notice. An omission can be inaccurate or incomplete when it creates a materially misleading impression, including failure after investigation to report a bona fide dispute in the circumstances addressed.",
       "operationalUse": "Draft precise bureau disputes that identify the field, evidence, and why the presentation is materially misleading; do not treat a generic disagreement notation as automatic relief.",
       "limits": "Binding in the Ninth Circuit only; the opinion distinguishes initial furnisher duties from duties triggered after CRA notice and does not validate meritless disputes."

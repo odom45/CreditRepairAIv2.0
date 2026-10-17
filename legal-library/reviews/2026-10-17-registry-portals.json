@@ -1,0 +1,473 @@
+{
+  "checkedAt": "2026-10-17T13:19:11.082718+00:00",
+  "scope": "Registry portal identity and reachability only; no state provision, effective date, legal interpretation or case treatment review.",
+  "results": [
+    {
+      "code": "AL",
+      "url": "https://alison.legislature.state.al.us/code-of-alabama",
+      "status": 200,
+      "finalUrl": "https://alison.legislature.state.al.us/code-of-alabama",
+      "title": "Alabama Legislature",
+      "bytesRead": 59579,
+      "result": "reachable"
+    },
+    {
+      "code": "AK",
+      "url": "https://www.akleg.gov/basis/statutes.asp",
+      "status": 200,
+      "finalUrl": "https://www.akleg.gov/basis/statutes.asp",
+      "title": "Alaska Statutes 2025",
+      "bytesRead": 14353,
+      "result": "reachable"
+    },
+    {
+      "code": "AZ",
+      "url": "https://www.azleg.gov/arstitle/",
+      "status": 200,
+      "finalUrl": "https://www.azleg.gov/arstitle/",
+      "title": "Arizona Revised Statutes",
+      "bytesRead": 90944,
+      "result": "reachable"
+    },
+    {
+      "code": "AR",
+      "url": "https://www.arkleg.state.ar.us/ArkansasLaw",
+      "status": 200,
+      "finalUrl": "https://www.arkleg.state.ar.us/ArkansasLaw",
+      "title": "Arkansas Law - Arkansas State Legislature",
+      "bytesRead": 38669,
+      "result": "reachable"
+    },
+    {
+      "code": "CA",
+      "url": "https://leginfo.legislature.ca.gov/faces/codes.xhtml",
+      "status": 403,
+      "result": "restricted"
+    },
+    {
+      "code": "CO",
+      "url": "https://leg.colorado.gov/colorado-revised-statutes",
+      "status": 200,
+      "finalUrl": "https://leg.colorado.gov/laws/colorado-revised-statutes",
+      "title": "Colorado Revised Statutes | Colorado General Assembly",
+      "bytesRead": 41080,
+      "result": "reachable"
+    },
+    {
+      "code": "CT",
+      "url": "https://www.cga.ct.gov/current/pub/titles.htm",
+      "status": 502,
+      "result": "failed"
+    },
+    {
+      "code": "DE",
+      "url": "https://delcode.delaware.gov/",
+      "status": 200,
+      "finalUrl": "https://delcode.delaware.gov/",
+      "title": "Delaware Code Online",
+      "bytesRead": 20946,
+      "result": "reachable"
+    },
+    {
+      "code": "DC",
+      "url": "https://code.dccouncil.gov/",
+      "status": 200,
+      "finalUrl": "https://code.dccouncil.gov/",
+      "title": "D.C. Law Library",
+      "bytesRead": 8697,
+      "result": "reachable"
+    },
+    {
+      "code": "FL",
+      "url": "https://www.leg.state.fl.us/Statutes/",
+      "status": 200,
+      "finalUrl": "https://www.leg.state.fl.us/Statutes/",
+      "title": "Statutes & Constitution :View Statutes : Online Sunshine",
+      "bytesRead": 26359,
+      "result": "reachable"
+    },
+    {
+      "code": "GA",
+      "url": "https://www.legis.ga.gov/georgia-code",
+      "status": 200,
+      "finalUrl": "https://www.legis.ga.gov/georgia-code",
+      "title": "Georgia General Assembly",
+      "bytesRead": 1492,
+      "result": "reachable"
+    },
+    {
+      "code": "HI",
+      "url": "https://www.capitol.hawaii.gov/hrscurrent/",
+      "status": 403,
+      "result": "restricted"
+    },
+    {
+      "code": "ID",
+      "url": "https://legislature.idaho.gov/statutesrules/idstat/",
+      "status": 200,
+      "finalUrl": "https://legislature.idaho.gov/statutesrules/idstat/",
+      "title": "Idaho Statutes \u2013 Idaho State Legislature",
+      "bytesRead": 101800,
+      "result": "reachable"
+    },
+    {
+      "code": "IL",
+      "url": "https://www.ilga.gov/legislation/ilcs/ilcs.asp",
+      "status": 502,
+      "result": "failed"
+    },
+    {
+      "code": "IN",
+      "url": "https://iga.in.gov/laws/current/ic/titles",
+      "status": 200,
+      "finalUrl": "https://iga.in.gov/laws/current/ic/titles",
+      "title": "Indiana General Assembly",
+      "bytesRead": 691,
+      "result": "reachable"
+    },
+    {
+      "code": "IA",
+      "url": "https://www.legis.iowa.gov/law/iowaCode",
+      "status": 200,
+      "finalUrl": "https://www.legis.iowa.gov/law/iowaCode",
+      "title": "Iowa Legislature - Iowa Code",
+      "bytesRead": 24791,
+      "result": "reachable"
+    },
+    {
+      "code": "KS",
+      "url": "https://www.kslegislature.gov/li/b2025_26/statute/",
+      "status": 200,
+      "finalUrl": "https://www.kslegislature.gov/b2025_26/laws/",
+      "title": "Kansas Statutes",
+      "bytesRead": 57066,
+      "result": "reachable"
+    },
+    {
+      "code": "KY",
+      "url": "https://apps.legislature.ky.gov/law/statutes/",
+      "status": 200,
+      "finalUrl": "https://apps.legislature.ky.gov/law/statutes/",
+      "title": "Kentucky Revised Statutes",
+      "bytesRead": 109502,
+      "result": "reachable"
+    },
+    {
+      "code": "LA",
+      "url": "https://legis.la.gov/Legis/Laws_Toc.aspx",
+      "status": 200,
+      "finalUrl": "https://legis.la.gov/Legis/Laws_Toc.aspx",
+      "title": "Louisiana Laws Table of Contents - Louisiana State Legislature - s",
+      "bytesRead": 35458,
+      "result": "reachable"
+    },
+    {
+      "code": "ME",
+      "url": "https://legislature.maine.gov/statutes/",
+      "status": 200,
+      "finalUrl": "https://legislature.maine.gov/statutes/",
+      "title": "List Of Titles",
+      "bytesRead": 17625,
+      "result": "reachable"
+    },
+    {
+      "code": "MD",
+      "url": "https://mgaleg.maryland.gov/mgawebsite/Laws/Statutes",
+      "status": 200,
+      "finalUrl": "https://mgaleg.maryland.gov/mgawebsite/Laws/Statutes",
+      "title": "Laws - Statutes",
+      "bytesRead": 80200,
+      "result": "reachable"
+    },
+    {
+      "code": "MA",
+      "url": "https://malegislature.gov/Laws/GeneralLaws",
+      "status": 200,
+      "finalUrl": "https://malegislature.gov/Laws/GeneralLaws",
+      "title": "General Laws",
+      "bytesRead": 79906,
+      "result": "reachable"
+    },
+    {
+      "code": "MI",
+      "url": "https://legislature.mi.gov/Laws/MCL",
+      "status": 400,
+      "result": "failed"
+    },
+    {
+      "code": "MN",
+      "url": "https://www.revisor.mn.gov/statutes/",
+      "status": 200,
+      "finalUrl": "https://www.revisor.mn.gov/statutes/",
+      "title": "2025 MN Statutes",
+      "bytesRead": 97006,
+      "result": "reachable"
+    },
+    {
+      "code": "MS",
+      "url": "https://www.legislature.ms.gov/laws/",
+      "status": 502,
+      "result": "failed"
+    },
+    {
+      "code": "MO",
+      "url": "https://revisor.mo.gov/main/Home.aspx",
+      "status": 200,
+      "finalUrl": "https://revisor.mo.gov/main/Home.aspx",
+      "title": "Missouri Revisor of Statutes - Revised Statutes of Missouri(RSMo)",
+      "bytesRead": 195892,
+      "result": "reachable"
+    },
+    {
+      "code": "MT",
+      "url": "https://archive.legmt.gov/bills/mca/",
+      "status": 200,
+      "finalUrl": "https://mca.legmt.gov/bills/mca/",
+      "title": "Table of Contents - MCA",
+      "bytesRead": 20094,
+      "result": "reachable"
+    },
+    {
+      "code": "NE",
+      "url": "https://nebraskalegislature.gov/laws/browse-statutes.php",
+      "status": 200,
+      "finalUrl": "https://nebraskalegislature.gov/laws/browse-statutes.php",
+      "title": "Nebraska Legislature - Browse Statutes by Chapter",
+      "bytesRead": 74832,
+      "result": "reachable"
+    },
+    {
+      "code": "NV",
+      "url": "https://www.leg.state.nv.us/NRS/",
+      "status": 200,
+      "finalUrl": "https://www.leg.state.nv.us/NRS/",
+      "title": "NRS \u2014 TABLE OF TITLES AND CHAPTERS",
+      "bytesRead": 160261,
+      "result": "reachable"
+    },
+    {
+      "code": "NH",
+      "url": "https://gc.nh.gov/rsa/html/indexes/default.html",
+      "status": 200,
+      "finalUrl": "https://gc.nh.gov/rsa/html/indexes/default.html",
+      "title": "",
+      "bytesRead": 212,
+      "result": "reachable"
+    },
+    {
+      "code": "NJ",
+      "url": "https://lis.njleg.state.nj.us/nxt/gateway.dll/statutes",
+      "status": 200,
+      "finalUrl": "https://lis.njleg.state.nj.us/nxt/gateway.dll/statutes",
+      "title": "",
+      "bytesRead": 204,
+      "result": "reachable"
+    },
+    {
+      "code": "NM",
+      "url": "https://nmonesource.com/nmos/en/nav.do",
+      "status": 200,
+      "finalUrl": "https://nmonesource.com/nmos/en/nav.do",
+      "title": "Home - NMOneSource.com",
+      "bytesRead": 11989,
+      "result": "reachable"
+    },
+    {
+      "code": "NY",
+      "url": "https://www.nysenate.gov/legislation/laws/CONSOLIDATED",
+      "status": 200,
+      "finalUrl": "https://www.nysenate.gov/legislation/laws/CONSOLIDATED",
+      "title": "NYS Open Legislation | NYSenate.gov",
+      "bytesRead": 69416,
+      "result": "reachable"
+    },
+    {
+      "code": "NC",
+      "url": "https://www.ncleg.gov/Laws/GeneralStatutes",
+      "status": 200,
+      "finalUrl": "https://www.ncleg.gov/Laws/GeneralStatutes",
+      "title": "General Statutes - North Carolina General Assembly",
+      "bytesRead": 60657,
+      "result": "reachable"
+    },
+    {
+      "code": "ND",
+      "url": "https://ndlegis.gov/general-information/north-dakota-century-code",
+      "status": 200,
+      "finalUrl": "https://ndlegis.gov/general-information/north-dakota-century-code/index.html",
+      "title": "Century Code | North Dakota Legislative Branch",
+      "bytesRead": 199657,
+      "result": "reachable"
+    },
+    {
+      "code": "OH",
+      "url": "https://codes.ohio.gov/ohio-revised-code",
+      "status": 200,
+      "finalUrl": "https://codes.ohio.gov/ohio-revised-code",
+      "title": "Ohio Revised Code | Ohio Laws",
+      "bytesRead": 18076,
+      "result": "reachable"
+    },
+    {
+      "code": "OK",
+      "url": "https://oksenate.gov/about/publications/oklahoma-statutes",
+      "status": 307,
+      "result": "failed"
+    },
+    {
+      "code": "OR",
+      "url": "https://www.oregonlegislature.gov/bills_laws/Pages/ORS.aspx",
+      "status": 403,
+      "result": "restricted"
+    },
+    {
+      "code": "PA",
+      "url": "https://www.legis.state.pa.us/WU01/LI/LI/CT/HTM/",
+      "status": 403,
+      "result": "restricted"
+    },
+    {
+      "code": "RI",
+      "url": "https://webserver.rilegislature.gov/Statutes/",
+      "status": 200,
+      "finalUrl": "https://webserver.rilegislature.gov/Statutes/",
+      "title": "",
+      "bytesRead": 4444,
+      "result": "reachable"
+    },
+    {
+      "code": "SC",
+      "url": "https://www.scstatehouse.gov/code/statmast.php",
+      "status": 200,
+      "finalUrl": "https://www.scstatehouse.gov/code/statmast.php",
+      "title": "South Carolina Code of Laws",
+      "bytesRead": 30816,
+      "result": "reachable"
+    },
+    {
+      "code": "SD",
+      "url": "https://sdlegislature.gov/Statutes",
+      "status": 200,
+      "finalUrl": "https://sdlegislature.gov/Statutes",
+      "title": "Loading... | South Dakota Legislature",
+      "bytesRead": 5982,
+      "result": "reachable"
+    },
+    {
+      "code": "TN",
+      "url": "https://www.capitol.tn.gov/legislation/",
+      "status": 200,
+      "finalUrl": "https://www.capitol.tn.gov/legislation/",
+      "title": "Legislation - TN General Assembly",
+      "bytesRead": 41881,
+      "result": "reachable"
+    },
+    {
+      "code": "TX",
+      "url": "https://statutes.capitol.texas.gov/",
+      "status": 200,
+      "finalUrl": "https://statutes.capitol.texas.gov/",
+      "title": "Texas Constitution and Statutes",
+      "bytesRead": 200000,
+      "result": "reachable"
+    },
+    {
+      "code": "UT",
+      "url": "https://le.utah.gov/xcode/code.html",
+      "status": 200,
+      "finalUrl": "https://le.utah.gov/xcode/code.html",
+      "title": "Utah Code Index",
+      "bytesRead": 26585,
+      "result": "reachable"
+    },
+    {
+      "code": "VT",
+      "url": "https://legislature.vermont.gov/statutes/",
+      "status": 200,
+      "finalUrl": "https://legislature.vermont.gov/statutes/",
+      "title": "Vermont Laws",
+      "bytesRead": 63639,
+      "result": "reachable"
+    },
+    {
+      "code": "VA",
+      "url": "https://law.lis.virginia.gov/vacode",
+      "status": 200,
+      "finalUrl": "https://law.lis.virginia.gov/vacode/",
+      "title": "Code of Virginia",
+      "bytesRead": 34696,
+      "result": "reachable"
+    },
+    {
+      "code": "WA",
+      "url": "https://app.leg.wa.gov/RCW/default.aspx",
+      "status": 200,
+      "finalUrl": "https://app.leg.wa.gov/RCW/default.aspx",
+      "title": "Revised Code of Washington (RCW)",
+      "bytesRead": 130363,
+      "result": "reachable"
+    },
+    {
+      "code": "WV",
+      "url": "https://code.wvlegislature.gov/",
+      "status": 200,
+      "finalUrl": "https://code.wvlegislature.gov/",
+      "title": "West Virginia Code | \u00a71",
+      "bytesRead": 37266,
+      "result": "reachable"
+    },
+    {
+      "code": "WI",
+      "url": "https://docs.legis.wisconsin.gov/statutes",
+      "status": 200,
+      "finalUrl": "https://docs.legis.wisconsin.gov/statutes",
+      "title": "Wisconsin Legislative Documents - Statutes Related",
+      "bytesRead": 14824,
+      "result": "reachable"
+    },
+    {
+      "code": "WY",
+      "url": "https://www.wyoleg.gov/Legislation/Statutes",
+      "status": 200,
+      "finalUrl": "https://www.wyoleg.gov/Legislation/Statutes",
+      "title": "Legislative Service Office",
+      "bytesRead": 11411,
+      "result": "reachable"
+    }
+  ],
+  "changes": [
+    {
+      "from": "https://leg.colorado.gov/colorado-revised-statutes",
+      "to": "https://leg.colorado.gov/laws/colorado-revised-statutes"
+    },
+    {
+      "from": "https://www.kslegislature.gov/li/b2025_26/statute/",
+      "to": "https://www.kslegislature.gov/b2025_26/laws/"
+    },
+    {
+      "from": "https://archive.legmt.gov/bills/mca/",
+      "to": "https://mca.legmt.gov/bills/mca/"
+    },
+    {
+      "from": "https://ndlegis.gov/general-information/north-dakota-century-code",
+      "to": "https://ndlegis.gov/general-information/north-dakota-century-code/index.html"
+    },
+    {
+      "from": "https://law.lis.virginia.gov/vacode",
+      "to": "https://law.lis.virginia.gov/vacode/"
+    },
+    {
+      "from": "https://www.ilga.gov/legislation/ilcs/ilcs.asp",
+      "to": "https://www.ilga.gov/Legislation/ILCS/Chapters"
+    },
+    {
+      "from": "https://www.legislature.ms.gov/laws/",
+      "to": "https://www.legislature.ms.gov/general-information/"
+    },
+    {
+      "from": "https://oksenate.gov/about/publications/oklahoma-statutes",
+      "to": "https://www.oklegislature.gov/tsrs_os_oc.aspx"
+    }
+  ],
+  "limitations": "HTTP 200 and official-host identity do not establish current provision text. Four portals restricted automated access; five initial requests were unavailable. Illinois and Mississippi replacement paths were confirmed by official-site search results; their page bodies remain blocked in this environment. Connecticut and Michigan require later reachability follow-up. All 51 entries remain SOURCE_REGISTRY_ONLY; federal source and opinion review dates are unchanged."
+}
