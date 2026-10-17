@@ -19,4 +19,18 @@ Owner certificate SHA-256: `1E:C8:AA:A5:A3:B2:59:AC:8D:0E:C1:6F:66:B8:05:DD:F8:2
 
 The certificate registration check does not sign in a person or issue a Firebase user token. Native Google/email sign-in, verification and reauthentication/deletion paths on the new signed APK, followed by the consented Firebase-to-Convex-to-AI request, still require phone acceptance. Play App Signing uses its own certificate; register the actual Play certificate before accepting a Play-distributed build. Existing development gateway and disabled purchases are retained. Production and commercial-launch requirements from the engineering record remain open.
 
-Build/test results will be recorded after the signed release workflow completes.
+## Verified 2.0.6 release
+
+Source: `fd354880383f1cafede6d409cf12e481fb042173` on `android-native-rebuild`.
+
+- [Signed release workflow](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/39043071809): passed. APK v2/v3 and AAB verification passed. Android API-36 prior install, in-place update to version code `20261019` and launch passed. Paid access was explicitly false.
+- [Complete native/backend workflow](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/39043071846): passed. Downloaded reports show 65 JVM tests and 26 API-35 device tests, all with zero failures/skips. Lint: zero errors/fatal issues, 29 existing warnings. All 47 backend/configuration/maintenance tests passed. Dependency audits returned no advisories.
+- Authorized development deployment and fictional live AI/retrieval check passed. This does not establish native authenticated phone acceptance.
+- Downloaded artifact ZIP SHA-256 checks passed before extraction. APK and AAB integrity and owner certificate independently verified locally. The expected Firebase app ID and web OAuth client are present in the APK resources.
+
+| Deliverable | Bytes | SHA-256 |
+| --- | ---: | --- |
+| CreditRepairAI-2.0.6.apk | 48,177,945 | `229c711660f4426ba16bb669784c3bd9b4bae4826d4319099b6dd0cf1d8a3af6` |
+| CreditRepairAI-2.0.6.aab | 28,305,914 | `918e79c9a35d4b88c6548d41c2a907c6b0fdf4fbe0ef3599a3fcc76721966d0c` |
+
+The registration/configuration blocker is resolved. The phone acceptance and launch requirements above remain open.
