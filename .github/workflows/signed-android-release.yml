@@ -24,8 +24,8 @@ permissions:
 
 jobs:
   signed-release:
-    # Source publication must not create a release before account integration is accepted.
-    if: vars.CREDIT_RELEASE_READY == 'true'
+    # Public release and a deliberately purchase-disabled production test build are separate modes.
+    if: vars.CREDIT_RELEASE_READY == 'true' || vars.CREDIT_BUILD_PRODUCTION_TEST_CANDIDATE == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 55
     defaults:
@@ -36,6 +36,7 @@ jobs:
       CREDIT_AI_GATEWAY_URL: ${{ vars.CREDIT_PRODUCTION_GATEWAY_URL }}
       CREDIT_SUPPORT_EMAIL: ${{ vars.CREDIT_SUPPORT_EMAIL || 'admin@synergyfundai.com' }}
       CREDIT_PAID_ACCESS_ENABLED: ${{ vars.CREDIT_PAID_ACCESS_ENABLED || 'false' }}
+      CREDIT_RELEASE_PURPOSE: ${{ vars.CREDIT_BUILD_PRODUCTION_TEST_CANDIDATE == 'true' && 'production-test' || 'production' }}
       ANDROID_KEYSTORE_FILE: ${{ github.workspace }}/native-android/creditrepair-upload.jks
       ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
       ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
@@ -54,8 +55,8 @@ jobs:
         env:
           CONVEX_DEPLOY_KEY: ${{ secrets.CREDIT_PRODUCTION_DEPLOY_KEY }}
         run: |
-          test "$CREDIT_PAID_ACCESS_ENABLED" = true
           npm ci --ignore-scripts
+          node --input-type=module -e 'import { validateReleaseMode } from "./scripts/production-configuration.mjs"; console.log(JSON.stringify(validateReleaseMode(process.env)));'
           node scripts/firebase-signing-readiness.mjs --require-play-ready
           node scripts/production-configuration.mjs
 

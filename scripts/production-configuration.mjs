@@ -2,6 +2,15 @@ import { spawnSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
+export function validateReleaseMode(env) {
+  const purpose = env.CREDIT_RELEASE_PURPOSE || 'production';
+  if (!['production', 'production-test'].includes(purpose)) throw Error('Select a recognized release purpose.');
+  const paid = env.CREDIT_PAID_ACCESS_ENABLED;
+  if (purpose === 'production' && paid !== 'true') throw Error('The public production release requires configured paid access.');
+  if (purpose === 'production-test' && paid !== 'false') throw Error('The production test candidate must keep purchases disabled.');
+  return { releasePurpose: purpose, purchasesEnabled: paid === 'true' };
+}
+
 // Never print keys, provider bodies or protected CLI output.
 export function validateProductionTarget(env) {
   const deployment = env.CREDIT_PRODUCTION_DEPLOYMENT || '';
