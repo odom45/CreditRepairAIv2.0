@@ -1,6 +1,10 @@
 name: Deploy configured production legal agent
 
 on:
+  push:
+    branches: [android-native-rebuild]
+    paths:
+      - ".github/workflows/deploy-legal-agent.yml"
   workflow_dispatch:
 
 permissions:
