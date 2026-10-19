@@ -10,7 +10,6 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import org.json.JSONObject
 
-data class PlanOffer(val price: String, val offerToken: String)
 data class BillingUiState(
     val offers: Map<AccessPlan, PlanOffer> = emptyMap(), val busy: Boolean = false,
     val message: String = "Refresh to check Google Play.", val entitlement: Entitlement = Entitlement(),
@@ -67,14 +66,25 @@ class PlayBillingManager(context: Context, private val service: SecureService, p
                 it.offerId == null && it.rentalDetails == null && it.preorderDetails == null
             } ?: return null
             val token = selected.offerToken?.takeIf { it.isNotBlank() } ?: return null
-            return PlanOffer(selected.formattedPrice, token)
+            if (selected.priceAmountMicros <= 0 || selected.formattedPrice.isBlank() ||
+                !selected.priceCurrencyCode.matches(Regex("[A-Z]{3}"))) return null
+            return PlanOffer(token, listOf(PricePhase(selected.formattedPrice, selected.priceAmountMicros,
+                selected.priceCurrencyCode, "", 1, PriceRecurrence.ONCE)))
         }
-        val selected = product.subscriptionOfferDetails?.singleOrNull {
-            it.offerId == null && it.pricingPhases.pricingPhaseList.singleOrNull()?.let { phase ->
-                phase.billingPeriod == plan.period && phase.recurrenceMode == ProductDetails.RecurrenceMode.INFINITE_RECURRING
-            } == true
-        } ?: return null
-        return PlanOffer(selected.pricingPhases.pricingPhaseList.single().formattedPrice, selected.offerToken)
+        return OfferPricing.select(plan, product.subscriptionOfferDetails.orEmpty()
+            .filter { it.installmentPlanDetails == null }
+            .map { option ->
+                val phases = option.pricingPhases.pricingPhaseList.map { phase ->
+                    PricePhase(phase.formattedPrice, phase.priceAmountMicros, phase.priceCurrencyCode,
+                        phase.billingPeriod, phase.billingCycleCount, when (phase.recurrenceMode) {
+                            ProductDetails.RecurrenceMode.INFINITE_RECURRING -> PriceRecurrence.RECURRING
+                            ProductDetails.RecurrenceMode.FINITE_RECURRING -> PriceRecurrence.LIMITED
+                            ProductDetails.RecurrenceMode.NON_RECURRING -> PriceRecurrence.ONCE
+                            else -> PriceRecurrence.UNSUPPORTED
+                        })
+                }
+                SubscriptionOption(option.basePlanId, option.offerId, option.offerToken, phases)
+            })
     }
     private fun query(ticket: SessionFence.Ticket) {
         AccessPlan.entries.forEach { plan ->

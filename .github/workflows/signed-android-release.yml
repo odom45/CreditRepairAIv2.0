@@ -12,11 +12,11 @@ on:
       version_code:
         description: "Play version code (must exceed the previous release)"
         required: true
-        default: "20261019"
+        default: "20261020"
       version_name:
         description: "User-visible version name"
         required: true
-        default: "2.0.6"
+        default: "2.0.7"
 
 permissions:
   contents: read
@@ -24,12 +24,16 @@ permissions:
 
 jobs:
   signed-release:
+    # Source publication must not create a release before account integration is accepted.
+    if: vars.CREDIT_RELEASE_READY == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 55
     defaults:
       run:
         working-directory: native-android
     env:
+      CREDIT_PRODUCTION_DEPLOYMENT: ${{ vars.CREDIT_PRODUCTION_DEPLOYMENT }}
+      CREDIT_AI_GATEWAY_URL: ${{ vars.CREDIT_PRODUCTION_GATEWAY_URL }}
       CREDIT_SUPPORT_EMAIL: ${{ vars.CREDIT_SUPPORT_EMAIL || 'admin@synergyfundai.com' }}
       CREDIT_PAID_ACCESS_ENABLED: ${{ vars.CREDIT_PAID_ACCESS_ENABLED || 'false' }}
       ANDROID_KEYSTORE_FILE: ${{ github.workspace }}/native-android/creditrepair-upload.jks
@@ -39,6 +43,21 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Require production integration before building a release
+        working-directory: .
+        env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CREDIT_PRODUCTION_DEPLOY_KEY }}
+        run: |
+          test "$CREDIT_PAID_ACCESS_ENABLED" = true
+          npm ci --ignore-scripts
+          node scripts/firebase-signing-readiness.mjs --require-play-ready
+          node scripts/production-configuration.mjs
 
       - uses: actions/setup-java@v4
         with:
@@ -51,9 +70,8 @@ jobs:
       - name: Validate protected release configuration
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          CREDIT_AI_GATEWAY_URL: ${{ secrets.CREDIT_AI_GATEWAY_URL }}
-          VERSION_CODE: ${{ inputs.version_code || '20261019' }}
-          VERSION_NAME: ${{ inputs.version_name || '2.0.6' }}
+          VERSION_CODE: ${{ inputs.version_code || '20261020' }}
+          VERSION_NAME: ${{ inputs.version_name || '2.0.7' }}
         run: |
           test -n "$KEYSTORE_BASE64"
           test -n "$ANDROID_KEYSTORE_PASSWORD"
@@ -74,9 +92,8 @@ jobs:
 
       - name: Build signed Play bundle and tester APK
         env:
-          CREDIT_AI_GATEWAY_URL: ${{ secrets.CREDIT_AI_GATEWAY_URL }}
-          VERSION_CODE: ${{ inputs.version_code || '20261019' }}
-          VERSION_NAME: ${{ inputs.version_name || '2.0.6' }}
+          VERSION_CODE: ${{ inputs.version_code || '20261020' }}
+          VERSION_NAME: ${{ inputs.version_name || '2.0.7' }}
         run: ./gradlew bundleRelease assembleRelease -PCREDIT_AI_GATEWAY_URL="$CREDIT_AI_GATEWAY_URL" -PCREDIT_VERSION_CODE="$VERSION_CODE" -PCREDIT_VERSION_NAME="$VERSION_NAME" -PCREDIT_SUPPORT_EMAIL="$CREDIT_SUPPORT_EMAIL" -PCREDIT_PAID_ACCESS_ENABLED="$CREDIT_PAID_ACCESS_ENABLED" --stacktrace
 
       - name: Verify signatures
@@ -116,7 +133,7 @@ jobs:
           working-directory: native-android
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
-          script: ../scripts/release-install-smoke.sh "$RUNNER_TEMP/creditrepairai-previous/app-release.apk" app/build/outputs/apk/release/app-release.apk "${{ inputs.version_code || '20261019' }}" "$GITHUB_WORKSPACE/release-install-smoke.json"
+          script: ../scripts/release-install-smoke.sh "$RUNNER_TEMP/creditrepairai-previous/app-release.apk" app/build/outputs/apk/release/app-release.apk "${{ inputs.version_code || '20261020' }}" "$GITHUB_WORKSPACE/release-install-smoke.json"
 
       - name: Upload release acceptance evidence
         uses: actions/upload-artifact@v4

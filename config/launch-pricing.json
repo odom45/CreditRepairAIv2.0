@@ -1,0 +1,32 @@
+{
+  "currency": "USD",
+  "region": "US",
+  "status": "owner-authorized-plan-not-yet-saved-in-play",
+  "monthly": {
+    "productId": "creditrepairai_monthly",
+    "basePlanId": "monthly",
+    "period": "P1M",
+    "renewalPrice": "30.00",
+    "offerId": "launch-intro",
+    "introPrice": "24.99",
+    "introCycles": 3,
+    "eligibility": "new-customer-acquisition-never-subscribed-to-any-subscription-in-app"
+  },
+  "yearly": {
+    "productId": "creditrepairai_yearly",
+    "basePlanId": "yearly",
+    "period": "P1Y",
+    "renewalPrice": "249.99",
+    "offerId": "launch-intro",
+    "introPrice": "199.99",
+    "introCycles": 1,
+    "eligibility": "new-customer-acquisition-never-subscribed-to-any-subscription-in-app"
+  },
+  "case": {
+    "productId": "creditrepairai_dispute",
+    "price": "9.99",
+    "type": "standard-buy",
+    "scope": "one-saved-dispute-across-its-bureau-and-CFPB-guides",
+    "renewal": false
+  }
+}

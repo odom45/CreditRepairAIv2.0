@@ -8,6 +8,7 @@
     { "package": "com.creditrepairai.v2", "config": "native-android/app/google-services.json" },
     { "package": "com.creditrepairai.v2.debug", "config": "native-android/app/src/debug/google-services.json" }
   ],
-  "playAppSigningSha1": null,
+  "playAppSigningSha1": "6A:17:AC:C0:2F:CD:94:50:0A:B2:1A:0A:A0:AA:DC:13:C9:28:4B:F1",
+  "playAppSigningSha256": "7A:86:78:AC:A5:0F:BF:B9:7D:AC:E1:12:7F:C0:F9:D1:C9:EC:1B:BD:85:50:83:7F:1D:94:FD:E5:F7:81:DA:EE",
   "note": "Public certificate metadata only. Play-delivered APKs require the actual Play App Signing certificate in Firebase as well. Do not manufacture OAuth entries in google-services.json."
 }

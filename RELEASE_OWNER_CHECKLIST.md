@@ -2,6 +2,20 @@
 
 Review snapshot: 2026-10-12. Code implemented is not equivalent to production verified. Do not mark the application 100% launch-ready until every required gate below has evidence.
 
+## October 18 production-first release gate
+
+The signed-release job now requires repository variable `CREDIT_RELEASE_READY=true`; it is skipped while that variable is absent/false, including manual dispatch. Before any Android release assembly it requires paid mode, genuine Firebase Play-signing configuration and matching production server settings via the existing production configuration checker. Its gateway comes from `CREDIT_PRODUCTION_GATEWAY_URL` and deployment credential from `CREDIT_PRODUCTION_DEPLOY_KEY`, rather than the development gateway secret. Leave the release gate closed until production integration and license billing acceptance have evidence. Publishing source may run ordinary development checks but must not produce a premature release candidate.
+
+## October 17 introductory pricing and release-candidate update
+
+The [current pricing and release-candidate record](docs/LAUNCH_PRICING_AND_RELEASE_CANDIDATE_2026-10-17.md) supersedes the older standard-price-only offer selection below. The app now supports eligible `launch-intro` offers: monthly for three P1M cycles and yearly for one P1Y cycle, followed by an infinite recurring base plan. Prices, calculated discounts, eligibility and renewal disclosures come from Play. Intended US prices are recorded in `config/launch-pricing.json`; that file is an operator plan, not evidence of saved Play settings. Candidate version defaults are 2.0.7 / 20261020. No new signed artifact or production acceptance is established by this source change.
+
+## October 17 live integration preparation
+
+The direct-APK Firebase registration repair and signed 2.0.6 verification are recorded in [Firebase repair](docs/FIREBASE_REPAIR_2026-10-17.md). The later [integration acceptance record](docs/INTEGRATION_ACCEPTANCE_2026-10-17.md) records production settings and actual Play draft/test setup. Older missing-credit and upload-certificate findings below are historical. Production deployment, native authenticated acceptance and real Play billing acceptance remain open.
+
+Before distributing through Play, run `node scripts/firebase-signing-readiness.mjs --require-play-ready`. The actual Play signing certificate is now recorded, but its registration is absent from the downloaded Firebase configuration. Upload-certificate readiness alone does not establish Play sign-in readiness. Download genuine Firebase configuration after registering the Play certificate; never manufacture OAuth entries locally.
+
 ## October 16 funded AI and authentication update
 
 The funded live agent/retrieval check now passes, including the output-filter/citation corrections verified in recovery run 38958991401; the previous exhausted-credit result below is historical. Native 2.0.4 adds actionable login errors, password recovery, the explicit Google button flow and email verification/token refresh. Current Firebase certificate checks still reject the owner's upload certificate. See [the current completion and acceptance record](docs/ENGINEERING_COMPLETION_2026-10-16.md) for exact evidence and remaining account gates.
@@ -104,7 +118,7 @@ Do not commit service-account JSON, private keys, upload keys, purchase tokens, 
 
 Play Console for `com.creditrepairai.v2` → Monetize → Products → Subscriptions:
 
-1. Configure `creditrepairai_monthly` with one auto-renewing monthly base plan (`P1M`) and the owner-approved price/territories. The app selects standard auto-renewing base plans only; trial/discount offers are not used. Also configure `creditrepairai_yearly` with a standard P1Y plan and the owner-approved price, and `creditrepairai_dispute` with one standard buy option (no multi-quantity, rental or preorder options). One-time purchase consumption occurs only after the verified account/case binding is saved.
+1. Configure `creditrepairai_monthly` with base plan ID `monthly` (`P1M`, $30 renewal), and `creditrepairai_yearly` with base plan ID `yearly` (`P1Y`, $249.99 renewal), US availability. Add offer ID `launch-intro` to each: $24.99 per month for three monthly cycles, and $199.99 for one annual cycle, respectively. Use Play-evaluated new-customer eligibility (never subscribed to any subscription in the app). The app prefers that exact eligible offer and otherwise displays the regular base plan. Configure `creditrepairai_dispute` at $9.99 with one standard buy option (no multi-quantity, rental or preorder options). One-time purchase consumption occurs only after the verified account/case binding is saved. These are intended settings; consult the current record for actual saved state.
 2. Description: monthly software access to guided tools, AI assistance and education; results are not guaranteed. Cancel anytime through Google Play. Do not describe this as fee-for-deletion, representation or a promise to improve a score.
 3. Configure license testers and install an appropriately signed internal-test build. The `.debug` package is separate and is expected to report billing unavailable unless separately configured; local parsing/education remains available.
 4. Give the existing server service account the required app-level Play permissions and enable the Android Publisher API. Run the documented license-test lifecycle for both subscription periods and one-time case access, including pending, refund, repeat purchase for a different case, restore, account switch and deletion/retry; never test actual customer refunds or real disputes here.

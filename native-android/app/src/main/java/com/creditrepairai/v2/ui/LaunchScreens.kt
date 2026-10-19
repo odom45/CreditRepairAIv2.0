@@ -261,12 +261,20 @@ fun SubscriptionScreen(viewModel: MainViewModel) {
         Text(state.message)
         if (!BuildConfig.PAID_ACCESS_ENABLED) Text("Purchases are disabled pending owner configuration and compliance review. No charge can be started in this build.", color = Amber400)
         listOf(AccessPlan.MONTHLY, AccessPlan.YEARLY).forEach { plan ->
-            val price = state.offers[plan]?.price
+            val offer = state.offers[plan]
+            val price = offer?.price
+            Text(plan.label, style = MaterialTheme.typography.titleLarge)
+            offer?.discount?.let { Text("Introductory offer — $it off the renewal price", fontWeight = FontWeight.Bold) }
+            offer?.let { Text(it.disclosure(plan)) }
+            if (plan == AccessPlan.YEARLY && offer != null) state.offers[AccessPlan.MONTHLY]?.let { monthly ->
+                com.creditrepairai.v2.billing.OfferPricing.annualComparison(offer, monthly)?.let { Text(it) }
+            }
             Button(onClick = { (context as? Activity)?.let { viewModel.billing.purchase(it, plan) } },
                 enabled = BuildConfig.PAID_ACCESS_ENABLED && price != null && !state.busy && !subscribed, modifier = Modifier.fillMaxWidth()) {
                 Text(if (price == null) "${plan.label} plan unavailable" else "${plan.label}: $price / ${if (plan == AccessPlan.MONTHLY) "month" else "year"}")
             }
         }
+        Text("Introductory offers appear only when Google Play confirms eligibility. The renewal amount and offer duration above apply to the selected plan; Google Play confirms final terms at checkout.")
         Text("Subscriptions renew for the displayed period until canceled. Cancel in Google Play; cancellation normally stops the next renewal. An existing subscriber should manage that subscription before choosing another plan.")
         Text("One dispute — one-time purchase", style = MaterialTheme.typography.titleLarge)
         if (app.data.disputes.isEmpty()) Text("Create a dispute from Analysis to choose it here.")

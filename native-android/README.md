@@ -42,7 +42,7 @@ Repository variable `CREDIT_SUPPORT_EMAIL` is also required; `CREDIT_PAID_ACCESS
 
 For an existing Play listing, use the upload key already registered with that app. For a new listing, create the owner-controlled upload key once, back it up securely, and never commit it. The workflow emits a signed AAB for Play and a signed release APK for testers, then verifies both signatures.
 
-When starting the workflow, enter a Play `version_code` greater than every previously uploaded build. The default `1` is appropriate only for a brand-new Play listing.
+When starting the workflow, enter a Play `version_code` greater than every previously uploaded build. The current candidate defaults are version 2.0.7 / code 20261020; verify the highest uploaded code before using them. Introductory offer setup and release gates are recorded in `../docs/LAUNCH_PRICING_AND_RELEASE_CANDIDATE_2026-10-17.md`.
 
 ## Build
 
