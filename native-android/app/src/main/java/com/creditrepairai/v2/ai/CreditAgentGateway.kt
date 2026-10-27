@@ -28,12 +28,12 @@ class CreditAgentGateway(
 
     val isConfigured: Boolean get() = resolvedEndpoint.startsWith("https://")
 
-    suspend fun answer(question: String, state: AppState, expectedSubject: String, caseScopeId: String? = null): String = withContext(Dispatchers.IO) {
+    suspend fun answer(question: String, state: AppState, expectedSubject: String, caseScopeId: String? = null, includeConversation: Boolean = false): String = withContext(Dispatchers.IO) {
         check(isConfigured) { "The secure AI service has not been configured for this build." }
         val snapshot = state.forAgentCase(caseScopeId)
         val token = tokenProvider.bearerToken(expectedSubject)?.takeIf(String::isNotBlank)
             ?: error("Secure AI sign-in is not connected. No report data was sent.")
-        val safeQuestion = SensitiveDataRedactor.redact(question)
+        val safeQuestion = SensitiveDataRedactor.redact(if (includeConversation) ConversationContext.question(question, state.chat, caseScopeId) else question)
         check(!SensitiveDataRedactor.containsHighRiskIdentifier(safeQuestion)) {
             "Remove sensitive identifiers such as an SSN, birth date, email, or phone number and try again."
         }

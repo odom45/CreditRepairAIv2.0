@@ -93,10 +93,16 @@ data class ScoreSnapshot(
     val recordedAt: Long = System.currentTimeMillis(),
 )
 
+data class MailingRecord(
+    val disputeId: String, val bureau: Bureau, val mailedAt: Long,
+    val trackingNumber: String = "", val deliveredAt: Long? = null, val responseReceivedAt: Long? = null,
+)
+
 data class ChatMessage(
     val id: String = UUID.randomUUID().toString(),
     val fromUser: Boolean,
     val text: String,
+    val caseScopeId: String? = null,
     val createdAt: Long = System.currentTimeMillis(),
 )
 
@@ -105,6 +111,7 @@ data class AppState(
     val policyAcceptance: PolicyAcceptance? = null,
     val acquisition: AcquisitionState = AcquisitionState(),
     val filings: List<FilingRecord> = emptyList(),
+    val mailings: List<MailingRecord> = emptyList(),
     val goal: CreditGoal = CreditGoal(),
     val jurisdictionCode: String = "",
     val reports: List<CreditReport> = emptyList(),

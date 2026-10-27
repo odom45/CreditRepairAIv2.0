@@ -38,9 +38,9 @@ fun EducationLabel() { Text(EDUCATIONAL_LABEL, modifier = Modifier.fillMaxWidth(
 fun AccountVerificationCard(verified: Boolean, busy: Boolean, onCheck: () -> Unit, onResend: () -> Unit) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(if (verified) "Email verified" else "Verify your email for AI access", fontWeight = FontWeight.Bold)
+            Text(if (verified) "Email verified" else "Verify your email", fontWeight = FontWeight.Bold)
             if (!verified) {
-                Text("Open the verification link in your inbox, then check here. Local tools remain available while you verify.")
+                Text("Open the verification link in your inbox, then check here. Your saved local case is kept while you verify.")
                 OutlinedButton(onClick = onCheck, enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text("I've verified my email — check again") }
                 OutlinedButton(onClick = onResend, enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text("Resend verification email") }
             }
@@ -142,26 +142,28 @@ fun AcquisitionScreen(data: AppState, update: (AcquisitionState) -> Unit, onImpo
     }
 }
 @Composable
-fun FilingScreen(ui: AppUiState, viewModel: MainViewModel, initialPortal: FilingPortal = FilingPortal.EXPERIAN) {
+fun FilingScreen(ui: AppUiState, viewModel: MainViewModel, initialPortal: FilingPortal = FilingPortal.EXPERIAN, initialDisputeId: String? = null) {
     val data = ui.data
     val context = LocalContext.current
-    var selectedDispute by rememberSaveable { mutableStateOf(data.disputes.firstOrNull()?.id.orEmpty()) }
-    var portal by rememberSaveable { mutableStateOf(initialPortal) }
+    var selectedDispute by rememberSaveable(initialDisputeId, initialPortal) { mutableStateOf(initialDisputeId ?: data.disputes.firstOrNull()?.id.orEmpty()) }
+    var chosenPortal by rememberSaveable(initialDisputeId, initialPortal) { mutableStateOf(initialPortal) }
     var limitText by rememberSaveable { mutableStateOf("1000") }
-    var receipt by rememberSaveable(selectedDispute, portal) { mutableStateOf("") }
+    var receipt by rememberSaveable(selectedDispute, chosenPortal) { mutableStateOf("") }
     var browserError by remember { mutableStateOf("") }
     val notificationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
     val dispute = data.disputes.firstOrNull { it.id == selectedDispute } ?: data.disputes.firstOrNull()
+    val allowedPortals = dispute?.let { FilingGuide.portals(it) + FilingPortal.CFPB }.orEmpty()
+    val portal = chosenPortal.takeIf { it in allowedPortals } ?: allowedPortals.firstOrNull() ?: FilingPortal.CFPB
     val newRecord = remember(dispute?.id, portal) { FilingRecord(disputeId = dispute?.id.orEmpty(), portal = portal) }
     val record = data.filings.firstOrNull { it.disputeId == dispute?.id && it.portal == portal } ?: newRecord
-    val ready = dispute != null && (portal != FilingPortal.CFPB || FilingGuide.cfpbReady(dispute, data.filings, System.currentTimeMillis()))
+    val ready = dispute != null && (portal != FilingPortal.CFPB || FilingGuide.cfpbReady(dispute, data.filings, System.currentTimeMillis(), data.mailings))
     LaunchColumn {
-        Text("Guided filing", style = MaterialTheme.typography.headlineMedium)
+        Text("${portal.label} dispute walkthrough", style = MaterialTheme.typography.headlineMedium)
         EducationLabel()
         Text("This checklist follows your saved progress, not the portal page. Partial browser support varies: keep the guide below the browser or return to the app. We cannot see fields or detect submission.")
         if (dispute == null) Text("Create a fact-specific dispute from Analysis first. Then return here.")
-        data.disputes.forEach { item -> FilterChip(selected = dispute?.id == item.id, onClick = { selectedDispute = item.id }, label = { Text(item.creditor) }) }
-        FilingPortal.entries.forEach { item -> FilterChip(selected = portal == item, onClick = { portal = item }, label = { Text(item.label) }) }
+        data.disputes.forEach { item -> FilterChip(selected = dispute?.id == item.id, onClick = { selectedDispute = item.id; chosenPortal = FilingGuide.portals(item).firstOrNull() ?: FilingPortal.CFPB }, label = { Text(item.creditor) }) }
+        allowedPortals.forEach { item -> FilterChip(selected = portal == item, onClick = { chosenPortal = item }, label = { Text(item.label) }) }
         if (dispute != null) {
             Text("Step ${record.step + 1} of 7: ${FilingGuide.steps[record.step].first}", style = MaterialTheme.typography.titleLarge)
             Text(FilingGuide.steps[record.step].second)
@@ -312,4 +314,22 @@ fun PolicyScreen() {
             OutlinedButton(onClick = { PortalBrowser.open(context, "https://github.com/odom45/CreditRepairAIv2.0/issues") }, modifier = Modifier.fillMaxWidth()) { Text("Report a software issue (public — no case data)") }
         }
     }
+}
+
+@Composable
+internal fun VerificationRequiredScreen(ui: AppUiState, viewModel: MainViewModel) {
+    val context = LocalContext.current
+    var confirm by remember { mutableStateOf(false) }
+    LaunchColumn {
+        Text("Verify your signed-in account", style = MaterialTheme.typography.headlineMedium)
+        Text("Signed in as ${ui.signedInEmail}", fontWeight = FontWeight.Bold)
+        Text("Android restored this signed-in account. Verify its email before opening reports, disputes or AI. Existing reports stay encrypted on this device while you verify.")
+        AccountVerificationCard(false, ui.isAuthenticating, { viewModel.checkEmailVerification() }, { viewModel.checkEmailVerification(resend = true) })
+        ui.notice?.let { Text(it) }
+        OutlinedButton(onClick = { confirm = true }, modifier = Modifier.fillMaxWidth()) { Text("Sign out / use another account") }
+    }
+    if (confirm) AlertDialog(onDismissRequest = { confirm = false }, title = { Text("Switch accounts?") },
+        text = { Text("Signing out removes the current encrypted case from this device, including imported reports and drafts. Your account itself is not deleted. Cancel to keep this case and finish email verification.") },
+        confirmButton = { TextButton(onClick = { confirm = false; viewModel.signOut(context) }) { Text("Sign out and remove local case") } },
+        dismissButton = { TextButton(onClick = { confirm = false }) { Text("Keep this account") } })
 }

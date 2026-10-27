@@ -96,6 +96,9 @@ object GoalPlanner {
     fun prompt(goal: CreditGoal): String = "Build an educational prioritized, sequenced action plan for this goal: ${goal.description}. The user's target is ${goal.targetMonths} months, not a forecast or promise. Use actual findings and saved dispute history; identify evidence gaps; do not predict approvals, score changes, deletion, or completion dates."
 }
 object FilingGuide {
+    fun portals(dispute: Dispute): List<FilingPortal> = dispute.bureaus.filter { it != Bureau.UNKNOWN }
+        .distinct().map { FilingPortal.valueOf(it.name) }
+
     fun answerPrompt(dispute: Dispute, record: FilingRecord): String {
         require(record.disputeId == dispute.id)
         return """
@@ -170,7 +173,10 @@ object FilingGuide {
                     it.responseReceivedAt?.let { response -> response >= submitted && response >= sent && response <= now } == true
                 } == true
         } } == true
-    fun cfpbReady(dispute: Dispute, records: List<FilingRecord>, now: Long): Boolean =
+    fun cfpbReady(dispute: Dispute, records: List<FilingRecord>, now: Long, mailings: List<MailingRecord> = emptyList()): Boolean =
+        mailings.any { it.disputeId == dispute.id && it.mailedAt in 1..now &&
+            ((it.responseReceivedAt?.let { response -> response in it.mailedAt..now } == true) ||
+                (it.deliveredAt?.let { delivered -> delivered in it.mailedAt..now && now - delivered >= 45L * 86400000 } == true)) } ||
         dispute.sentAt?.let { it > 0 && it <= now } == true && (hasBureauResponse(dispute, records, now) ||
             dispute.craResponseDueAt?.let { it <= now } == true)
     fun canReview(record: FilingRecord): Boolean =

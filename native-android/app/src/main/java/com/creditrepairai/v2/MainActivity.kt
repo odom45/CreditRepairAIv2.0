@@ -37,6 +37,7 @@ class MainActivity : ComponentActivity() {
         lifecycleScope.launch { viewModel.uiState.collect { importPendingPdf() } }
         lifecycle.addObserver(object : androidx.lifecycle.DefaultLifecycleObserver {
             override fun onResume(owner: androidx.lifecycle.LifecycleOwner) {
+                viewModel.checkEmailVerification(quiet = true)
                 viewModel.billing.refresh()
                 viewModel.rescheduleCheckins()
                 importPendingPdf()
@@ -60,7 +61,7 @@ class MainActivity : ComponentActivity() {
     }
     private fun importPendingPdf() {
         val state = viewModel.uiState.value
-        if (state.signedInEmail == null || state.data.policyAcceptance?.isCurrent != true || !state.data.onboardingComplete) return
+        if (state.signedInEmail == null || !state.emailVerified || state.data.policyAcceptance?.isCurrent != true || !state.data.onboardingComplete) return
         val uri = pendingPdf ?: return
         pendingPdf = null
         val name = runCatching { contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { if (it.moveToFirst()) it.getString(0) else null } }.getOrNull() ?: "Credit-report.pdf"

@@ -19,6 +19,7 @@ import com.creditrepairai.v2.legal.DisputeLetterGenerator
 import com.creditrepairai.v2.model.AppState
 import com.creditrepairai.v2.model.Bureau
 import com.creditrepairai.v2.model.ChatMessage
+import com.creditrepairai.v2.model.MailingRecord
 import com.creditrepairai.v2.model.CreditAccount
 import com.creditrepairai.v2.model.CreditReport
 import com.creditrepairai.v2.model.DisputeStatus
@@ -96,6 +97,8 @@ class MainViewModel(
             repository.selectOwner(owner)
             billing.reset()
             _uiState.value = AppUiState(data = repository.load(), signedInEmail = session.email, emailVerified = session.isEmailVerified, isAgentEndpointConfigured = agentGateway.isConfigured)
+        } else {
+            _uiState.update { it.copy(signedInEmail = session.email, emailVerified = session.isEmailVerified) }
         }
     }
 
@@ -166,7 +169,7 @@ class MainViewModel(
         }
     }
 
-    fun checkEmailVerification(resend: Boolean = false) {
+    fun checkEmailVerification(resend: Boolean = false, quiet: Boolean = false) {
         if (session.uid == null || _uiState.value.isAuthenticating) return
         val ticket = caseFence.ticket()
         viewModelScope.launch {
@@ -176,14 +179,14 @@ class MainViewModel(
                 if (!caseFence.accepts(ticket, session.uid)) return@launch
                 if (resend && !session.isEmailVerified) session.resendVerification()
                 if (!caseFence.accepts(ticket, session.uid)) return@launch
-                _uiState.update { it.copy(emailVerified = session.isEmailVerified, notice = when {
+                _uiState.update { it.copy(emailVerified = session.isEmailVerified, notice = if (quiet) null else when {
                     session.isEmailVerified -> "Email verified. Your sign-in token has been refreshed."
                     resend -> "Verification email requested. Open its link, then tap I've verified my email."
                     else -> "Email is not verified yet. Open the verification link in your inbox, then check again."
                 }) }
             } catch (error: Exception) {
                 if (error is CancellationException) throw error
-                if (caseFence.accepts(ticket, session.uid)) _uiState.update { it.copy(notice = AuthFeedback.failureMessage(error)) }
+                if (caseFence.accepts(ticket, session.uid) && !quiet) _uiState.update { it.copy(notice = AuthFeedback.failureMessage(error)) }
             } finally {
                 if (caseFence.accepts(ticket, session.uid)) _uiState.update { it.copy(isAuthenticating = false) }
             }
@@ -207,6 +210,10 @@ class MainViewModel(
     }
 
     fun importPdf(uri: Uri, displayName: String) {
+        if (!session.isEmailVerified) {
+            _uiState.update { it.copy(notice = "Verify the signed-in email before importing reports. Your existing local reports have not been deleted.") }
+            return
+        }
         if (_uiState.value.data.policyAcceptance?.isCurrent != true || !_uiState.value.data.onboardingComplete) return
         val owner = session.uid ?: return
         val ticket = caseFence.ticket()
@@ -288,11 +295,14 @@ class MainViewModel(
         }
     }
 
-    fun createDispute(finding: Finding) {
+    fun createDispute(finding: Finding): String {
+        val draft = _uiState.value.data.disputes.firstOrNull { it.findingId == finding.id }
+            ?: DisputeLetterGenerator.fromFinding(finding)
         mutate("Draft dispute created. Review every fact and replace all placeholders before sending.") { state ->
             if (state.disputes.any { it.findingId == finding.id }) state
-            else state.copy(disputes = state.disputes + DisputeLetterGenerator.fromFinding(finding))
+            else state.copy(disputes = state.disputes + draft)
         }
+        return draft.id
     }
 
     fun updateDispute(id: String, status: DisputeStatus) {
@@ -317,7 +327,7 @@ class MainViewModel(
     fun deleteDispute(id: String) {
         FollowUpWorker.cancelAll(context)
         mutate("Dispute removed from this device.") { state ->
-            state.copy(disputes = state.disputes.filterNot { it.id == id }, filings = state.filings.filterNot { it.disputeId == id })
+            state.copy(disputes = state.disputes.filterNot { it.id == id }, mailings = state.mailings.filterNot { it.disputeId == id }, filings = state.filings.filterNot { it.disputeId == id })
         }
         rescheduleCheckins()
     }
@@ -359,6 +369,9 @@ class MainViewModel(
         if (!caseFence.accepts(ticket, owner)) return false
         val cleaned = SensitiveDataRedactor.redact(prompt.trim())
         if (cleaned.isBlank()) return false
+        if (cleaned.length > 4000) {
+            _uiState.update { it.copy(notice = "Keep each question to 4,000 characters or fewer. Your question has not been sent.") }; return false
+        }
         if (_uiState.value.isAssistantThinking) return false
         if (!allowAiOrDisclose(PendingAiRequest.Chat(cleaned, saveAsPlan, caseScopeId))) return false
         if (BuildConfig.PAID_ACCESS_ENABLED && !(if (caseScopeId != null && !saveAsPlan) billing.ui.value.entitlement.hasCaseAccess(owner, caseScopeId, System.currentTimeMillis()) else billing.ui.value.entitlement.hasAccess(System.currentTimeMillis()))) {
@@ -367,7 +380,7 @@ class MainViewModel(
         }
 
         val stateWithQuestion = _uiState.value.data.copy(
-            chat = (_uiState.value.data.chat + ChatMessage(fromUser = true, text = cleaned)).takeLast(40),
+            chat = (_uiState.value.data.chat + ChatMessage(fromUser = true, text = cleaned, caseScopeId = caseScopeId)).takeLast(40),
         )
         if (runCatching { repository.save(stateWithQuestion) }.isFailure) {
             _uiState.update { it.copy(notice = "Encrypted storage could not save the question. No case data was sent.") }; return false
@@ -378,7 +391,7 @@ class MainViewModel(
             val result = runCatching {
                 service.syncPolicy(owner, requireNotNull(stateWithQuestion.policyAcceptance))
                 if (!caseFence.accepts(ticket, session.uid) || _uiState.value.data.policyAcceptance?.allowsAi != true) throw CancellationException()
-                agentGateway.answer(cleaned, stateWithQuestion, owner, caseScopeId)
+                agentGateway.answer(cleaned, stateWithQuestion, owner, caseScopeId, includeConversation = true)
             }
             val answer = result.getOrElse { error ->
                     if (error is CancellationException) throw error
@@ -387,7 +400,7 @@ class MainViewModel(
             if (!caseFence.accepts(ticket, session.uid) || _uiState.value.data.policyAcceptance?.allowsAi != true) return@launch
             val current = _uiState.value.data
             val updated = current.copy(
-                chat = (current.chat + ChatMessage(fromUser = false, text = answer)).takeLast(40),
+                chat = (current.chat + ChatMessage(fromUser = false, text = answer, caseScopeId = caseScopeId)).takeLast(40),
                 goal = if (result.isSuccess && saveAsPlan && current.goal.description == stateWithQuestion.goal.description && current.goal.targetMonths == stateWithQuestion.goal.targetMonths) current.goal.copy(aiPlan = answer) else current.goal,
             )
             if (runCatching { repository.save(updated) }.isFailure) {
@@ -396,6 +409,33 @@ class MainViewModel(
             _uiState.update { it.copy(data = updated, isAssistantThinking = false) }
         }
         return true
+    }
+
+    fun cancelAssistant() {
+        aiJob?.cancel()
+        _uiState.update { it.copy(isAssistantThinking = false, notice = "Stopped waiting for the answer. You can ask another question.") }
+    }
+
+    fun recordMailing(disputeId: String, bureau: Bureau, tracking: String) {
+        val dispute = _uiState.value.data.disputes.firstOrNull { it.id == disputeId && bureau in it.bureaus } ?: return
+        if (bureau == Bureau.UNKNOWN) return
+        val now = System.currentTimeMillis()
+        mutate("Mailing recorded for ${bureau.displayName}. Record actual delivery when confirmed.") { state ->
+            val old = state.mailings.firstOrNull { it.disputeId == dispute.id && it.bureau == bureau }
+            if (old != null) state else state.copy(mailings = state.mailings + MailingRecord(disputeId, bureau, now, tracking.trim().take(120)))
+        }
+    }
+    fun updateMailing(disputeId: String, bureau: Bureau, response: Boolean = false) {
+        mutate(if (response) "Mail response recorded." else "Confirmed mail delivery recorded.") { state ->
+            val now = System.currentTimeMillis()
+            state.copy(mailings = state.mailings.map { record ->
+                if (record.disputeId != disputeId || record.bureau != bureau) record
+                else if (response) record.copy(responseReceivedAt = record.responseReceivedAt ?: now)
+                else record.copy(deliveredAt = record.deliveredAt ?: now)
+            })
+        }
+        FollowUpWorker.cancelAll(context)
+        rescheduleCheckins()
     }
 
     fun clearData() {
@@ -535,7 +575,7 @@ class MainViewModel(
         val data = _uiState.value.data
         val current = data.filings.firstOrNull { it.id == record.id } ?: return
         val dispute = data.disputes.firstOrNull { it.id == current.disputeId } ?: return
-        if (current != record || (current.portal == FilingPortal.CFPB && !FilingGuide.cfpbReady(dispute, data.filings, System.currentTimeMillis()))) {
+        if (current != record || (current.portal == FilingPortal.CFPB && !FilingGuide.cfpbReady(dispute, data.filings, System.currentTimeMillis(), data.mailings))) {
             _uiState.update { it.copy(notice = "Filing details changed or the prior-dispute check is incomplete. Review the current saved filing before recording its receipt.") }; return
         }
         val saved = runCatching { FilingGuide.submitted(record, confirmation, System.currentTimeMillis()) }.getOrElse {
@@ -556,7 +596,16 @@ class MainViewModel(
         FollowUpWorker.cancelAll(context)
         rescheduleCheckins()
     }
-    fun rescheduleCheckins() { _uiState.value.data.filings.forEach { record ->
+    fun rescheduleCheckins() {
+        _uiState.value.data.mailings.filter { it.responseReceivedAt == null }.forEach { record ->
+            record.deliveredAt?.let { delivered ->
+                for (days in listOf(30, 45)) {
+                    val due = delivered + days.toLong() * 86400000
+                    if (due > System.currentTimeMillis()) FollowUpWorker.schedule(context, "mail-${record.disputeId}-${record.bureau}", days, due)
+                }
+            }
+        }
+        _uiState.value.data.filings.forEach { record ->
         if (record.responseReceivedAt == null) {
             record.reminder30?.takeIf { it > System.currentTimeMillis() }?.let { FollowUpWorker.schedule(context, record.id, 30, it) }
             record.reminder45?.takeIf { it > System.currentTimeMillis() }?.let { FollowUpWorker.schedule(context, record.id, 45, it) }
