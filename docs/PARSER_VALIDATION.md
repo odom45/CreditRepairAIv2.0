@@ -1,12 +1,12 @@
 # Parser validation — no real data in this repository
 
-## Automated fictional fixtures
+## Current automated synthetic coverage — October 26, 2026
 
-`native-android/app/src/test/resources/parser/` contains three deliberately fictional text fixtures. `ReportTextParserTest` runs the same pure text parser used by Android import. These fixtures check bureau/score recognition, account suffixes, balances, field boundaries and missing values. They are not current bureau PDFs and do not establish accuracy across actual layouts or OCR.
+PR #16 is merged into `android-native-rebuild`. [Final PR CI](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40435571642) passed the JVM suite and all eight API 35 Android parser tests. The 78-case measured PDF corpus has 72 exact supported outcomes, six safe rejections and 1,950 expected fields matched. All three bureaus are covered by multiple embedded/OCR layouts.
 
-Run `cd native-android` then `./gradlew testDebugUnitTest`. Never alter expectations just to match a parser error: compare the expected account records with the fixture text.
+The text corpus contains the three original fixtures and 18 new fixtures (six layouts per bureau) with independent expected values. The suites add 2,400 seeded text mutations, generated account properties, 24 PDFs with mutated text, 48 malformed/truncated PDF byte mutations, three seeded image-only/multi-page OCR inputs and oversized-input rejection. [PARSER_ROBUSTNESS.md](PARSER_ROBUSTNESS.md) gives exact coverage, seeds, bounds and commands; [PARSER_ROBUSTNESS_EVIDENCE.json](PARSER_ROBUSTNESS_EVIDENCE.json) ties results to tested commits and runs.
 
-The API-35 GitHub emulator also passed three generated PDF scenarios on source `2472e382`: embedded text, scanned on-device OCR and AES-encrypted fictional PDF with an empty document-user password. Run `./gradlew connectedDebugAndroidTest lintDebug` only on a disposable debug device containing fictional records. These fixtures contain no bureau login credential or consumer data; their success does not validate all current bureau formats.
+Every fixture is synthetic. No current real-bureau-layout accuracy or complete human walkthrough is established by these tests. Never alter independent expectations merely to match a parser error.
 
 ## Permissioned real-layout validation — owner/testers
 
@@ -31,8 +31,8 @@ The API-35 GitHub emulator also passed three generated PDF scenarios on source `
 - Privacy/support/account deletion: recent sign-in failure must not say deletion completed. Cancel subscription separately in Play.
 - TalkBack, large font/display size, keyboard open, narrow screens, dark theme; all actions remain reachable.
 
-## Established automation and remaining manual acceptance
+## Automation and remaining manual acceptance
 
-[Final source run 38241196324](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/38241196324) passed all 15 API-35 device tests and lint, including the three PDF scenarios, encrypted storage, agreement/onboarding, acquisition, filing receipts/responses and demo/navigation. Lint has zero errors and 29 warnings; see `VERIFICATION_RESULTS.md` for limits.
+The current parser evidence is summarized above. Historical full-device, lint, signed-build and live-agent results remain in [VERIFICATION_RESULTS.md](VERIFICATION_RESULTS.md) and its dated records. Those earlier counts and account-state observations are not new verification of the merged snapshot.
 
-No complete human walkthrough or real-user feedback was obtained. TalkBack/device diversity, actual permissioned bureau layouts, native Firebase/Convex/AI, Google Play license lifecycle and release AAB/R8 remain unverified. The live model gate is blocked by exhausted API credit. Unit/device fixtures and APK assembly do not substitute for these checks.
+Complete human walkthroughs, TalkBack/device diversity, permissioned real layouts, native Firebase/Convex/AI and Play license lifecycle acceptance remain in the [owner checklist](../RELEASE_OWNER_CHECKLIST.md). Synthetic tests and assembly do not substitute for those checks. Earlier exhausted-credit statements are historical; this document does not recheck current account balances.

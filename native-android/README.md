@@ -2,7 +2,13 @@
 
 This directory contains the native Android rebuild. It uses Kotlin and Jetpack Compose; it does not use Capacitor, a WebView, or a wrapped website for the application interface.
 
-## Included in the test build
+## Current branch status — October 26, 2026
+
+Code readiness: **100%** of the agreed native Android coding backlog.
+
+PR #16 is merged into `android-native-rebuild` at `ffe4e3750b49ee2db77d5b9cc36cea11a3eb0519`. [Final PR CI](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40435571642) passed the JVM suite, document consistency and all eight Android parser tests. The expanded corpus has 78 PDF outcomes (72 exact supported reports plus six safe rejections) and 18 new text fixtures across all three bureaus. See [the assessment](../docs/PRODUCTION_ASSESSMENT.md) and [current owner checklist](../RELEASE_OWNER_CHECKLIST.md) for scope and remaining launch acceptance. Version defaults remain 2.0.7 / 20261020; this record does not claim a new APK/AAB.
+
+## Included in the native implementation
 
 - Dark navy/blue CreditRepairAI visual identity and native navigation
 - PDF import through Android's secure document picker
@@ -17,7 +23,7 @@ This directory contains the native Android rebuild. It uses Kotlin and Jetpack C
 - Persisted Custom Tab report acquisition and explicit PDF share/open imports; browser credentials and page contents are never inspected
 - Persisted editable portal filing guides, encrypted inline AI step explanations, user-only submission, receipts, response records and private 30/45-day check-ins. Step/draft edits invalidate outdated answers; credentials and actual portal submission remain entirely user controlled.
 - Goal planning, saved AI plans, finding/draft/citation explanation actions and educational labels
-- Play monthly billing client and server verification/admin management; purchases disabled by default until owner setup/review
+- Play monthly/yearly and case-bound dispute billing clients with server verification/admin management; purchases disabled by default until owner setup/review
 - Five-step onboarding, privacy/terms/support screens and account-deletion flow
 - Session-generation regression checks prevent stale work from restoring deleted case data or crossing accounts
 
@@ -36,9 +42,9 @@ The debug APK is for testing only. Google Play requires the release AAB to be si
 - `ANDROID_KEYSTORE_PASSWORD`
 - `ANDROID_KEY_ALIAS`
 - `ANDROID_KEY_PASSWORD`
-- `CREDIT_AI_GATEWAY_URL` (HTTPS)
+- `CREDIT_PRODUCTION_DEPLOY_KEY` (the intended production deployment credential)
 
-Repository variable `CREDIT_SUPPORT_EMAIL` is also required; `CREDIT_PAID_ACCESS_ENABLED` defaults to `false`. See the root `RELEASE_OWNER_CHECKLIST.md` for exact server configuration and mandatory testing. These in-app policy documents are drafts pending qualified review, not approved legal advice.
+Repository variables `CREDIT_PRODUCTION_DEPLOYMENT`, `CREDIT_PRODUCTION_GATEWAY_URL` (HTTPS), `CREDIT_SUPPORT_EMAIL` and the release-mode settings must match the intended deployment. The workflow maps the production gateway variable to the native build property `CREDIT_AI_GATEWAY_URL`. Public production mode requires `CREDIT_RELEASE_READY=true` and configured paid access; the separate `CREDIT_BUILD_PRODUCTION_TEST_CANDIDATE=true` mode requires purchases disabled. `CREDIT_PAID_ACCESS_ENABLED` defaults to `false`. See the root `RELEASE_OWNER_CHECKLIST.md` for exact server configuration and mandatory testing. These in-app policy documents are drafts pending qualified review, not approved legal advice.
 
 For an existing Play listing, use the upload key already registered with that app. For a new listing, create the owner-controlled upload key once, back it up securely, and never commit it. The workflow emits a signed AAB for Play and a signed release APK for testers, then verifies both signatures.
 
@@ -54,7 +60,7 @@ Requirements: JDK 17 and Android SDK 36.
 
 Backend/admin checks: `npm ci --ignore-scripts`, `npm run typecheck`, `npm run build`, `npm run test:launch`, `npm run legal:check`, `npm run audit:source-secrets` from the repository root.
 
-Device regression tests: `./gradlew connectedDebugAndroidTest` on a disposable debug installation/emulator with fictional records only. `AppRepositoryInstrumentedTest` verifies actual Keystore storage and case preservation after local clearing; `OnboardingInstrumentedTest` verifies the five-step flow. These test definitions have not been executed in the current device-less environment. Follow `docs/PARSER_VALIDATION.md` for full manual and permissioned-layout checks.
+Device regression tests: `./gradlew connectedDebugAndroidTest` on a disposable debug installation/emulator with fictional records only. `AppRepositoryInstrumentedTest` verifies actual Keystore storage and case preservation after local clearing; `OnboardingInstrumentedTest` verifies the five-step flow. Historical broader device-suite results are in [verification records](../docs/VERIFICATION_RESULTS.md); the current parser-specific emulator evidence is linked above. Follow [PARSER_VALIDATION.md](../docs/PARSER_VALIDATION.md) for manual and permissioned-layout checks.
 
 APK output:
 

@@ -1,23 +1,14 @@
-# CreditRepairAI Viktor Space Migration Todo
+# Current Android coding backlog — October 26, 2026
 
-## Backend (Convex)
-- [ ] Update `convex/schema.ts` with `reports` and `disputes` tables.
-- [ ] Create `convex/reports.ts` for report parsing and storage.
-    - [ ] Port `CreditReportParser.js` logic to a Convex action (using `pdf-parse` if possible, or SDK tool).
-    - [ ] Implement `compareAccounts` logic.
-- [ ] Create `convex/disputes.ts` for dispute CRUD.
-- [ ] Update `convex/viktorTools.ts` if needed for AI analysis.
+Code readiness: **100%** of the agreed native Android coding backlog.
 
-## Frontend (React + shadcn/ui)
-- [ ] Create `src/pages/UploadPage.tsx` (Port from `UploadScreen.js`).
-- [ ] Create `src/pages/AnalysisPage.tsx` (Port from `AnalysisScreen.js`).
-- [ ] Create `src/pages/DisputesPage.tsx` (Port from `DisputesScreen.js`).
-- [ ] Update `src/App.tsx` with new routes.
-- [ ] Update `src/components/AppSidebar.tsx` with new navigation items.
-- [ ] Update `src/pages/LandingPage.tsx` with CreditRepairAI branding.
+PR #16 is merged into `android-native-rebuild` at `ffe4e3750b49ee2db77d5b9cc36cea11a3eb0519`. [Final PR CI](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40435571642) passed. All three stated remaining native code gaps are closed:
 
-## Testing & Deployment
-- [ ] Run `bun run sync:build` to verify build.
-- [ ] Write Playwright e2e tests for upload and analysis.
-- [ ] Deploy to preview and share with user.
-- [ ] Deploy to production after approval.
+- [x] Parser fuzz/property and actual PDF/OCR mutation tests, bounded-resource checks and CI enforcement.
+- [x] Expanded synthetic all-three-bureau corpus with multiple layouts and independent expected fields.
+- [x] Current assessment, release-owner checklist and machine-readable evidence kept consistent.
+- [x] Publish the changes into the Android branch and update the active README/verification/parser records.
+
+No additional native implementation task is identified in this agreed backlog. The rating is an engineering estimate of backlog completion, not a new exhaustive correctness audit. Human launch acceptance stays in [RELEASE_OWNER_CHECKLIST.md](RELEASE_OWNER_CHECKLIST.md); current evidence is in [PRODUCTION_ASSESSMENT.md](docs/PRODUCTION_ASSESSMENT.md).
+
+The previous [web-prototype migration TODO](docs/archive/WEB_PROTOTYPE_TODO_BEFORE_2026-10-26.md) is archived. It concerns the separate legacy React prototype and must not be read as the native Android completion checklist.

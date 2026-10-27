@@ -11,6 +11,8 @@ marker = f'<!-- parser-followup: {status} -->'
 for name in ['docs/PRODUCTION_ASSESSMENT.md', 'RELEASE_OWNER_CHECKLIST.md']:
     text = (root / name).read_text()
     assert text.count(marker) == 1, f'{name}: mismatched status'
+    if 'codeReadinessPercent' in evidence:
+        assert f"Code readiness: **{evidence['codeReadinessPercent']}%**" in text, f'{name}: mismatched code rating'
     assert len(re.findall(r'<!-- parser-followup:', text)) == 1
     assert not re.search(r'\b(?:55|65)/100\b', text), 'Historical score in current assessment'
     if status == 'verified':

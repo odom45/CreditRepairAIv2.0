@@ -1,3 +1,19 @@
+# Current native verification — October 26, 2026
+
+Code readiness: **100%** of the agreed native Android coding backlog.
+
+PR #16 merged into `android-native-rebuild` at `ffe4e3750b49ee2db77d5b9cc36cea11a3eb0519`. The final PR revision `c6eb63f85a18a6ab6ecc6c57b94eaa955b87469d` passed [run 40435571642](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40435571642), including the document-consistency check, JVM suite and all eight API 35 Android parser tests. The merge preserves the tested application/test source; subsequent readiness-record edits are documentation/checker updates.
+
+The [measured parser record](PARSER_ROBUSTNESS_EVIDENCE.json) records 72/72 exact supported reports, 6/6 safe rejections and 1,950/1,950 expected fields from [run 40434452161](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40434452161). The final PR run repeated the same full suites successfully. Coverage now includes 18 additional text fixtures, 2,400 seeded text mutations, 24 mutated-report PDFs, 48 malformed/truncated PDF mutations, three seeded scanned PDFs and an oversized-input test.
+
+Read the [current assessment](PRODUCTION_ASSESSMENT.md), [reproduction guide](PARSER_ROBUSTNESS.md) and [owner checklist](../RELEASE_OWNER_CHECKLIST.md). The code rating covers the agreed native implementation backlog, not launch acceptance or the separate legacy web product. Owner/legal/security/real-report/device/staging gates remain open. No new release-artifact verification is established by this documentation update.
+
+## Historical verification records below
+
+The following sections retain their original dates and source-specific findings. References to API-credit exhaustion, certificate mismatches, test counts and pending build work describe those dated snapshots, not current state. Current status is summarized above.
+
+---
+
 # CreditRepairAI verification record — 2026-10-12
 
 Application source: `2472e38210ac525616c014a9b9c4b65f45a03476`, tree `1daa366b99fce456d454174e62beba758aa5640a`, branch `android-native-rebuild`.

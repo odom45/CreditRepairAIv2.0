@@ -1,72 +1,53 @@
 # CreditRepairAI v2.0
 
-AI-powered 3-bureau credit report analysis and legal dispute generation.
+Native Android tools for on-device three-bureau report analysis, guided disputes and user-reviewed filing, with an authenticated legal-source AI assistant.
 
-## Current native release — 2026-10-17
+## Current Android status — October 26, 2026
 
-The previous signed **2.0.5 / 20261018** tester APK and Play AAB were built with the existing owner certificate. This update prevents silently partial AI case snapshots, keeps a saved plan when AI fails, and protects filing receipts/responses from stale edits and repeat submissions. Verified native source `6440464c` passed **65 JVM tests, 26 Android device tests, lint with zero errors, and Android 16 release installation/update/launch**. The device run also passed the full 60-case synthetic parser batch: 54 supported reports, 1,620 core fields and six expected rejections. These fictional fixtures do not establish current real-bureau or owner-phone acceptance.
+Code readiness: **100%** of the agreed native Android coding backlog.
 
-Maintenance source `8cc79049` passed **47 backend/configuration/maintenance regressions**, typecheck, policy synchronization, source-pattern scan and official-source freshness checks. The existing development legal store now contains the amended Gorman opinion and corrected source card; no new store was created. A live fictional AI check passed with three HTTP-200 provider responses and 16 accepted source results. Read [the complete 2.0.5 verification record](docs/ENGINEERING_COMPLETION_2026-10-17.md).
+This is an engineering estimate based on the previously implemented native scope, closure of all three stated remaining code gaps, and passing automated checks. It is not an exhaustive new audit, a probability of correctness, or production-launch approval. The separate React web prototype is outside this rating.
 
-**Firebase registration repaired:** The genuine release/debug configurations now use distinct registered Android app IDs and include the existing owner certificate. Firebase accepted both current package/certificate pairs (HTTP 200); invalid-certificate controls were rejected. Google and email/password providers are enabled in the console. Signed **2.0.6 / 20261019** is built with these configurations and passed 65 JVM tests, 26 device tests, lint with zero errors, Android 16 installation/update/launch, 47 backend checks and a fictional live development AI check. See [the Firebase repair record](docs/FIREBASE_REPAIR_2026-10-17.md).
+[PR #16](https://github.com/odom45/CreditRepairAIv2.0/pull/16) is merged into **`android-native-rebuild`** at `ffe4e3750b49ee2db77d5b9cc36cea11a3eb0519`. Source version defaults remain **2.0.7 / 20261020**. The parser follow-up and all three remaining code-backlog items are complete. This documentation update does not create or claim a newly verified APK/AAB.
 
-**Launch remains on hold:** Native phone sign-in and the authenticated app-to-AI chain still require acceptance. Production deployment, Play billing acceptance, owner-phone/current-report testing, operational support verification, independent legal/security reviews and the real-person closed test remain open. Purchases are disabled. The dated sections below are historical records; their old API-credit blockers and counts do not describe this latest verified snapshot.
+| Current evidence | Result |
+|---|---|
+| Final PR CI | [Run 40435571642](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40435571642) passed on `c6eb63f85a18a6ab6ecc6c57b94eaa955b87469d` |
+| Native JVM regression suite | Passed, including 2,400 seeded text mutations, account-boundary properties and limit tests |
+| API 35 Android parser tests | 8 passed, including 24 mutated-report PDFs, 48 malformed/truncated byte mutations, three seeded image-only/multi-page OCR inputs and oversized-input rejection |
+| Measured generated PDF corpus | 72/72 supported reports exact, 6/6 guards safely rejected, 1,950/1,950 fields matched |
+| Expanded checked-in corpus | 18 new synthetic text fixtures: six layouts per bureau, plus the three original fixtures |
+| Assessment/checklist consistency | Automated evidence check passed; historical numerical scores are archived |
 
-## Native branch engineering update — 2026-10-15
+Detailed status: [current code assessment](docs/PRODUCTION_ASSESSMENT.md), [release-owner checklist](RELEASE_OWNER_CHECKLIST.md), [machine-readable evidence](docs/PARSER_ROBUSTNESS_EVIDENCE.json), and [parser reproduction guide](docs/PARSER_ROBUSTNESS.md). The original measured-field results are tied to [run 40434452161](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40434452161); the later final PR run repeated the full suites successfully.
 
-Native filing now has reviewable AI-generated field drafts; source supports monthly/yearly subscriptions and server-bound one-dispute purchases, with purchases disabled until account setup and review. Version 2.0.2 adds signed-release install/update acceptance. Current validation and account-dependent gates are tracked in [engineering completion](docs/ENGINEERING_COMPLETION_2026-10-15.md). The older release record below describes earlier tested source, not verification of these changes.
+## Native implementation
 
-## Native branch release status — 2026-10-12
+- Kotlin/Jetpack Compose app with Firebase email/Google sign-in integration and authenticated Convex access.
+- On-device PDFBox extraction and bundled ML Kit OCR, structured account/score parsing, and three-bureau comparisons.
+- High-risk identifier redaction before AI calls; Keystore AES-GCM case storage, FLAG_SECURE and backups disabled.
+- Tool-enabled legal-source AI, editable dispute/portal answers, filing checklists, official-portal handoff, receipts and responses. Users review, copy and submit themselves.
+- Goals and saved plans, score/action tracking, onboarding, privacy/terms/disclosure and deletion flows.
+- Monthly/yearly subscriptions and case-bound dispute access in source, with server-side ownership/verification and account-generation protections. Release mode and paid access remain controlled by the existing configuration gates.
 
-The native branch now implements persisted acquisition/filing guides, encrypted AI explanations alongside the filing steps, user-reviewed copy/paste drafts, receipt/response tracking, goals and AI explanations, Play monthly software-access billing, server-authorized subscription management, onboarding and policy screens. Session/privacy hardening and regression checks were added. Final source `2472e382` passed 37 unit, 20 backend and 15 API-35 device tests, debug assembly/signature checks and lint (zero errors, 29 warnings). npm and resolved Android dependency scans report zero advisories. Complete manual/device diversity, permissioned real layouts, native Firebase/Play integration, signed release and external reviews remain required. Custom Tab PDF downloads use an explicit user-selected Open/Share/import handoff.
+Implementation presence does not establish live account acceptance. Legal/security review, Play submission/closed testing, real-report validation and device/staging integration acceptance remain in the owner checklist. Synthetic fixtures do not establish accuracy for every actual bureau layout.
 
-Policy version `2026-10-12.2` adds explicit agreement/adult confirmation, a separate optional AI-sharing disclosure, encrypted choice records, and server-side current-policy checks. Privacy, terms and disclaimer drafts are maintained together in [policies/documents.json](policies/documents.json); `npm run policies:generate` updates Android/backend metadata, readable Markdown and public HTML, and CI checks for drift. [Legal review handoff](policies/LEGAL_REVIEW_HANDOFF.md) identifies required counsel decisions; the drafts do not make the operator immune from liability. Draft public policy/deletion pages are hosted on the authorized Convex development site and still require a configured monitored contact and qualified approval before commercial launch.
+## Development
 
-Native CI now also runs on-device instrumentation and lint on a GitHub-hosted emulator, with fictional embedded/scanned PDF fixtures, plus a read-only protected-configuration preflight. The preflight reports only setting presence and HTTP statuses. A private comparison confirmed the supplied GitHub OpenAI key already matches Convex. Development deployment succeeded, but real Responses calls return 429 `credit_balance_exhausted`; [run 38241196324](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/38241196324) is therefore overall failed despite four passing code/preflight jobs. Restore API-project credit and rerun that live gate. Purchase/native authenticated-AI integration is still unproven.
+```sh
+git clone --branch android-native-rebuild https://github.com/odom45/CreditRepairAIv2.0.git
+cd CreditRepairAIv2.0
+python3 scripts/check-parser-evidence.py
+cd native-android
+bash ./gradlew testDebugUnitTest assembleDebug
+```
 
-Read [verification results](docs/VERIFICATION_RESULTS.md) and [funding preparation](docs/FUNDING_NEXT_STEPS.md). Read [RELEASE_OWNER_CHECKLIST.md](RELEASE_OWNER_CHECKLIST.md), [parser/device validation](docs/PARSER_VALIDATION.md), and [the architectural assessment](docs/PRODUCTION_ASSESSMENT.md). A finding is a review prompt; no deletion, score change, approval or outcome date is promised. Paid purchases default to disabled until owner configuration and qualified review.
+Use JDK 17 and Android SDK 36. Emulator/parser instructions: [PARSER_ROBUSTNESS.md](docs/PARSER_ROBUSTNESS.md). Native build/signing configuration: [native-android/README.md](native-android/README.md). Current release workflow: [.github/workflows/signed-android-release.yml](.github/workflows/signed-android-release.yml).
 
-The `src/` website is a separate legacy React prototype plus the admin interface. Its report/analysis pages contain sample data and must not be presented as production-native behavior. The native app does not display those web pages or use their simulated parser. The admin subscription screen has real server APIs in source; live Play permission/configuration is still unverified.
+## Web/admin scope and historical records
 
-## 🚀 Features
+The `src/` React report/analysis website is a separate legacy prototype with sample data, plus the admin interface. Its simulated report pages are outside this native code-readiness rating. Root `npm ci --ignore-scripts`, `npm run typecheck` and `npm run build` apply to that web/admin/backend toolchain.
 
-- **Native 3-Bureau Analysis**: Extract structured fields and flag cross-bureau differences for user verification.
-- **Tool-enabled Legal Agent**: A server-side agent can use redacted case tools and retrieve from a versioned official-source library. It never treats a flag as proof or promises deletion.
-- **CFPB Assistant**: Guided, editable answers with prerequisite checks and an official-portal handoff; the user reviews and submits.
-- **Secondary Bureau Freezes**: One-click access to freeze SageStream, CoreLogic, Innovis, and more.
-- **Modern Dashboard**: Sleek, professional UI designed for clarity and ease of use.
-- **Admin Panel**: Server-authorized Play subscription refresh, renewal cancellation, and confirmed refund/revoke actions; no simulated revenue or refund success.
+Historical test counts, signing/Firebase work and integration observations remain in [VERIFICATION_RESULTS.md](docs/VERIFICATION_RESULTS.md) and the dated engineering records it links. Historical API-credit/certificate findings are not current account-state claims. The [active backlog](todo.md) and [owner checklist](RELEASE_OWNER_CHECKLIST.md) are the current status entry points.
 
-## 🛠️ Tech Stack
-
-- **Android**: Kotlin and Jetpack Compose (no WebView or website wrapper).
-- **Backend**: Authenticated Convex HTTP gateway.
-- **AI**: OpenAI Responses API with case functions and legal-library file search.
-
-## 📦 Installation (Local Development)
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/odom45/CreditRepairAIv2.0.git
-   ```
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Start the development server:
-   ```bash
-   npm run dev
-   ```
-
-## 📱 Play Store Submission
-
-The debug APK is for testing, not Play submission. Production requires the signed-release workflow, an owner-controlled upload key, native OIDC sign-in, deployed agent secrets/vector store, real-report parser validation, and legal/privacy/commercial review. See `native-android/README.md`.
-
-## 👤 Author
-
-**Benjamin Odom**
-- Email: benjaminjodom45@gmail.com
-- GitHub: [@odom45](https://github.com/odom45)
-
----
-*Built with 🤖 by Viktor AI*
+Author: **Benjamin Odom** · [odom45](https://github.com/odom45)
