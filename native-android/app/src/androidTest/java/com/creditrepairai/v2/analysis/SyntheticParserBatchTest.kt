@@ -31,8 +31,8 @@ class SyntheticParserBatchTest {
     private val context = ApplicationProvider.getApplicationContext<Context>()
     private val directory = File(context.cacheDir, "fictional-parser-fixtures/synthetic-batch").apply { mkdirs() }
     private val parser = CreditReportParser(context)
-    private val layouts = listOf("upper", "creditor", "company", "subscriber", "title-case", "split-values", "whitespace", "account-status", "no-score", "missing-balance", "inline-fields", "aliases")
-    private val scans = listOf("upper", "creditor", "no-score", "split-values")
+    private val layouts = listOf("upper", "creditor", "company", "subscriber", "title-case", "split-values", "whitespace", "account-status", "no-score", "missing-balance", "inline-fields", "aliases", "unicode-space", "reordered", "form-feed", "single-account", "empty-accounts")
+    private val scans = listOf("upper", "creditor", "no-score", "split-values", "single-account")
     private data class Case(val id: String, val bureau: Bureau, val layout: String = "upper", val scanned: Boolean = false, val encrypted: Boolean = false, val multipage: Boolean = false, val reject: String? = null)
     private val expectedNames = listOf("NORTHSTAR BANK", "HARBOR COLLECTIONS", "PINE AUTO")
     // Test-only inspection of this generated scan when field accuracy fails.
@@ -45,7 +45,7 @@ class SyntheticParserBatchTest {
             if (result !== COROUTINE_SUSPENDED) continuation.resume(result as String)
         } catch(e: Exception) { continuation.resumeWithException(e) }
     }
-    private fun expected(case: Case) = expectedNames.mapIndexed { i, name ->
+    private fun expected(case: Case) = expectedNames.take(when(case.layout) { "single-account" -> 1; "empty-accounts" -> 0; else -> 3 }).mapIndexed { i, name ->
         linkedMapOf<String, Any?>("creditor" to name, "suffix" to listOf("1234", "5678", "9012")[i],
             "balance" to if (case.layout == "missing-balance" && i == 1) null else listOf(1280, 680, 0)[i],
             "status" to listOf("Open", "Collection", "Closed")[i], "paymentStatus" to listOf("Current", "Past due", "Paid")[i],
@@ -75,6 +75,9 @@ class SyntheticParserBatchTest {
         val formatted = when(case.layout) {
             "split-values" -> fields.flatMap { listOf(it.first + ":", it.second) }
             "whitespace" -> fields.map { it.first + "\u00a0 :\t  " + it.second }
+            "reordered" -> (fields.take(1) + fields.drop(1).reversed()).map { it.first + ": " + it.second }
+            "unicode-space" -> fields.map { it.first + "\u202f:\u00a0" + it.second }
+            "form-feed" -> fields.map { it.first + ": " + it.second + "\u000c" }
             "inline-fields" -> fields.chunked(2).map { pair -> pair.joinToString(" | ") { it.first + ": " + it.second } }
             else -> fields.map { it.first + ": " + it.second }
         }
@@ -88,7 +91,7 @@ class SyntheticParserBatchTest {
         repeat(pages) { p ->
             val height = if(case.reject == "tall-scan") 3000 else 1900
             val page = document.startPage(PdfDocument.PageInfo.Builder(1000, height, p + 1).create())
-            val lines = when(case.reject) { "blank" -> emptyList(); "too-many-text-pages" -> header(case); else -> header(case) + if(case.multipage) accountLines(case, p) else (0..2).flatMap { accountLines(case, it) } }
+            val lines = when(case.reject) { "blank" -> emptyList(); "too-many-text-pages" -> header(case); else -> header(case) + if(case.multipage) accountLines(case, p) else expected(case).indices.flatMap { accountLines(case, it) } }
             val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.BLACK; textSize = 21f; typeface = android.graphics.Typeface.MONOSPACE }
             if(case.scanned || case.reject in listOf("too-many-scan-pages", "tall-scan")) {
                 val bitmap = Bitmap.createBitmap(1000, height, Bitmap.Config.ARGB_8888)
@@ -112,7 +115,7 @@ class SyntheticParserBatchTest {
         }
         return file
     }
-    @Test fun measuredSyntheticPdfBatch() = runBlocking {
+    @Test(timeout = 600_000) fun measuredSyntheticPdfBatch() = runBlocking {
         val cases = mutableListOf<Case>()
         listOf(Bureau.EQUIFAX, Bureau.EXPERIAN, Bureau.TRANSUNION).forEach { bureau ->
             layouts.forEach { cases.add(Case("${bureau.name}-embedded-$it", bureau, it)) }
@@ -137,7 +140,8 @@ class SyntheticParserBatchTest {
                 val matched = want.mapIndexed { i, target -> target.count { (key, value) -> got.getOrNull(i)?.get(key) == value && got.getOrNull(i)?.containsKey(key) == true } }.sum()
                 val scoreOk = parsed.report.score == if(case.layout == "no-score") null else 640
                 val bureauOk = parsed.report.bureau == case.bureau
-                val exact = case.reject == null && got == want && scoreOk && bureauOk
+                val methodOk = parsed.report.extractionMethod == if(case.scanned) "On-device OCR" else "Embedded PDF text"
+                val exact = case.reject == null && got == want && scoreOk && bureauOk && methodOk
                 row.put("accepted", true).put("exactPass", exact).put("bureauCorrect", bureauOk).put("scoreCorrect", scoreOk)
                     .put("accountCount", got.size).put("fieldMatches", matched).put("fieldTotal", fieldTotal)
                     .put("extractionMethod", parsed.report.extractionMethod).put("expectedAccounts", JSONArray(want.map { JSONObject(it) })).put("actualAccounts", JSONArray(got.map { JSONObject(it) }))
@@ -155,7 +159,7 @@ class SyntheticParserBatchTest {
             .put("androidApi", android.os.Build.VERSION.SDK_INT).put("device", android.os.Build.MODEL)
             .put("total", all.size).put("supportedCases", supported.size).put("supportedAccepted", supported.count { it.getBoolean("accepted") })
             .put("supportedExactPass", supported.count { it.getBoolean("exactPass") }).put("guards", guards.size).put("guardsSafelyRejected", guards.count { !it.getBoolean("accepted") })
-            .put("fieldMatches", supported.sumOf { it.optInt("fieldMatches") }).put("fieldTotal", supported.size * 30)
+            .put("fieldMatches", supported.sumOf { it.optInt("fieldMatches") }).put("fieldTotal", supported.sumOf { it.optInt("fieldTotal") })
             .put("elapsedMs", System.currentTimeMillis() - started).put("cases", results)
         File(context.filesDir, "parser-validation-$phase.json").writeText(summary.toString(2))
         // Gradle uninstalls the app after instrumentation. Preserve small numbered log

@@ -16,20 +16,29 @@ import com.tom_roush.pdfbox.text.PDFTextStripper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
-import java.text.NumberFormat
+import kotlinx.coroutines.CancellationException
+import com.tom_roush.pdfbox.io.MemoryUsageSetting
 import java.util.Locale
 
 class CreditReportParser(private val context: Context) {
     suspend fun parse(uri: Uri, fileName: String): ParsedReport = withContext(Dispatchers.IO) {
         require(uri.scheme == "content") { "Select a PDF through Android's document picker or share sheet." }
         var extractionMethod = "Embedded PDF text"
-        var text = runCatching { extractEmbeddedText(uri) }.getOrDefault("")
-        if (text.filterNot(Char::isWhitespace).length < 200) {
+        var text = try {
+            extractEmbeddedText(uri)
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: ParserLimitException) {
+            throw error // Size/page limits must never be bypassed through OCR.
+        } catch (_: java.io.IOException) {
+            "" // A renderer-readable scan can still be unreadable to PDFBox.
+        }
+        if (text.count { !it.isWhitespace() } < 200) {
             extractionMethod = "On-device OCR"
             text = extractWithOcr(uri)
         }
 
-        require(text.filterNot(Char::isWhitespace).length >= 80) {
+        require(text.count { !it.isWhitespace() } >= 80) {
             "The PDF did not contain enough readable text. Try an original downloaded report instead of a photo-only scan."
         }
 
@@ -52,11 +61,13 @@ class CreditReportParser(private val context: Context) {
 
     private fun extractEmbeddedText(uri: Uri): String {
         return context.contentResolver.openInputStream(uri)?.use { stream ->
-            val bytes = stream.readBytesLimited(50_000_000)
+            val bytes = stream.readBytesLimited(ParserLimits.MAX_PDF_BYTES)
             require(bytes.take(5).toByteArray().toString(Charsets.US_ASCII) == "%PDF-") { "Selected file is not a PDF." }
-            PDDocument.load(bytes).use { document ->
-                require(document.numberOfPages <= 200) { "PDF exceeds 200 pages. Export a bureau report separately." }
-                PDFTextStripper().getText(document)
+            PDDocument.load(java.io.ByteArrayInputStream(bytes), MemoryUsageSetting.setupMixed(8_000_000).setTempDir(context.cacheDir)).use { document ->
+                ParserLimits.check(document.numberOfPages <= 200, "PDF exceeds 200 pages. Export a bureau report separately.")
+                val output = BoundedReportWriter()
+                PDFTextStripper().writeText(document, output)
+                output.toString()
             }
         }.orEmpty()
     }
@@ -68,18 +79,20 @@ class CreditReportParser(private val context: Context) {
         return try {
             PdfRenderer(descriptor).use { renderer ->
                 buildString {
-                    require(renderer.pageCount <= 30) { "Scanned PDF exceeds 30 pages. Import smaller report sections; no pages were silently skipped." }
+                    ParserLimits.check(renderer.pageCount <= 30, "Scanned PDF exceeds 30 pages. Import smaller report sections; no pages were silently skipped.")
                     val pageLimit = renderer.pageCount
                     for (index in 0 until pageLimit) {
                         renderer.openPage(index).use { page ->
                             require(page.width > 0 && page.height > 0) { "PDF page dimensions are invalid." }
                             val targetWidth = 2048
                             val targetHeight = (targetWidth * page.height.toFloat() / page.width).toInt().coerceAtLeast(1)
-                            require(targetHeight <= 4096) { "PDF page is too tall for safe OCR. Export a standard-sized page." }
+                            ParserLimits.check(targetHeight <= 4096, "PDF page is too tall for safe OCR. Export a standard-sized page.")
                             val bitmap = Bitmap.createBitmap(targetWidth, targetHeight, Bitmap.Config.ARGB_8888)
                             try {
                                 page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-                                appendLine(orderedOcrText(recognizer.process(InputImage.fromBitmap(bitmap, 0)).await()))
+                                val pageText = orderedOcrText(recognizer.process(InputImage.fromBitmap(bitmap, 0)).await())
+                                ParserLimits.check(length.toLong() + pageText.length + 1 <= ParserLimits.MAX_TEXT_CHARS, "OCR text exceeds the safe character limit.")
+                                appendLine(pageText)
                             } finally {
                                 bitmap.recycle()
                             }
@@ -99,7 +112,8 @@ class CreditReportParser(private val context: Context) {
         while (true) {
             val count = read(buffer)
             if (count < 0) break
-            require(output.size() + count <= limit) { "PDF is larger than 50 MB. Export a smaller report." }
+            check(count > 0) { "PDF stream made no progress." }
+            ParserLimits.check(output.size().toLong() + count <= limit, "PDF is larger than 50 MB. Export a smaller report.")
             output.write(buffer, 0, count)
         }
         return output.toByteArray()
@@ -141,7 +155,7 @@ class CreditReportParser(private val context: Context) {
 /** Pure text parser used by Android import and permission-free JVM fixtures. */
 class ReportTextParser {
     internal fun detectBureau(fileName: String, text: String): Bureau {
-        val source = "$fileName\n${text.take(8_000)}".lowercase(Locale.US)
+        val source = "${fileName.take(256)}\n${text.take(8_000)}".lowercase(Locale.US)
         val compact = source.replace(Regex("\\s+"), "")
         return when {
             "transunion" in compact -> Bureau.TRANSUNION
@@ -152,6 +166,7 @@ class ReportTextParser {
     }
 
     internal fun parseScore(text: String): Int? {
+        ParserLimits.validateText(text)
         val scorePatterns = listOf(
             Regex("(?i)\\b(?:credit\\s+score|fico[®™ ]*(?:score)?|vantage(?:score)?[®™ ]*(?:score)?)[^0-9]{0,25}([3-8][0-9]{2})(?![0-9])"),
             Regex("(?i)(?:your|current) score[^0-9]{0,15}([3-8][0-9]{2})(?![0-9])"),
@@ -162,6 +177,7 @@ class ReportTextParser {
     }
 
     internal fun parseAccounts(text: String, bureau: Bureau): List<CreditAccount> {
+        ParserLimits.validateText(text)
         val rawLines = text.lineSequence()
             .flatMap { it.split('|').asSequence() }
             .map { it.replace('\u00a0', ' ').replace('\u202f', ' ').replace(Regex("\\s+"), " ").trim()
@@ -188,9 +204,7 @@ class ReportTextParser {
                     lines.getOrNull(index + 1)?.let { ACCOUNT_NUMBER.containsMatchIn(it) } == true)
         }
 
-        require(candidateIndexes.size <= 150) {
-            "Report exceeds 150 account sections. Import smaller report sections; no accounts were silently skipped."
-        }
+        ParserLimits.check(candidateIndexes.size <= 150, "Report exceeds 150 account sections. Import smaller report sections; no accounts were silently skipped.")
         return candidateIndexes.mapIndexedNotNull { position, index ->
             val end = candidateIndexes.getOrNull(position + 1) ?: lines.size
             val window = lines.subList(index, end)
@@ -255,6 +269,7 @@ class ReportTextParser {
     }
 
     private fun parseMoney(raw: String): Int? = runCatching {
+        if (raw.length > 64) return@runCatching null
         val number = raw.replace("$", "").replace(" ", "").trim()
         val whole = when {
             Regex("[0-9]{1,3}(?:\\.[0-9]{3})+").matches(number) -> number.replace(".", "")

@@ -4,7 +4,7 @@ phase="${1:?phase required}"
 enforce="${2:?true or false required}"
 adb logcat -c
 ./gradlew connectedDebugAndroidTest \
-  -Pandroid.testInstrumentationRunnerArguments.class=com.creditrepairai.v2.analysis.SyntheticParserBatchTest \
+  -Pandroid.testInstrumentationRunnerArguments.class=com.creditrepairai.v2.analysis.SyntheticParserBatchTest,com.creditrepairai.v2.analysis.PdfParserInstrumentedTest,com.creditrepairai.v2.analysis.PdfParserFuzzTest \
   -Pandroid.testInstrumentationRunnerArguments.parserPhase="$phase" \
   -Pandroid.testInstrumentationRunnerArguments.parserEnforce="$enforce" --stacktrace
 result=$?
@@ -18,7 +18,7 @@ for line in Path('parser-validation-chunks.txt').read_text().splitlines():
     if match: chunks[int(match[1])]=match[2]
 assert chunks and sorted(chunks)==list(range(len(chunks))), 'Missing metric log chunks'
 data=json.loads(''.join(chunks[i] for i in range(len(chunks))))
-assert data['total']==60 and data['supportedCases']==54 and len(data['cases'])==60
+assert data['total']==78 and data['supportedCases']==72 and len(data['cases'])==78
 assert data['phase']==sys.argv[1]
 Path('parser-validation-'+sys.argv[1]+'.json').write_text(json.dumps(data,indent=2)+'\n')
 print({k:v for k,v in data.items() if k!='cases'})
