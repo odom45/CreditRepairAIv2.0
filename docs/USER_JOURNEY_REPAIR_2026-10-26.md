@@ -2,7 +2,7 @@
 
 The owner tested signed 2.0.7 and reported no visible sign-in/verification or sign-out, no offered bureau walkthrough, and an assistant blocked on verification with weak interaction. Physical mailed dispute letters are a required addition. These findings supersede the previous 100% backlog estimate.
 
-## Implemented in PR #18 — awaiting CI
+## Implemented and CI-verified in merged PR #18
 
 - A restored unverified Firebase account now sees a verification screen before report/dispute tools. The active email, resend/check controls and confirmed account switch are visible. Returning to the app refreshes verification and the ID token. Import handlers also require verification. Existing encrypted reports are retained during verification; no key or Firebase configuration is replaced.
 - Every saved dispute offers a walkthrough and print/mail action for each relevant known bureau. Creating or reopening the draft from Analysis opens its own guide. The guide retains separate bureau progress and does not silently default to an unrelated bureau.
@@ -12,7 +12,7 @@ The owner tested signed 2.0.7 and reported no visible sign-in/verification or si
 - The server outcome guard analyzes Markdown emphasis and narrowly qualified negation without allowing actual promises. A blocked draft gets at most one revision attempt using the same retrieved context and original deadline; a second failing draft remains withheld. Mail metadata is separately allowlisted by bureau/date; sender and tracking fields are stripped.
 - The assistant scrolls to new messages, offers follow-up questions and exposes a stop-waiting action. Stopping the UI does not claim to retract a request already received by the provider.
 
-## Evidence required before delivering 2.0.8
+## Automated verification for 2.0.8
 
 The new secret-free native-experience workflow compiles the app/test APK, runs all native JVM tests, lint and the full emulator instrumentation suite. Added tests reproduce restored unverified sessions, account/sign-out discovery and confirmation, correct bureau guide entry, letter-export review requirements, multi-page PDF first/last-line integrity, print page ranges, encrypted postal/chat persistence and exclusion of private tracking from agent JSON. Conversation properties check case isolation, redaction, bounded history and preservation of the current question.
 
@@ -31,3 +31,9 @@ The app links these source pages and asks the user to recheck current address, f
 The new small-screen journey tests exposed a transient long draft-created snackbar covering the actual bureau buttons. The redundant creation snackbar is removed; opening the guide is the success feedback. Guide step/progress now precede selector rows, and routes have explicit state keys. An older AI-draft fixture selected Equifax for a Cedar dispute that only listed TransUnion/Experian; that fixture now selects a genuinely Equifax-relevant finding. The bureau restriction was retained.
 
 Raw PDF byte mutations now use one generated page, so the unchanged 10-second per-mutation budget measures container robustness without requiring three OCR pages inside that budget. All 48 mutations and the 180-second whole-test deadline remain. Separate seeded scans, text mutation PDFs and the measured corpus retain multi-page coverage. No production parser limit or independent field expectation is relaxed.
+
+## Current verification — October 27, 2026
+
+PR #18 merged at `36e33860768d44863ca237527ba5eabeea8aa5f7`, preserving the tested source `f9fce9d2ee625d4b93092141be8b65c4f9b75266`. [Native/backend run 40465737885](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40465737885) passed compile, JVM tests, lint, all 37 API-35 device tests and backend typecheck/regressions. [Parser run 40465737742](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40465737742) passed all eight parser tests, 72 exact supported PDFs, six safe rejections and 1,950/1,950 fields in 146,489 ms. Malformed-PDF mutations and real bundled OCR also passed.
+
+Code readiness: **98%** — engineering estimate for the agreed native scope, not a measured percentage or exhaustive audit. Residual integration/edge-case defects remain possible; human legal/security/Play/real-report/device/staging gates are tracked separately and are not code-completion deductions. Signed-build and backend deployment results are pending; owner-phone acceptance remains open.

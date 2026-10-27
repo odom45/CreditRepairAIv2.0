@@ -43,7 +43,14 @@
   "latestGreenRun": "https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40435571642",
   "latestGreenCommit": "c6eb63f85a18a6ab6ecc6c57b94eaa955b87469d",
   "codeReadinessScope": "Reopened after user-device feedback: account, bureau walkthrough, physical letters and contextual assistant",
-  "codeReadinessBasis": "The earlier 100% backlog estimate is superseded. Parser evidence is preserved; new user journeys require their own CI and signed-build evidence.",
-  "experienceFollowupStatus": "implemented-awaiting-ci",
-  "experiencePullRequest": "https://github.com/odom45/CreditRepairAIv2.0/pull/18"
+  "codeReadinessBasis": "Engineering estimate for the agreed native implementation; parser and user-journey CI green. Residual integration and edge-case defects possible; not a measured percentage, exhaustive audit or launch approval.",
+  "experienceFollowupStatus": "ci-verified-merged-release-pending",
+  "experiencePullRequest": "https://github.com/odom45/CreditRepairAIv2.0/pull/18",
+  "codeReadinessPercent": 98,
+  "experienceVerificationCommit": "f9fce9d2ee625d4b93092141be8b65c4f9b75266",
+  "experienceMergeCommit": "36e33860768d44863ca237527ba5eabeea8aa5f7",
+  "experienceVerificationRun": "https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40465737885",
+  "experienceDeviceTestsPassed": 37,
+  "currentParserVerificationRun": "https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40465737742",
+  "currentParserCorpusElapsedMs": 146489
 }

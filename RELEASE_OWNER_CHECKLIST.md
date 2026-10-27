@@ -1,13 +1,13 @@
 # CreditRepairAI release-owner checklist
 
-> **Device feedback update — October 26, 2026:** The previous 100% coding-backlog estimate is superseded by user-reported account/verification, walkthrough-discovery and assistant usability gaps, plus the required physical-letter feature. [PR #18](https://github.com/odom45/CreditRepairAIv2.0/pull/18) implements the repair; user-journey CI and a new signed 2.0.8 build are pending. Parser-only evidence below remains valid and does not establish acceptance of these new flows. Current work: [user-journey repair](docs/USER_JOURNEY_REPAIR_2026-10-26.md).
+> **Current update — October 27, 2026:** [PR #18](https://github.com/odom45/CreditRepairAIv2.0/pull/18) merged at `36e33860768d44863ca237527ba5eabeea8aa5f7`. Account/verification, direct bureau walkthroughs, physical PDF/print letters and contextual assistant repairs passed [native/backend CI 40465737885](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40465737885) (37 device tests). [Parser CI 40465737742](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40465737742) passed all 78 outcomes and 1,950 fields. Signed 2.0.8 build/deployment are in progress. [Repair details](docs/USER_JOURNEY_REPAIR_2026-10-26.md).
 
 
-Current review: **October 26, 2026**. Native 2.0.7 source; [PR #16](https://github.com/odom45/CreditRepairAIv2.0/pull/16) covers the three Muse/Viktor parser follow-up items. This checklist agrees with [the current assessment](docs/PRODUCTION_ASSESSMENT.md) and [the machine-readable evidence](docs/PARSER_ROBUSTNESS_EVIDENCE.json).
+Current review: **October 27, 2026**. Native 2.0.8 source; [PR #16](https://github.com/odom45/CreditRepairAIv2.0/pull/16) covers the three Muse/Viktor parser follow-up items. This checklist agrees with [the current assessment](docs/PRODUCTION_ASSESSMENT.md) and [the machine-readable evidence](docs/PARSER_ROBUSTNESS_EVIDENCE.json).
 
 <!-- parser-followup: verified -->
 
-**Current overall code-readiness rating reopened pending the user-journey repair.**
+Code readiness: **98%** — engineering estimate for the agreed native scope; residual integration and edge-case defects remain possible. This is not a measured percentage or launch approval.
 
 This is an engineering estimate based on the previously implemented native scope, closure of all three stated remaining code gaps, and passing automated checks. It is not an exhaustive new audit, a probability of correctness, or production-launch approval. The separate React web prototype is outside this rating.
 
@@ -44,7 +44,7 @@ These are separate from the three code follow-up items. Attach dated results, bu
 
 - Firebase project `credit-repair-ai-v2`; main package `com.creditrepairai.v2`; debug package `com.creditrepairai.v2.debug`.
 - [Firebase repair record](docs/FIREBASE_REPAIR_2026-10-17.md), [integration acceptance record](docs/INTEGRATION_ACCEPTANCE_2026-10-17.md), and [launch pricing record](docs/LAUNCH_PRICING_AND_RELEASE_CANDIDATE_2026-10-17.md) retain their dated evidence. Do not infer current console settings from those records.
-- Public production release requires the existing production configuration checks and release-ready gate. The separate `production-test` mode requires purchases disabled. This follow-up changes neither mode nor secrets, billing settings, signing keys, production deployments or Play state.
+- Public production release requires the existing production configuration checks and release-ready gate. The separate `production-test` mode requires purchases disabled. The repair reuses existing secrets, signing keys and billing settings. The tested backend is deployed through the existing production configuration gate; no Play submission or purchase-mode change is made.
 - Detailed older console/configuration instructions are retained in [the archived checklist](docs/archive/RELEASE_OWNER_CHECKLIST_BEFORE_2026-10-26.md) for reference. Its chronological status statements and checkboxes are historical and superseded by this checklist; confirm live settings before acting on old instructions.
 
 Store credentials only in protected configuration. Parser test artifacts contain generated fictional data and test results; no consumer reports or account credentials are required.

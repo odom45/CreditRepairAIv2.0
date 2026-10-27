@@ -1,3 +1,4 @@
+# Owner-authorized 2.0.8 deployment: conversation, postal context and bounded answer revision.
 name: Deploy configured production legal agent
 
 on:
@@ -48,3 +49,4 @@ jobs:
           path: |
             production-configuration.json
             firebase-signing-readiness.json
+

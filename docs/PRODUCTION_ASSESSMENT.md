@@ -1,13 +1,13 @@
 # CreditRepairAI current code assessment
 
-> **Device feedback update — October 26, 2026:** The previous 100% coding-backlog estimate is superseded by user-reported account/verification, walkthrough-discovery and assistant usability gaps, plus the required physical-letter feature. [PR #18](https://github.com/odom45/CreditRepairAIv2.0/pull/18) implements the repair; user-journey CI and a new signed 2.0.8 build are pending. Parser-only evidence below remains valid and does not establish acceptance of these new flows. Current work: [user-journey repair](USER_JOURNEY_REPAIR_2026-10-26.md).
+> **Current update — October 27, 2026:** [PR #18](https://github.com/odom45/CreditRepairAIv2.0/pull/18) merged at `36e33860768d44863ca237527ba5eabeea8aa5f7`. Account/verification, direct bureau walkthroughs, physical PDF/print letters and contextual assistant repairs passed [native/backend CI 40465737885](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40465737885) (37 device tests). [Parser CI 40465737742](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40465737742) passed all 78 outcomes and 1,950 fields. Signed 2.0.8 build/deployment are in progress. [Repair details](USER_JOURNEY_REPAIR_2026-10-26.md).
 
 
-Review date: **October 26, 2026**. Native branch: `android-native-rebuild`; follow-up: [PR #16](https://github.com/odom45/CreditRepairAIv2.0/pull/16), based on `302428f1ab977ffa17169b7d3398b3956d44124b` (2.0.7 source).
+Review date: **October 27, 2026**. Native 2.0.8 branch: `android-native-rebuild`; historical parser follow-up: [PR #16](https://github.com/odom45/CreditRepairAIv2.0/pull/16), based on `302428f1ab977ffa17169b7d3398b3956d44124b` (2.0.7 source).
 
 <!-- parser-followup: verified -->
 
-**Current overall code-readiness rating reopened pending the user-journey repair.**
+Code readiness: **98%** — engineering estimate for the agreed native scope; residual integration and edge-case defects remain possible. This is not a measured percentage or launch approval.
 
 This is an engineering estimate based on the previously implemented native scope, closure of all three stated remaining code gaps, and passing automated checks. It is not an exhaustive new audit, a probability of correctness, or production-launch approval. The separate React web prototype is outside this rating.
 

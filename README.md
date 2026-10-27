@@ -1,17 +1,17 @@
 # CreditRepairAI v2.0
 
-> **Device feedback update — October 26, 2026:** The previous 100% coding-backlog estimate is superseded by user-reported account/verification, walkthrough-discovery and assistant usability gaps, plus the required physical-letter feature. [PR #18](https://github.com/odom45/CreditRepairAIv2.0/pull/18) implements the repair; user-journey CI and a new signed 2.0.8 build are pending. Parser-only evidence below remains valid and does not establish acceptance of these new flows. Current work: [user-journey repair](docs/USER_JOURNEY_REPAIR_2026-10-26.md).
+> **Current update — October 27, 2026:** [PR #18](https://github.com/odom45/CreditRepairAIv2.0/pull/18) merged at `36e33860768d44863ca237527ba5eabeea8aa5f7`. Account/verification, direct bureau walkthroughs, physical PDF/print letters and contextual assistant repairs passed [native/backend CI 40465737885](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40465737885) (37 device tests). [Parser CI 40465737742](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40465737742) passed all 78 outcomes and 1,950 fields. Signed 2.0.8 build/deployment are in progress. [Repair details](docs/USER_JOURNEY_REPAIR_2026-10-26.md).
 
 
 Native Android tools for on-device three-bureau report analysis, guided disputes and user-reviewed filing, with an authenticated legal-source AI assistant.
 
 ## Current Android status — October 26, 2026
 
-**Current overall code-readiness rating reopened pending the user-journey repair.**
+Code readiness: **98%** — engineering estimate for the agreed native scope; residual integration and edge-case defects remain possible. This is not a measured percentage or launch approval.
 
 This is an engineering estimate based on the previously implemented native scope, closure of all three stated remaining code gaps, and passing automated checks. It is not an exhaustive new audit, a probability of correctness, or production-launch approval. The separate React web prototype is outside this rating.
 
-[PR #16](https://github.com/odom45/CreditRepairAIv2.0/pull/16) is merged into **`android-native-rebuild`** at `ffe4e3750b49ee2db77d5b9cc36cea11a3eb0519`. Source version defaults remain **2.0.7 / 20261020**. The parser follow-up and all three remaining code-backlog items are complete. This documentation update does not create or claim a newly verified APK/AAB.
+[PR #16](https://github.com/odom45/CreditRepairAIv2.0/pull/16) is merged into **`android-native-rebuild`** at `ffe4e3750b49ee2db77d5b9cc36cea11a3eb0519`. Source version defaults are **2.0.8 / 20261026**. The three parser follow-up items and the requested account, bureau, letter and conversation implementations are complete. Signed release evidence is recorded separately when the build finishes.
 
 | Current evidence | Result |
 |---|---|

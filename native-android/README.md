@@ -1,15 +1,15 @@
 # CreditRepairAI — Native Android
 
-> **Device feedback update — October 26, 2026:** The previous 100% coding-backlog estimate is superseded by user-reported account/verification, walkthrough-discovery and assistant usability gaps, plus the required physical-letter feature. [PR #18](https://github.com/odom45/CreditRepairAIv2.0/pull/18) implements the repair; user-journey CI and a new signed 2.0.8 build are pending. Parser-only evidence below remains valid and does not establish acceptance of these new flows. Current work: [user-journey repair](../docs/USER_JOURNEY_REPAIR_2026-10-26.md).
+> **Current update — October 27, 2026:** [PR #18](https://github.com/odom45/CreditRepairAIv2.0/pull/18) merged at `36e33860768d44863ca237527ba5eabeea8aa5f7`. Account/verification, direct bureau walkthroughs, physical PDF/print letters and contextual assistant repairs passed [native/backend CI 40465737885](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40465737885) (37 device tests). [Parser CI 40465737742](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40465737742) passed all 78 outcomes and 1,950 fields. Signed 2.0.8 build/deployment are in progress. [Repair details](../docs/USER_JOURNEY_REPAIR_2026-10-26.md).
 
 
 This directory contains the native Android rebuild. It uses Kotlin and Jetpack Compose; it does not use Capacitor, a WebView, or a wrapped website for the application interface.
 
 ## Current branch status — October 26, 2026
 
-**Current overall code-readiness rating reopened pending the user-journey repair.**
+Code readiness: **98%** — engineering estimate for the agreed native scope; residual integration and edge-case defects remain possible. This is not a measured percentage or launch approval.
 
-PR #16 is merged into `android-native-rebuild` at `ffe4e3750b49ee2db77d5b9cc36cea11a3eb0519`. [Final PR CI](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40435571642) passed the JVM suite, document consistency and all eight Android parser tests. The expanded corpus has 78 PDF outcomes (72 exact supported reports plus six safe rejections) and 18 new text fixtures across all three bureaus. See [the assessment](../docs/PRODUCTION_ASSESSMENT.md) and [current owner checklist](../RELEASE_OWNER_CHECKLIST.md) for scope and remaining launch acceptance. Version defaults remain 2.0.7 / 20261020; this record does not claim a new APK/AAB.
+PR #16 is merged into `android-native-rebuild` at `ffe4e3750b49ee2db77d5b9cc36cea11a3eb0519`. [Final PR CI](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40435571642) passed the JVM suite, document consistency and all eight Android parser tests. The expanded corpus has 78 PDF outcomes (72 exact supported reports plus six safe rejections) and 18 new text fixtures across all three bureaus. See [the assessment](../docs/PRODUCTION_ASSESSMENT.md) and [current owner checklist](../RELEASE_OWNER_CHECKLIST.md) for scope and remaining launch acceptance. Version defaults are 2.0.8 / 20261026; signed-build evidence is tracked in the repair record.
 
 ## Included in the native implementation
 
@@ -51,7 +51,7 @@ Repository variables `CREDIT_PRODUCTION_DEPLOYMENT`, `CREDIT_PRODUCTION_GATEWAY_
 
 For an existing Play listing, use the upload key already registered with that app. For a new listing, create the owner-controlled upload key once, back it up securely, and never commit it. The workflow emits a signed AAB for Play and a signed release APK for testers, then verifies both signatures.
 
-When starting the workflow, enter a Play `version_code` greater than every previously uploaded build. The current candidate defaults are version 2.0.7 / code 20261020; verify the highest uploaded code before using them. Introductory offer setup and release gates are recorded in `../docs/LAUNCH_PRICING_AND_RELEASE_CANDIDATE_2026-10-17.md`.
+When starting the workflow, enter a Play `version_code` greater than every previously uploaded build. The current candidate defaults are version 2.0.8 / code 20261026; verify the highest uploaded code before using them. Introductory offer setup and release gates are recorded in `../docs/LAUNCH_PRICING_AND_RELEASE_CANDIDATE_2026-10-17.md`.
 
 ## Build
 
