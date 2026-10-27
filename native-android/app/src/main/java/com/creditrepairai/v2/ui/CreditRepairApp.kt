@@ -624,6 +624,7 @@ private fun DisputeCard(dispute: Dispute, viewModel: MainViewModel, onExplain: (
     var expanded by rememberSaveable(dispute.id) { mutableStateOf(false) }
     var draftReviewed by rememberSaveable(dispute.id, dispute.letter) { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
+    var explainResult by remember(dispute.id) { mutableStateOf(false) }
     val context = LocalContext.current
     Card(colors = CardDefaults.cardColors(containerColor = Navy900), modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -641,6 +642,7 @@ private fun DisputeCard(dispute: Dispute, viewModel: MainViewModel, onExplain: (
                 Button(onClick = { onFiling(dispute.id, FilingPortal.valueOf(bureau.name)) }, modifier = Modifier.fillMaxWidth()) { Text("${bureau.displayName} walkthrough") }
                 OutlinedButton(onClick = { onLetter(dispute.id, bureau) }, modifier = Modifier.fillMaxWidth()) { Text("${bureau.displayName} print / mail letter") }
             }
+            OutlinedButton(onClick = { explainResult = true }, modifier = Modifier.fillMaxWidth()) { Text("Explain my result") }
             AnimatedVisibility(expanded) {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Surface(color = Navy950, shape = RoundedCornerShape(12.dp)) {
@@ -674,6 +676,10 @@ private fun DisputeCard(dispute: Dispute, viewModel: MainViewModel, onExplain: (
                 }
             }
         }
+    }
+    if (explainResult) ResultExplanationDialog(dispute, { explainResult = false }) { question ->
+        explainResult = false
+        onExplain(question)
     }
     if (confirmDelete) {
         AlertDialog(
