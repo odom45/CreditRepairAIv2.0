@@ -83,7 +83,7 @@ class FilingFlowInstrumentedTest {
         lateinit var viewModel: MainViewModel
         compose.runOnIdle {
             viewModel = model(); viewModel.acceptPolicies(true, true); viewModel.completeOnboarding(); viewModel.loadDemo()
-            viewModel.createDispute(viewModel.uiState.value.data.findings.first())
+            viewModel.createDispute(viewModel.uiState.value.data.findings.first { com.creditrepairai.v2.model.Bureau.EQUIFAX in it.bureaus })
             val dispute = viewModel.uiState.value.data.disputes.single()
             val record = FilingRecord(disputeId = dispute.id, portal = FilingPortal.EQUIFAX)
             val draft = FilingAnswerDraft(FilingGuide.contextKey(dispute, record), "Fictional drafted explanation", "[NOT APPLICABLE]", "Please investigate the reported balance", "[ADD SUPPORTING RECORDS]")
@@ -169,5 +169,40 @@ class FilingFlowInstrumentedTest {
         compose.onNode(hasText("Analysis") and hasClickAction()).performClick()
         compose.onNodeWithText("Three-bureau analysis").assertIsDisplayed()
         compose.onNodeWithText("No reports imported").assertDoesNotExist()
+    }
+
+    @Test fun savedDisputeOffersTheSelectedBureauWalkthroughDirectly() {
+        lateinit var journeyModel: MainViewModel
+        lateinit var bureau: com.creditrepairai.v2.model.Bureau
+        compose.runOnIdle {
+            journeyModel = model(); journeyModel.acceptPolicies(true, true); journeyModel.completeOnboarding(); journeyModel.loadDemo()
+            journeyModel.createDispute(journeyModel.uiState.value.data.findings.first())
+            bureau = journeyModel.uiState.value.data.disputes.first().bureaus.first { it != com.creditrepairai.v2.model.Bureau.UNKNOWN }
+        }
+        compose.setContent { CreditRepairTheme { CreditRepairApp(journeyModel) } }
+        compose.onNodeWithText("Disputes", substring = false).performClick()
+        compose.onNodeWithText("${bureau.displayName} walkthrough").performScrollTo().performClick()
+        compose.onRoot().printToLog("JourneyTree")
+        compose.onNodeWithText("${bureau.displayName} dispute walkthrough").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Step 1 of 7: Review facts").performScrollTo().assertIsDisplayed()
+    }
+    @Test fun physicalLetterExportRequiresSenderEvidenceAndReview() {
+        lateinit var journeyModel: MainViewModel
+        lateinit var bureau: com.creditrepairai.v2.model.Bureau
+        compose.runOnIdle {
+            journeyModel = model(); journeyModel.acceptPolicies(true, true); journeyModel.completeOnboarding(); journeyModel.loadDemo()
+            journeyModel.createDispute(journeyModel.uiState.value.data.findings.first())
+            bureau = journeyModel.uiState.value.data.disputes.first().bureaus.first { it != com.creditrepairai.v2.model.Bureau.UNKNOWN }
+        }
+        compose.setContent { CreditRepairTheme { CreditRepairApp(journeyModel) } }
+        compose.onNodeWithText("Disputes", substring = false).performClick()
+        compose.onNodeWithText("${bureau.displayName} print / mail letter").performScrollTo().performClick()
+        compose.onRoot().printToLog("JourneyTree")
+        compose.onNodeWithText("Save ${bureau.displayName} letter PDF").performScrollTo().assertIsNotEnabled()
+        compose.onNodeWithText("Your full name — local only").performScrollTo().performTextInput("Fictional Reader")
+        compose.onNodeWithText("Your return mailing address — local only").performScrollTo().performTextInput("123 Test Street, Test City WA 00000")
+        compose.onNodeWithText("Copies I will enclose").performScrollTo().performTextInput("Copy of the dated fictional statement")
+        compose.onNodeWithText("I verified every statement and the mailing requirements").performScrollTo().performClick()
+        compose.onNodeWithText("Save ${bureau.displayName} letter PDF").performScrollTo().assertIsEnabled()
     }
 }

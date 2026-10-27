@@ -7,6 +7,7 @@ import android.util.Base64
 import com.creditrepairai.v2.model.AppState
 import com.creditrepairai.v2.model.Bureau
 import com.creditrepairai.v2.model.ChatMessage
+import com.creditrepairai.v2.model.MailingRecord
 import com.creditrepairai.v2.model.CreditAccount
 import com.creditrepairai.v2.model.CreditReport
 import com.creditrepairai.v2.model.Dispute
@@ -85,6 +86,10 @@ class AppRepository(context: Context) {
             .put("answerDraft", record.answerDraft?.let { JSONObject().put("contextKey", it.contextKey).put("problem", it.problem).put("companyResponse", it.companyResponse).put("resolution", it.resolution).put("evidence", it.evidence) } ?: JSONObject.NULL)
             .put("submittedAt", record.submittedAt ?: JSONObject.NULL).put("responseReceivedAt", record.responseReceivedAt ?: JSONObject.NULL)
             .put("reminder30", record.reminder30 ?: JSONObject.NULL).put("reminder45", record.reminder45 ?: JSONObject.NULL)) } })
+        put("mailings", JSONArray().apply { state.mailings.forEach { record -> put(JSONObject()
+            .put("disputeId", record.disputeId).put("bureau", record.bureau.name).put("mailedAt", record.mailedAt)
+            .put("trackingNumber", record.trackingNumber).put("deliveredAt", record.deliveredAt ?: JSONObject.NULL)
+            .put("responseReceivedAt", record.responseReceivedAt ?: JSONObject.NULL)) } })
         put("jurisdictionCode", state.jurisdictionCode)
         put("reports", JSONArray().apply { state.reports.forEach { put(it.toJson()) } })
         put("accounts", JSONArray().apply { state.accounts.forEach { put(it.toJson()) } })
@@ -107,6 +112,8 @@ class AppRepository(context: Context) {
             explanation = it.optJSONObject("explanation")?.let { note -> FilingExplanation(note.optInt("step", -1), note.optString("contextKey"), note.optString("text")) },
             answerDraft = it.optJSONObject("answerDraft")?.let { draft -> FilingAnswerDraft(draft.optString("contextKey"), draft.optString("problem"), draft.optString("companyResponse"), draft.optString("resolution"), draft.optString("evidence")) },
             submittedAt = it.optLongOrNull("submittedAt"), responseReceivedAt = it.optLongOrNull("responseReceivedAt"), reminder30 = it.optLongOrNull("reminder30"), reminder45 = it.optLongOrNull("reminder45")) },
+        mailings = json.array("mailings").objects().map { MailingRecord(it.optString("disputeId"), Bureau.from(it.optString("bureau")),
+            it.optLong("mailedAt"), it.optString("trackingNumber"), it.optLongOrNull("deliveredAt"), it.optLongOrNull("responseReceivedAt")) },
         jurisdictionCode = json.optString("jurisdictionCode"),
         reports = json.array("reports").objects().map { it.toReport() },
         accounts = json.array("accounts").objects().map { it.toAccount() },
@@ -153,7 +160,7 @@ class AppRepository(context: Context) {
         .put("bureau", bureau.name).put("score", score).put("recordedAt", recordedAt)
 
     private fun ChatMessage.toJson() = JSONObject()
-        .put("id", id).put("fromUser", fromUser).put("text", text).put("createdAt", createdAt)
+        .put("id", id).put("fromUser", fromUser).put("text", text).put("createdAt", createdAt).put("caseScopeId", caseScopeId ?: JSONObject.NULL)
 
     private fun JSONObject.toReport() = CreditReport(
         id = optString("id"), fileName = optString("fileName"), bureau = Bureau.from(optString("bureau")),
@@ -193,6 +200,7 @@ class AppRepository(context: Context) {
 
     private fun JSONObject.toMessage() = ChatMessage(
         id = optString("id"), fromUser = optBoolean("fromUser"), text = optString("text"), createdAt = optLong("createdAt"),
+        caseScopeId = optString("caseScopeId").takeIf { has("caseScopeId") && !isNull("caseScopeId") && it.isNotBlank() },
     )
 
     private fun JSONObject.optIntOrNull(key: String): Int? = if (isNull(key) || !has(key)) null else optInt(key)

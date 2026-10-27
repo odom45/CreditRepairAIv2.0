@@ -1,10 +1,13 @@
 # CreditRepairAI v2.0
 
+> **Device feedback update — October 26, 2026:** The previous 100% coding-backlog estimate is superseded by user-reported account/verification, walkthrough-discovery and assistant usability gaps, plus the required physical-letter feature. [PR #18](https://github.com/odom45/CreditRepairAIv2.0/pull/18) implements the repair; user-journey CI and a new signed 2.0.8 build are pending. Parser-only evidence below remains valid and does not establish acceptance of these new flows. Current work: [user-journey repair](docs/USER_JOURNEY_REPAIR_2026-10-26.md).
+
+
 Native Android tools for on-device three-bureau report analysis, guided disputes and user-reviewed filing, with an authenticated legal-source AI assistant.
 
 ## Current Android status — October 26, 2026
 
-Code readiness: **100%** of the agreed native Android coding backlog.
+**Current overall code-readiness rating reopened pending the user-journey repair.**
 
 This is an engineering estimate based on the previously implemented native scope, closure of all three stated remaining code gaps, and passing automated checks. It is not an exhaustive new audit, a probability of correctness, or production-launch approval. The separate React web prototype is outside this rating.
 

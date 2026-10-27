@@ -133,4 +133,35 @@ class AuthenticationInstrumentedTest {
             assertEquals("Previously reviewed plan", AppRepository(context).load().goal.aiPlan)
         }
     }
+
+    @Test fun restoredUnverifiedAccountShowsVerificationBeforeAnyReportTools() {
+        val session = Session(signedIn = true)
+        lateinit var vm: MainViewModel
+        compose.runOnIdle { vm = model(session); vm.acceptPolicies(true, true); vm.completeOnboarding() }
+        compose.setContent { CreditRepairTheme { CreditRepairApp(vm) } }
+        compose.onNodeWithText("Verify your signed-in account").assertIsDisplayed()
+        compose.onNodeWithText("Signed in as fictional@example.invalid").assertIsDisplayed()
+        compose.onNodeWithText("Reports", substring = false).assertDoesNotExist()
+        compose.onNodeWithText("Resend verification email").performScrollTo().performClick()
+        compose.waitUntil { session.resendRequests == 1 && !vm.uiState.value.isAuthenticating }
+        compose.runOnIdle { session.isEmailVerified = true }
+        compose.onNodeWithText("I've verified my email — check again").performScrollTo().performClick()
+        compose.waitUntil { vm.uiState.value.emailVerified }
+        compose.onNodeWithText("Account", substring = false).assertIsDisplayed()
+    }
+    @Test fun accountAndSignOutAreVisibleAndRequireConfirmation() {
+        val session = Session(signedIn = true).apply { isEmailVerified = true }
+        lateinit var vm: MainViewModel
+        compose.runOnIdle { vm = model(session); vm.acceptPolicies(true, true); vm.completeOnboarding() }
+        compose.setContent { CreditRepairTheme { CreditRepairApp(vm) } }
+        compose.onNodeWithText("Account", substring = false).performClick()
+        compose.onNodeWithText("Signed in as fictional@example.invalid").assertIsDisplayed()
+        compose.onNodeWithText("Sign out", substring = false).performClick()
+        compose.onNodeWithText("Keep working").performClick()
+        compose.runOnIdle { assertTrue(session.signedIn) }
+        compose.onNodeWithText("Sign out", substring = false).performClick()
+        compose.onNodeWithText("Sign out and remove local case").performClick()
+        compose.waitUntil { !session.signedIn && vm.uiState.value.signedInEmail == null }
+        compose.onNodeWithText("Welcome to CreditRepairAI").assertIsDisplayed()
+    }
 }

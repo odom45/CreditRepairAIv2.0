@@ -1,10 +1,13 @@
 # CreditRepairAI — Native Android
 
+> **Device feedback update — October 26, 2026:** The previous 100% coding-backlog estimate is superseded by user-reported account/verification, walkthrough-discovery and assistant usability gaps, plus the required physical-letter feature. [PR #18](https://github.com/odom45/CreditRepairAIv2.0/pull/18) implements the repair; user-journey CI and a new signed 2.0.8 build are pending. Parser-only evidence below remains valid and does not establish acceptance of these new flows. Current work: [user-journey repair](../docs/USER_JOURNEY_REPAIR_2026-10-26.md).
+
+
 This directory contains the native Android rebuild. It uses Kotlin and Jetpack Compose; it does not use Capacitor, a WebView, or a wrapped website for the application interface.
 
 ## Current branch status — October 26, 2026
 
-Code readiness: **100%** of the agreed native Android coding backlog.
+**Current overall code-readiness rating reopened pending the user-journey repair.**
 
 PR #16 is merged into `android-native-rebuild` at `ffe4e3750b49ee2db77d5b9cc36cea11a3eb0519`. [Final PR CI](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40435571642) passed the JVM suite, document consistency and all eight Android parser tests. The expanded corpus has 78 PDF outcomes (72 exact supported reports plus six safe rejections) and 18 new text fixtures across all three bureaus. See [the assessment](../docs/PRODUCTION_ASSESSMENT.md) and [current owner checklist](../RELEASE_OWNER_CHECKLIST.md) for scope and remaining launch acceptance. Version defaults remain 2.0.7 / 20261020; this record does not claim a new APK/AAB.
 

@@ -1,6 +1,9 @@
 # Current native verification — October 26, 2026
 
-Code readiness: **100%** of the agreed native Android coding backlog.
+> **Device feedback update — October 26, 2026:** The previous 100% coding-backlog estimate is superseded by user-reported account/verification, walkthrough-discovery and assistant usability gaps, plus the required physical-letter feature. [PR #18](https://github.com/odom45/CreditRepairAIv2.0/pull/18) implements the repair; user-journey CI and a new signed 2.0.8 build are pending. Parser-only evidence below remains valid and does not establish acceptance of these new flows. Current work: [user-journey repair](USER_JOURNEY_REPAIR_2026-10-26.md).
+
+
+**Current overall code-readiness rating reopened pending the user-journey repair.**
 
 PR #16 merged into `android-native-rebuild` at `ffe4e3750b49ee2db77d5b9cc36cea11a3eb0519`. The final PR revision `c6eb63f85a18a6ab6ecc6c57b94eaa955b87469d` passed [run 40435571642](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40435571642), including the document-consistency check, JVM suite and all eight API 35 Android parser tests. The merge preserves the tested application/test source; subsequent readiness-record edits are documentation/checker updates.
 

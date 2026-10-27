@@ -28,12 +28,12 @@ class CreditAgentGateway(
 
     val isConfigured: Boolean get() = resolvedEndpoint.startsWith("https://")
 
-    suspend fun answer(question: String, state: AppState, expectedSubject: String, caseScopeId: String? = null): String = withContext(Dispatchers.IO) {
+    suspend fun answer(question: String, state: AppState, expectedSubject: String, caseScopeId: String? = null, includeConversation: Boolean = false): String = withContext(Dispatchers.IO) {
         check(isConfigured) { "The secure AI service has not been configured for this build." }
         val snapshot = state.forAgentCase(caseScopeId)
         val token = tokenProvider.bearerToken(expectedSubject)?.takeIf(String::isNotBlank)
             ?: error("Secure AI sign-in is not connected. No report data was sent.")
-        val safeQuestion = SensitiveDataRedactor.redact(question)
+        val safeQuestion = SensitiveDataRedactor.redact(if (includeConversation) ConversationContext.question(question, state.chat, caseScopeId) else question)
         check(!SensitiveDataRedactor.containsHighRiskIdentifier(safeQuestion)) {
             "Remove sensitive identifiers such as an SSN, birth date, email, or phone number and try again."
         }
@@ -117,6 +117,9 @@ class CreditAgentGateway(
         })
         put("disputes", JSONArray().apply {
             disputes.forEach { dispute ->
+                val now = System.currentTimeMillis()
+                val postal = mailings.filter { it.disputeId == dispute.id && it.mailedAt in 1..now }
+                val postalDue = postal.mapNotNull { it.deliveredAt?.takeIf { delivered -> delivered in it.mailedAt..now }?.plus(45L * 86400000) }.minOrNull()
                 put(JSONObject()
                     .put("id", dispute.id)
                     .put("findingId", dispute.findingId)
@@ -125,9 +128,12 @@ class CreditAgentGateway(
                     .put("reason", SensitiveDataRedactor.redact(dispute.reason))
                     .put("status", dispute.status.name)
                     .put("createdAt", dispute.createdAt)
-                    .put("sentAt", dispute.sentAt ?: JSONObject.NULL)
-                    .put("craResponseDueAt", dispute.craResponseDueAt ?: JSONObject.NULL)
-                    .put("responseReceived", FilingGuide.hasBureauResponse(dispute, filings, System.currentTimeMillis())))
+                    .put("sentAt", dispute.sentAt ?: postal.minOfOrNull { it.mailedAt } ?: JSONObject.NULL)
+                    .put("craResponseDueAt", dispute.craResponseDueAt ?: postalDue ?: JSONObject.NULL)
+                    .put("responseReceived", FilingGuide.hasBureauResponse(dispute, filings, now) || postal.any { record -> record.responseReceivedAt?.let { it in record.mailedAt..now } == true })
+                    .put("mailingHistory", JSONArray().apply { postal.forEach { record -> put(JSONObject()
+                        .put("bureau", record.bureau.name.lowercase()).put("mailedAt", record.mailedAt)
+                        .put("deliveredAt", record.deliveredAt ?: JSONObject.NULL).put("responseReceivedAt", record.responseReceivedAt ?: JSONObject.NULL)) } }))
             }
         })
     }

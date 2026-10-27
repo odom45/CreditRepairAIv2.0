@@ -1,10 +1,13 @@
 # CreditRepairAI current code assessment
 
+> **Device feedback update — October 26, 2026:** The previous 100% coding-backlog estimate is superseded by user-reported account/verification, walkthrough-discovery and assistant usability gaps, plus the required physical-letter feature. [PR #18](https://github.com/odom45/CreditRepairAIv2.0/pull/18) implements the repair; user-journey CI and a new signed 2.0.8 build are pending. Parser-only evidence below remains valid and does not establish acceptance of these new flows. Current work: [user-journey repair](USER_JOURNEY_REPAIR_2026-10-26.md).
+
+
 Review date: **October 26, 2026**. Native branch: `android-native-rebuild`; follow-up: [PR #16](https://github.com/odom45/CreditRepairAIv2.0/pull/16), based on `302428f1ab977ffa17169b7d3398b3956d44124b` (2.0.7 source).
 
 <!-- parser-followup: verified -->
 
-Code readiness: **100%** of the agreed native Android coding backlog.
+**Current overall code-readiness rating reopened pending the user-journey repair.**
 
 This is an engineering estimate based on the previously implemented native scope, closure of all three stated remaining code gaps, and passing automated checks. It is not an exhaustive new audit, a probability of correctness, or production-launch approval. The separate React web prototype is outside this rating.
 
