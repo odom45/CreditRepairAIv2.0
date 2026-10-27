@@ -39,7 +39,8 @@ class PdfParserFuzzTest {
                 else -> line
             }
         }.shuffled(random)
-        PdfDocument().use { document ->
+        val document = PdfDocument()
+        try {
             repeat(1 + random.nextInt(3)) { pageIndex ->
                 val page = document.startPage(PdfDocument.PageInfo.Builder(1000, 1400, pageIndex + 1).create())
                 val bitmap = if (scan) Bitmap.createBitmap(1000, 1400, Bitmap.Config.ARGB_8888) else null
@@ -53,7 +54,7 @@ class PdfParserFuzzTest {
                 } finally { bitmap?.recycle() }
             }
             file.outputStream().use(document::writeTo)
-        }
+        } finally { document.close() }
     }
 
     @Test(timeout = 180_000) fun mutatedAndTruncatedPdfBytesAcceptOrRejectWithoutCrashing() = runBlocking {
