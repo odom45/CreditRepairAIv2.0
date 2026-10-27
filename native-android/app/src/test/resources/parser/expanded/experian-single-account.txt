@@ -1,0 +1,17 @@
+EXPERIAN CREDIT REPORT
+SYNTHETIC ONLY - invented records; not a consumer report.
+FICO Score: 640
+Creditor: SYNTHETIC NORTH BANK
+Account Number: XXXX1234
+Balance: $1,280
+Status: Open
+Payment Status: Current
+Date Opened: 01/2020
+Date Reported: 09/2026
+Account Type: Revolving
+Responsibility: Individual
+Credit Limit: $5,000
+High Balance: $1,400
+Past Due: $0
+Original Creditor: SYNTHETIC ORIGINAL BANK
+Remarks: Synthetic record only

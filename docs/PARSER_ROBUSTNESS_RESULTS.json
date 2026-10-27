@@ -1,0 +1,45 @@
+{
+  "baseline_commit": "302428f1ab977ffa17169b7d3398b3956d44124b",
+  "tested_commit": "fcb2c4f531e70ba292696e318acc7c889092fb56",
+  "workflow_run": 40434707769,
+  "workflow_url": "https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40434707769",
+  "scope": "parser fuzz/property tests, expanded synthetic corpus, synchronized assessment/checklist",
+  "unit": {
+    "tests": 79,
+    "suites": 16,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "xml_inspected": true,
+    "artifact_id": 12703268938,
+    "zip_sha256": "f56741410c9ea4d755a2ef04d1b47c481eae87bfa61ceca05fe934658a223598"
+  },
+  "device": {
+    "tests": 7,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "api": 35,
+    "suites": 1,
+    "xml_inspected": true,
+    "artifact_id": 12704660027,
+    "zip_sha256": "c3a8e6d1f5e450baf8acee7e7c6d170d98dc56abbb659f5279f5257c47a8b4bc",
+    "lint": {
+      "Warning": 29
+    }
+  },
+  "seeds": {
+    "text_mutations": "0x435245444954",
+    "valid_metamorphic_reports": "0x4d455441",
+    "pdf_mutations": "0x504446"
+  },
+  "corpus": {
+    "new_text_fixtures": 18,
+    "new_supported_pdf_cases": 24,
+    "new_pdf_mutations": 48,
+    "original_measured_pdf_cases": 60
+  },
+  "external_acceptance": "not assessed by this follow-up",
+  "workflow_conclusion": "success",
+  "follow_up_status": "3/3 complete; external acceptance unassessed"
+}

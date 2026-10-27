@@ -1,0 +1,6 @@
+EQUIFAX CREDIT REPORT
+SYNTHETIC ONLY - invented records; not a consumer report.
+Creditor: SYNTHETIC NORTH BANK
+Account Number: XXXX1234
+Creditor: SYNTHETIC HARBOR AUTO
+Account Number: XXXX5678
