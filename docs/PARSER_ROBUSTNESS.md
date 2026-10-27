@@ -14,7 +14,7 @@ All test documents are invented. No bureau-provided templates or real consumer d
 
 Explicit boundaries cover character, line/field, field-count and extraction-writer limits. Limits reject rather than silently truncate reports. Resource-limit errors, cancellation, VM errors and arbitrary test failures are not treated as successful fuzz outcomes. PDF structural/argument errors may be expected rejections for corrupted byte inputs.
 
-JVM test heap: 256 MB. JUnit timeouts: 15–60 seconds for text tests, 30–180 seconds for individual PDF tests, 600 seconds for the measured corpus. Each mutated PDF must finish in under 10 seconds; the workflow job is bounded to 40 minutes. Timeouts are test enforcement, not a production process-isolation guarantee. PDFBox parsing still executes in the app process, and mixed scratch memory does not cap the whole dependency heap.
+JVM test heap: 256 MB. JUnit timeouts: 15–60 seconds for text tests, 30–180 seconds for individual PDF tests, 600 seconds for the measured corpus. Each mutated PDF must finish in under 10 seconds after one known image-only PDF warms bundled OCR; the original whole-test timeout still includes that warm-up; the workflow job is bounded to 40 minutes. Timeouts are test enforcement, not a production process-isolation guarantee. PDFBox parsing still executes in the app process, and mixed scratch memory does not cap the whole dependency heap.
 
 ## Reproduce
 

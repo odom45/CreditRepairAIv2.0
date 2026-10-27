@@ -2,14 +2,25 @@ name: Native account, dispute and letter journeys
 on:
   pull_request:
     branches: [android-native-rebuild]
-    paths: ["native-android/**", ".github/workflows/native-experience.yml"]
+    paths: ["native-android/**", "convex/**", "tests/**", ".github/workflows/native-experience.yml"]
   push:
     branches: [android-native-rebuild]
-    paths: ["native-android/**", ".github/workflows/native-experience.yml"]
+    paths: ["native-android/**", "convex/**", "tests/**", ".github/workflows/native-experience.yml"]
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
+  backend-regressions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm ci --ignore-scripts
+      - run: npm run typecheck
+      - run: npm run test:launch
   native-journeys:
     runs-on: ubuntu-latest
     timeout-minutes: 40

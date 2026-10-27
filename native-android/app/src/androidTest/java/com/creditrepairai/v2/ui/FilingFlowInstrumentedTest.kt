@@ -83,7 +83,7 @@ class FilingFlowInstrumentedTest {
         lateinit var viewModel: MainViewModel
         compose.runOnIdle {
             viewModel = model(); viewModel.acceptPolicies(true, true); viewModel.completeOnboarding(); viewModel.loadDemo()
-            viewModel.createDispute(viewModel.uiState.value.data.findings.first())
+            viewModel.createDispute(viewModel.uiState.value.data.findings.first { com.creditrepairai.v2.model.Bureau.EQUIFAX in it.bureaus })
             val dispute = viewModel.uiState.value.data.disputes.single()
             val record = FilingRecord(disputeId = dispute.id, portal = FilingPortal.EQUIFAX)
             val draft = FilingAnswerDraft(FilingGuide.contextKey(dispute, record), "Fictional drafted explanation", "[NOT APPLICABLE]", "Please investigate the reported balance", "[ADD SUPPORTING RECORDS]")
@@ -182,7 +182,8 @@ class FilingFlowInstrumentedTest {
         compose.setContent { CreditRepairTheme { CreditRepairApp(journeyModel) } }
         compose.onNodeWithText("Disputes", substring = false).performClick()
         compose.onNodeWithText("${bureau.displayName} walkthrough").performScrollTo().performClick()
-        compose.onNodeWithText("${bureau.displayName} dispute walkthrough").assertIsDisplayed()
+        compose.onRoot().printToLog("JourneyTree")
+        compose.onNodeWithText("${bureau.displayName} dispute walkthrough").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Step 1 of 7: Review facts").assertIsDisplayed()
     }
     @Test fun physicalLetterExportRequiresSenderEvidenceAndReview() {
@@ -196,6 +197,7 @@ class FilingFlowInstrumentedTest {
         compose.setContent { CreditRepairTheme { CreditRepairApp(journeyModel) } }
         compose.onNodeWithText("Disputes", substring = false).performClick()
         compose.onNodeWithText("${bureau.displayName} print / mail letter").performScrollTo().performClick()
+        compose.onRoot().printToLog("JourneyTree")
         compose.onNodeWithText("Save ${bureau.displayName} letter PDF").performScrollTo().assertIsNotEnabled()
         compose.onNodeWithText("Your full name — local only").performScrollTo().performTextInput("Fictional Reader")
         compose.onNodeWithText("Your return mailing address — local only").performScrollTo().performTextInput("123 Test Street, Test City WA 00000")

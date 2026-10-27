@@ -93,6 +93,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -255,6 +256,7 @@ fun CreditRepairApp(viewModel: MainViewModel) {
         },
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(padding)) {
+            key(destination, filingDisputeId, filingPortal, letterBureau) {
             when (destination) {
                 Destination.DASHBOARD -> DashboardScreen(ui.data, viewModel, onNavigate = { destination = it })
                 Destination.REPORTS -> ReportsScreen(ui, viewModel) { destination = Destination.ACQUISITION }
@@ -274,6 +276,7 @@ fun CreditRepairApp(viewModel: MainViewModel) {
                 Destination.SUBSCRIPTION -> SubscriptionScreen(viewModel)
                 Destination.LETTERS -> PaperLetterScreen(ui, viewModel, filingDisputeId, letterBureau)
                 Destination.POLICIES -> PolicyScreen()
+            }
             }
 
             if (ui.isProcessing) {

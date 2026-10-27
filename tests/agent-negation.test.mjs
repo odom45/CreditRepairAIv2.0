@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { educationalAnswer, redactText } from '../convex/agentSafety.ts';
+import { educationalAnswer, redactText, sanitizeSnapshot } from '../convex/agentSafety.ts';
 
 test('explicitly negated error claims retain their legal explanation', () => {
   for (const phrase of ['is not proof of an error', 'does not prove an error', 'doesn’t prove an error', 'never proves an error', 'is not automatically proof of an error']) {
@@ -36,4 +36,22 @@ test('answer redaction retains late citations while request text stays bounded',
   const oversized = educationalAnswer('A'.repeat(16001) + ' FCRA 1681i.');
   assert.ok(oversized.includes('no partial legal answer is displayed'));
   assert.ok(!oversized.includes('1681i'));
+});
+
+test('Markdown emphasis and qualified negation retain useful explanations while formatted promises fail', () => {
+  for (const phrase of ['is **not** proof of an error', 'does **not** guarantee deletion', 'is not conclusive proof of an error', 'is not the same as proof of an error']) {
+    const text = `A comparison flag ${phrase}. Check the dated records. FCRA 15 USC 1681i describes reinvestigation.`;
+    assert.ok(educationalAnswer(text).includes('1681i'), phrase);
+  }
+  for (const claim of ['This **will** be deleted.', '**Guaranteed deletion**.', 'It is not conclusive proof of an error, but it will be deleted.']) {
+    assert.ok(educationalAnswer(claim).includes('did not pass'), claim);
+  }
+});
+test('mailing history keeps only bureau and dates; no sender or tracking data reaches tools', () => {
+  const result = sanitizeSnapshot({ disputes: [{ id: 'fictional', mailingHistory: [
+    { bureau: 'equifax', mailedAt: 1000, deliveredAt: 2000, responseReceivedAt: null, trackingNumber: 'PRIVATE-TRACKING', name: 'PRIVATE-SENDER', address: 'PRIVATE-ADDRESS' },
+    { bureau: 'unknown', mailedAt: 1000 },
+  ] }] });
+  assert.deepEqual(result.disputes[0].mailingHistory, [{ bureau: 'equifax', mailedAt: 1000, deliveredAt: 2000, responseReceivedAt: null }]);
+  assert.ok(!JSON.stringify(result).includes('PRIVATE-'));
 });

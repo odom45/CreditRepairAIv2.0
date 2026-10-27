@@ -110,6 +110,7 @@ export async function runCreditAgent(request: CreditAgentRequest): Promise<strin
   }];
   let searched = false;
   let summarized = false;
+  let outcomeRevisionRequested = false;
   let response = await callResponsesApi(apiKey, {
     model: process.env.CREDIT_AGENT_MODEL || CREDIT_AGENT_CONFIG.defaultModel,
     instructions,
@@ -130,7 +131,22 @@ export async function runCreditAgent(request: CreditAgentRequest): Promise<strin
       }
       searched = true;
     }
-    if (calls.length === 0 && summarized && searched) return educationalAnswer(extractAnswer(response));
+    if (calls.length === 0 && summarized && searched) {
+      const answer = educationalAnswer(extractAnswer(response));
+      if (!answer.includes("did not pass the outcome-claim check") || outcomeRevisionRequested) return answer;
+      // One correction attempt stays inside the original deadline and retrieval context.
+      // Never show a blocked draft or relax the outcome filter to make a response pass.
+      outcomeRevisionRequested = true;
+      history.push(...(response.output || []), { role: "user", content: [{ type: "input_text", text:
+        "Revise the withheld draft into a factual educational answer using the already retrieved sources and case facts. Do not predict deletion, approval, score changes or timing. State that differences need verification without using proof/proves language. Preserve relevant citations. Return only the revised answer." }] });
+      response = await callResponsesApi(apiKey, {
+        model: process.env.CREDIT_AGENT_MODEL || CREDIT_AGENT_CONFIG.defaultModel,
+        instructions, input: history, store: false,
+        include: ["reasoning.encrypted_content", "file_search_call.results"], tools, tool_choice: "auto",
+        max_output_tokens: CREDIT_AGENT_CONFIG.maxOutputTokens,
+      }, deadline);
+      continue;
+    }
 
     const outputs = calls.map((call) => ({
       type: "function_call_output",

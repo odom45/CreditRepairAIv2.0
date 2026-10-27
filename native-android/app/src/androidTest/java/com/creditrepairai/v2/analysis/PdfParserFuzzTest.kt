@@ -61,6 +61,11 @@ class PdfParserFuzzTest {
         val parser = CreditReportParser(context)
         val original = File(directory, "original.pdf")
         pdf(original, false, 42)
+        // The time property measures warm parsing, independent of one-time bundled OCR startup.
+        val warmScan = File(directory, "warmup-scan.pdf")
+        pdf(warmScan, true, 7)
+        assertEquals("On-device OCR", parser.parse(uri(warmScan), "synthetic.pdf").report.extractionMethod)
+        warmScan.delete()
         val bytes = original.readBytes()
         val random = Random(20261026)
         repeat(48) { iteration ->

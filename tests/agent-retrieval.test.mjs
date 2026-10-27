@@ -111,3 +111,22 @@ test('deadline aborts an outstanding provider request and returns a safe error',
     });
   } finally { Date.now = now; }
 });
+
+test('a filtered answer gets one bounded revision using the same sourced case context', async () => {
+  const risky = { type: 'message', content: [{ type: 'output_text', text: 'Your account will be deleted.' }] };
+  const retrieval = { type: 'file_search_call', status: 'completed', results: [{ file_id: 'file_fictional', text: 'FCRA 15 USC 1681i excerpt.' }] };
+  await withResponses([summary, { status: 'completed', output: [retrieval, risky] }, { status: 'completed', output: [answer] }], async bodies => {
+    const result = await runCreditAgent(request);
+    assert.ok(result.includes('1681i'));
+    assert.ok(!result.includes('will be deleted'));
+    assert.equal(bodies.length, 3);
+    assert.ok(JSON.stringify(bodies[2].input).includes('already retrieved sources'));
+    assert.ok(bodies.every(body => body.store === false));
+  });
+  await withResponses([summary, { status: 'completed', output: [retrieval, risky] }, { status: 'completed', output: [risky] }], async bodies => {
+    const result = await runCreditAgent(request);
+    assert.ok(result.includes('did not pass'));
+    assert.ok(!result.includes('will be deleted'));
+    assert.equal(bodies.length, 3);
+  });
+});
