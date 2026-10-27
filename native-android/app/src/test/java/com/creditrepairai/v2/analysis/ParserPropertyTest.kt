@@ -14,7 +14,7 @@ class ParserPropertyTest {
         val seed = 0x435245444954L
         val random = Random(seed)
         val base = "Experian CREDIT REPORT\nSYNTHETIC ONLY\nFICO Score: 640\nCreditor: Synthetic Bank\nAcct: XXXX1234\nBalance: $1280\nStatus: Open\n"
-        val quirks = listOf("\u0000", "\u00a0", "\u202f", "\u200b", "\u202e", "\ud800", "\udfff", "\r\n", "\f\n", "|", "💳", "漢字")
+        val quirks = listOf("\u0000", "\u00a0", "\u202f", "\u200b", "\u202e", "\ud800", "\udfff", "\r\n", "\u000c\n", "|", "💳", "漢字")
         repeat(1_000) { iteration ->
             val text = when (iteration % 8) {
                 0 -> base.take(random.nextInt(base.length + 1))
