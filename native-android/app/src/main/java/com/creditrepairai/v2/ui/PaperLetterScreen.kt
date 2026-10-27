@@ -49,13 +49,16 @@ fun PaperLetterScreen(ui: AppUiState, viewModel: MainViewModel, initialDisputeId
     var message by remember { mutableStateOf<String?>(null) }
     var pendingText by remember { mutableStateOf<String?>(null) }
     var pendingOwner by remember { mutableStateOf<String?>(null) }
+    var pendingDisputeId by remember { mutableStateOf<String?>(null) }
     var tracking by remember(dispute.id, bureau) { mutableStateOf("") }
     val letter = if (bureau != Bureau.UNKNOWN && name.isNotBlank() && address.isNotBlank() && facts.isNotBlank() && evidence.isNotBlank() && resolution.isNotBlank() && date.isNotBlank())
         PaperDisputeLetter.compose(dispute, bureau, name, address, date, facts, evidence, resolution) else null
     val notifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
     val export = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/pdf")) { uri ->
         val text = pendingText; pendingText = null
-        if (uri != null && text != null && pendingOwner == viewModel.signedInSubject && viewModel.uiState.value.data.disputes.any { it.id == dispute.id }) {
+        val owner = pendingOwner; pendingOwner = null
+        val exportingDisputeId = pendingDisputeId; pendingDisputeId = null
+        if (uri != null && text != null && owner == viewModel.signedInSubject && viewModel.uiState.value.data.disputes.any { it.id == exportingDisputeId }) {
             message = runCatching {
                 context.contentResolver.openOutputStream(uri)?.use { LetterPdfRenderer.write(it, text) } ?: error("Could not open the selected destination")
                 "PDF saved. Print, sign, and mail it yourself; saving does not send a dispute."
@@ -81,7 +84,7 @@ fun PaperLetterScreen(ui: AppUiState, viewModel: MainViewModel, initialDisputeId
         letter?.let { Text("Letter preview"); Text(it) }
         Text("Name/address stay in this screen's memory and are not sent to AI. Exported/printed copies contain those details. Choose a private destination. Returning to this screen may require re-entering them.")
         FilterChip(reviewed, { reviewed = !reviewed }, label = { Text("I verified every statement and the mailing requirements") }, enabled = letter != null)
-        Button(onClick = { pendingText = letter; pendingOwner = viewModel.signedInSubject; export.launch("CreditRepairAI-${bureau.name}-dispute.pdf") }, enabled = reviewed && letter != null, modifier = Modifier.fillMaxWidth()) { Text("Save ${bureau.displayName} letter PDF") }
+        Button(onClick = { pendingText = letter; pendingOwner = viewModel.signedInSubject; pendingDisputeId = dispute.id; export.launch("CreditRepairAI-${bureau.name}-dispute.pdf") }, enabled = reviewed && letter != null, modifier = Modifier.fillMaxWidth()) { Text("Save ${bureau.displayName} letter PDF") }
         OutlinedButton(onClick = {
             message = runCatching {
                 (context.getSystemService(Context.PRINT_SERVICE) as PrintManager).print("${bureau.displayName} dispute", LetterPrintAdapter(requireNotNull(letter)), PrintAttributes.Builder().setMediaSize(PrintAttributes.MediaSize.NA_LETTER).build())
