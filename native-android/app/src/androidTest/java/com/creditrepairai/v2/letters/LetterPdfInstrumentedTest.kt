@@ -45,4 +45,17 @@ class LetterPdfInstrumentedTest {
             assertEquals("fictional-case", restored.chat.single().caseScopeId)
         } finally { repository.clear(preserveOwner = false) }
     }
+
+    @Test fun agentSnapshotHasMailStatusButNeverTheLocalTrackingNumber() {
+        val dispute = Dispute(findingId = "fictional", creditor = "Fictional Bank", bureaus = listOf(Bureau.EQUIFAX), reason = "Fictional balance review", letter = "Local letter")
+        val state = AppState(disputes = listOf(dispute), mailings = listOf(MailingRecord(dispute.id, Bureau.EQUIFAX, 1000, "PRIVATE-LOCAL-TRACKING", 2000, 3000)))
+        val gateway = com.creditrepairai.v2.ai.CreditAgentGateway("", com.creditrepairai.v2.ai.SessionTokenProvider { null })
+        val method = gateway.javaClass.getDeclaredMethod("toSafeAgentJson", AppState::class.java).apply { isAccessible = true }
+        val json = method.invoke(gateway, state) as org.json.JSONObject
+        assertFalse(json.toString().contains("PRIVATE-LOCAL-TRACKING"))
+        val sent = json.getJSONArray("disputes").getJSONObject(0)
+        assertEquals(1000L, sent.getLong("sentAt"))
+        assertTrue(sent.getBoolean("responseReceived"))
+        assertEquals("equifax", sent.getJSONArray("mailingHistory").getJSONObject(0).getString("bureau"))
+    }
 }

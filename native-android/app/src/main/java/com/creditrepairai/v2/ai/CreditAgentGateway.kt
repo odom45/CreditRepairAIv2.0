@@ -117,6 +117,9 @@ class CreditAgentGateway(
         })
         put("disputes", JSONArray().apply {
             disputes.forEach { dispute ->
+                val now = System.currentTimeMillis()
+                val postal = mailings.filter { it.disputeId == dispute.id && it.mailedAt in 1..now }
+                val postalDue = postal.mapNotNull { it.deliveredAt?.takeIf { delivered -> delivered in it.mailedAt..now }?.plus(45L * 86400000) }.minOrNull()
                 put(JSONObject()
                     .put("id", dispute.id)
                     .put("findingId", dispute.findingId)
@@ -125,9 +128,12 @@ class CreditAgentGateway(
                     .put("reason", SensitiveDataRedactor.redact(dispute.reason))
                     .put("status", dispute.status.name)
                     .put("createdAt", dispute.createdAt)
-                    .put("sentAt", dispute.sentAt ?: JSONObject.NULL)
-                    .put("craResponseDueAt", dispute.craResponseDueAt ?: JSONObject.NULL)
-                    .put("responseReceived", FilingGuide.hasBureauResponse(dispute, filings, System.currentTimeMillis())))
+                    .put("sentAt", dispute.sentAt ?: postal.minOfOrNull { it.mailedAt } ?: JSONObject.NULL)
+                    .put("craResponseDueAt", dispute.craResponseDueAt ?: postalDue ?: JSONObject.NULL)
+                    .put("responseReceived", FilingGuide.hasBureauResponse(dispute, filings, now) || postal.any { record -> record.responseReceivedAt?.let { it in record.mailedAt..now } == true })
+                    .put("mailingHistory", JSONArray().apply { postal.forEach { record -> put(JSONObject()
+                        .put("bureau", record.bureau.name.lowercase()).put("mailedAt", record.mailedAt)
+                        .put("deliveredAt", record.deliveredAt ?: JSONObject.NULL).put("responseReceivedAt", record.responseReceivedAt ?: JSONObject.NULL)) } }))
             }
         })
     }

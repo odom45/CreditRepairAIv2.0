@@ -554,7 +554,7 @@ private fun AnalysisScreen(data: AppState, viewModel: MainViewModel, onGuide: (S
         items(data.findings, key = { it.id }) { finding ->
             FindingCard(finding, data.disputes.any { it.findingId == finding.id }, {
                 val id = viewModel.createDispute(finding)
-                finding.bureaus.firstOrNull { it != Bureau.UNKNOWN }?.let { onGuide(id, it) }
+                if (id != null) finding.bureaus.firstOrNull { it != Bureau.UNKNOWN }?.let { onGuide(id, it) }
             }, onExplain)
         }
         if (data.accounts.isNotEmpty()) {
