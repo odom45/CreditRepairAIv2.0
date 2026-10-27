@@ -2,9 +2,9 @@
 
 Current review: **October 26, 2026**. Native 2.0.7 source; [PR #16](https://github.com/odom45/CreditRepairAIv2.0/pull/16) covers the three Muse/Viktor parser follow-up items. This checklist agrees with [the current assessment](docs/PRODUCTION_ASSESSMENT.md) and [the machine-readable evidence](docs/PARSER_ROBUSTNESS_EVIDENCE.json).
 
-<!-- parser-followup: implemented-awaiting-ci -->
+<!-- parser-followup: verified -->
 
-**Status: implementation complete for the three requested items; CI verification pending.** This is not a whole-application completion claim or production-launch approval. The old numerical production score is retired.
+**Status: the three requested items are verified and closed: 3/3 (100% of this defined follow-up).** This is not a whole-application completion claim or production-launch approval. The old numerical production score is retired.
 
 ## Code follow-up acceptance
 
@@ -13,7 +13,7 @@ Current review: **October 26, 2026**. Native 2.0.7 source; [PR #16](https://gith
 - [x] Expand synthetic reports: 18 checked-in text fixtures (six layouts per bureau), and 78 generated PDF cases (72 supported plus six safe-rejection cases).
 - [x] Enforce extracted-text/field bounds, retain byte/page/account/OCR limits, and prevent resource-limit errors from falling through to OCR.
 - [x] Update assessment and checklist; add an automated evidence-consistency check.
-- [ ] Record a passing current parser CI run, including all JVM tests, 78 exact PDF outcomes, malformed-PDF fuzz and real OCR tests. Until then, these three items are not marked verified/closed.
+- [x] Passing [CI run 40434452161](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40434452161), source `8b3284f91f322a9b9419f6b5e4b736d530cb8ac4`: JVM suite passed; all eight API 35 Android parser tests passed, including all 78 corpus outcomes (72 exact supported reports, six safe rejections), all 1,950 expected fields, mutated-report PDFs, malformed-PDF fuzz, real OCR and oversized-input rejection. The evidence-record update changes documentation only.
 
 Reproduction and exact corpus coverage: [PARSER_ROBUSTNESS.md](docs/PARSER_ROBUSTNESS.md). Timeouts and a bounded JVM heap detect regressions; a finite green run does not prove all possible PDFs are safe.
 

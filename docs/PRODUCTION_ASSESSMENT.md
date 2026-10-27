@@ -2,9 +2,9 @@
 
 Review date: **October 26, 2026**. Native branch: `android-native-rebuild`; follow-up: [PR #16](https://github.com/odom45/CreditRepairAIv2.0/pull/16), based on `302428f1ab977ffa17169b7d3398b3956d44124b` (2.0.7 source).
 
-<!-- parser-followup: implemented-awaiting-ci -->
+<!-- parser-followup: verified -->
 
-**The three requested follow-up items are implemented; CI verification is pending.** This is a bounded assessment of the Muse/Viktor parser follow-up. It does not establish that every feature or the whole application is 100% complete. Production launch remains gated by the owner validation below. The old numerical release-readiness score is retired; it mixed implementation with external acceptance and is not a current code-completion percentage.
+**The three requested follow-up items are verified and closed: 3/3 (100% of this defined follow-up).** This is a bounded assessment of the Muse/Viktor parser follow-up. It does not establish that every feature or the whole application is 100% complete. Production launch remains gated by the owner validation below. The old numerical release-readiness score is retired; it mixed implementation with external acceptance and is not a current code-completion percentage.
 
 | Follow-up item | Current implementation | Verification requirement |
 |---|---|---|
@@ -12,7 +12,7 @@ Review date: **October 26, 2026**. Native branch: `android-native-rebuild`; foll
 | Synthetic corpus expansion | 18 checked-in text fixtures, six layouts for each bureau, plus 72 generated supported PDFs and six explicit rejection PDFs (78 total) | Independent manifest/core-field expectations, exact PDF-field comparison, bureau and extraction-method checks |
 | Assessment/checklist alignment | This assessment and the release-owner checklist use one versioned evidence record and a CI consistency checker | `python3 scripts/check-parser-evidence.py` and current workflow evidence |
 
-Verification evidence is maintained in [PARSER_ROBUSTNESS_EVIDENCE.json](PARSER_ROBUSTNESS_EVIDENCE.json); the test design and reproduction commands are in [PARSER_ROBUSTNESS.md](PARSER_ROBUSTNESS.md). The [release-owner checklist](../RELEASE_OWNER_CHECKLIST.md) uses the same status. No passing CI result is claimed until it is recorded against a tested commit.
+Verification evidence is maintained in [PARSER_ROBUSTNESS_EVIDENCE.json](PARSER_ROBUSTNESS_EVIDENCE.json); the test design and reproduction commands are in [PARSER_ROBUSTNESS.md](PARSER_ROBUSTNESS.md). The [release-owner checklist](../RELEASE_OWNER_CHECKLIST.md) uses the same status. **Passing CI:** [run 40434452161](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40434452161) tested source `8b3284f91f322a9b9419f6b5e4b736d530cb8ac4`. The JVM suite and eight API 35 Android parser tests passed. All 72 supported PDFs matched exactly, all six guards rejected safely, and all 1,950 expected fields matched. The measured corpus completed in 126,186 ms. The 24 mutated-report PDFs, 48 byte-mutation/truncation cases, three seeded scanned PDFs and oversized-input check passed within those Android tests. This evidence commit changes documentation only; it does not alter that tested parser/test source.
 
 ## Resource handling and test limits
 

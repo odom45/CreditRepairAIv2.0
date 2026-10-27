@@ -34,3 +34,5 @@ The parser workflow runs on native-branch pushes, native-branch pull requests an
 ## Evidence interpretation
 
 The current status and exact CI run are in `PARSER_ROBUSTNESS_EVIDENCE.json`. Both active assessment documents must have the same status marker. Historical release-readiness scores are archived. A passing synthetic run closes this scoped implementation/test follow-up; legal review, penetration testing, Play submission/closed testing, real-report validation and device/staging acceptance remain separate owner gates.
+
+Verified on October 26, 2026 (Pacific) in [CI run 40434452161](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40434452161), source `8b3284f91f322a9b9419f6b5e4b736d530cb8ac4`: JVM suite passed; 8/8 Android parser tests passed; 72/72 supported PDFs exact; 6/6 guards safely rejected; 1,950/1,950 fields matched. Corpus runtime: 126,186 ms.
