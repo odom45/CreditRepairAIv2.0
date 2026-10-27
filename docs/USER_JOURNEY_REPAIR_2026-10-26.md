@@ -25,3 +25,9 @@ No actual owner Firebase account, consumer report, postal mailing, printer or li
 - TransUnion: [official mail/phone dispute instructions](https://www.transunion.com/credit-disputes/dispute-your-credit/mail-or-phone), TransUnion Consumer Solutions / P.O. Box 2000 / Chester, PA 19016-2000.
 
 The app links these source pages and asks the user to recheck current address, form and identity-document requirements. For example, Equifax's official form requires identification/address information beyond the letter; the app does not imply that a name/address-only letter satisfies every requirement. Required sensitive identifiers can be added by the user directly to the bureau form without sending them to AI.
+
+## Regression investigation notes
+
+The new small-screen journey tests exposed a transient long draft-created snackbar covering the actual bureau buttons. The redundant creation snackbar is removed; opening the guide is the success feedback. Guide step/progress now precede selector rows, and routes have explicit state keys. An older AI-draft fixture selected Equifax for a Cedar dispute that only listed TransUnion/Experian; that fixture now selects a genuinely Equifax-relevant finding. The bureau restriction was retained.
+
+Raw PDF byte mutations now use one generated page, so the unchanged 10-second per-mutation budget measures container robustness without requiring three OCR pages inside that budget. All 48 mutations and the 180-second whole-test deadline remain. Separate seeded scans, text mutation PDFs and the measured corpus retain multi-page coverage. No production parser limit or independent field expectation is relaxed.

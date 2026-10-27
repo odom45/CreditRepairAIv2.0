@@ -13,6 +13,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -159,14 +160,20 @@ fun FilingScreen(ui: AppUiState, viewModel: MainViewModel, initialPortal: Filing
     val ready = dispute != null && (portal != FilingPortal.CFPB || FilingGuide.cfpbReady(dispute, data.filings, System.currentTimeMillis(), data.mailings))
     LaunchColumn {
         Text("${portal.label} dispute walkthrough", style = MaterialTheme.typography.headlineMedium)
-        EducationLabel()
-        Text("This checklist follows your saved progress, not the portal page. Partial browser support varies: keep the guide below the browser or return to the app. We cannot see fields or detect submission.")
-        if (dispute == null) Text("Create a fact-specific dispute from Analysis first. Then return here.")
-        data.disputes.forEach { item -> FilterChip(selected = dispute?.id == item.id, onClick = { selectedDispute = item.id; chosenPortal = FilingGuide.portals(item).firstOrNull() ?: FilingPortal.CFPB }, label = { Text(item.creditor) }) }
-        allowedPortals.forEach { item -> FilterChip(selected = portal == item, onClick = { chosenPortal = item }, label = { Text(item.label) }) }
         if (dispute != null) {
             Text("Step ${record.step + 1} of 7: ${FilingGuide.steps[record.step].first}", style = MaterialTheme.typography.titleLarge)
+            LinearProgressIndicator(progress = { (record.step + 1f) / FilingGuide.steps.size }, modifier = Modifier.fillMaxWidth())
             Text(FilingGuide.steps[record.step].second)
+        }
+        Text("Choose the bureau and work through the steps. You review and submit the dispute yourself.")
+        if (dispute == null) Text("Create a fact-specific dispute from Analysis first. Then return here.")
+        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            data.disputes.forEach { item -> FilterChip(selected = dispute?.id == item.id, onClick = { selectedDispute = item.id; chosenPortal = FilingGuide.portals(item).firstOrNull() ?: FilingPortal.CFPB }, label = { Text(item.creditor) }) }
+        }
+        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            allowedPortals.forEach { item -> FilterChip(selected = portal == item, onClick = { chosenPortal = item }, label = { Text(item.label) }) }
+        }
+        if (dispute != null) {
             val help = ui.filingHelp.takeIf { it.recordId == record.id && it.step == record.step && it.contextKey == FilingGuide.contextKey(dispute, record) }
             TextButton(onClick = { viewModel.explainFiling(record) }, enabled = !ui.filingHelp.thinking) { Text("Ask AI to explain this step") }
             TextButton(onClick = { viewModel.draftFilingAnswers(record) }, enabled = !ui.filingHelp.thinking) { Text("Draft editable answers with AI") }

@@ -1,6 +1,8 @@
 package com.creditrepairai.v2.ui
 
 import android.app.Activity
+import android.Manifest
+import android.os.Build
 import android.content.Context
 import android.os.CancellationSignal
 import android.os.ParcelFileDescriptor
@@ -50,6 +52,7 @@ fun PaperLetterScreen(ui: AppUiState, viewModel: MainViewModel, initialDisputeId
     var tracking by remember(dispute.id, bureau) { mutableStateOf("") }
     val letter = if (bureau != Bureau.UNKNOWN && name.isNotBlank() && address.isNotBlank() && facts.isNotBlank() && evidence.isNotBlank() && resolution.isNotBlank() && date.isNotBlank())
         PaperDisputeLetter.compose(dispute, bureau, name, address, date, facts, evidence, resolution) else null
+    val notifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
     val export = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/pdf")) { uri ->
         val text = pendingText; pendingText = null
         if (uri != null && text != null && pendingOwner == viewModel.signedInSubject && viewModel.uiState.value.data.disputes.any { it.id == dispute.id }) {
@@ -92,8 +95,15 @@ fun PaperLetterScreen(ui: AppUiState, viewModel: MainViewModel, initialDisputeId
             Button(onClick = { viewModel.recordMailing(dispute.id, bureau, tracking) }, enabled = reviewed, modifier = Modifier.fillMaxWidth()) { Text("I mailed this ${bureau.displayName} letter") }
         } else {
             Text("Mailed: ${DateFormat.getDateInstance().format(Date(mailed.mailedAt))}\nTracking: ${mailed.trackingNumber.ifBlank { "Not entered" }}")
-            if (mailed.deliveredAt == null) OutlinedButton(onClick = { viewModel.updateMailing(dispute.id, bureau) }) { Text("I confirmed delivery to ${bureau.displayName}") }
-            else Text("Delivery recorded. Check in 30/45 days from delivery; these are reminders, not promised result dates.")
+            if (mailed.deliveredAt == null) OutlinedButton(onClick = {
+                viewModel.updateMailing(dispute.id, bureau)
+                if (Build.VERSION.SDK_INT >= 33) notifications.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }) { Text("I confirmed delivery to ${bureau.displayName}") }
+            else {
+                val delivered = requireNotNull(mailed.deliveredAt)
+                val format = DateFormat.getDateInstance()
+                Text("Delivery recorded: ${format.format(Date(delivered))}. Check-ins: ${format.format(Date(delivered + 30L * 86400000))} and ${format.format(Date(delivered + 45L * 86400000))}. These are reminders, not promised result dates. Notification delivery depends on Android settings.")
+            }
             if (mailed.responseReceivedAt == null) OutlinedButton(onClick = { viewModel.updateMailing(dispute.id, bureau, response = true) }) { Text("I received a ${bureau.displayName} response") }
             else Text("Response recorded. Compare it with your supporting records before deciding next steps.")
         }

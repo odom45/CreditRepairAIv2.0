@@ -184,7 +184,7 @@ class FilingFlowInstrumentedTest {
         compose.onNodeWithText("${bureau.displayName} walkthrough").performScrollTo().performClick()
         compose.onRoot().printToLog("JourneyTree")
         compose.onNodeWithText("${bureau.displayName} dispute walkthrough").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("Step 1 of 7: Review facts").assertIsDisplayed()
+        compose.onNodeWithText("Step 1 of 7: Review facts").performScrollTo().assertIsDisplayed()
     }
     @Test fun physicalLetterExportRequiresSenderEvidenceAndReview() {
         lateinit var journeyModel: MainViewModel

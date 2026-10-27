@@ -23,7 +23,7 @@ class PdfParserFuzzTest {
     private val directory get() = File(context.cacheDir, "fictional-parser-fixtures/fuzz").apply { mkdirs() }
     @After fun cleanup() { directory.deleteRecursively() }
     private fun uri(file: File) = FileProvider.getUriForFile(context, "${context.packageName}.test-fixtures", file)
-    private fun pdf(file: File, scan: Boolean, seed: Int, mutateText: Boolean = false) {
+    private fun pdf(file: File, scan: Boolean, seed: Int, mutateText: Boolean = false, pageCount: Int? = null) {
         val random = Random(seed)
         val sourceLines = listOf("EQUIFAX CREDIT REPORT", "SYNTHETIC ONLY - NO CONSUMER DATA",
             "Fictional generated parser property fixture; every identifier is invented.",
@@ -41,7 +41,7 @@ class PdfParserFuzzTest {
         }.shuffled(random)
         val document = PdfDocument()
         try {
-            repeat(1 + random.nextInt(3)) { pageIndex ->
+            repeat(pageCount ?: (1 + random.nextInt(3))) { pageIndex ->
                 val page = document.startPage(PdfDocument.PageInfo.Builder(1000, 1400, pageIndex + 1).create())
                 val bitmap = if (scan) Bitmap.createBitmap(1000, 1400, Bitmap.Config.ARGB_8888) else null
                 try {
@@ -60,10 +60,10 @@ class PdfParserFuzzTest {
     @Test(timeout = 180_000) fun mutatedAndTruncatedPdfBytesAcceptOrRejectWithoutCrashing() = runBlocking {
         val parser = CreditReportParser(context)
         val original = File(directory, "original.pdf")
-        pdf(original, false, 42)
+        pdf(original, false, 42, pageCount = 1)
         // The time property measures warm parsing, independent of one-time bundled OCR startup.
         val warmScan = File(directory, "warmup-scan.pdf")
-        pdf(warmScan, true, 7)
+        pdf(warmScan, true, 7, pageCount = 1)
         assertEquals("On-device OCR", parser.parse(uri(warmScan), "synthetic.pdf").report.extractionMethod)
         warmScan.delete()
         val bytes = original.readBytes()

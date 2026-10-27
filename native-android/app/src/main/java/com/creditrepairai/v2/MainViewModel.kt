@@ -298,7 +298,7 @@ class MainViewModel(
     fun createDispute(finding: Finding): String? {
         val draft = _uiState.value.data.disputes.firstOrNull { it.findingId == finding.id }
             ?: DisputeLetterGenerator.fromFinding(finding)
-        mutate("Draft dispute created. Review every fact and replace all placeholders before sending.") { state ->
+        mutate(null) { state ->
             if (state.disputes.any { it.findingId == finding.id }) state
             else state.copy(disputes = state.disputes + draft)
         }
