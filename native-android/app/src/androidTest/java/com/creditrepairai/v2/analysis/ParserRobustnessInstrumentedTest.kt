@@ -121,11 +121,12 @@ class ParserRobustnessInstrumentedTest {
     @Test(timeout = 30_000) fun blankAndEmptyPdfsRejectAndPrivateSnapshotsAreAlwaysDeleted() = runBlocking {
         val empty = File(directory, "empty.pdf").apply { writeBytes(byteArrayOf()) }
         val blank = File(directory, "blank.pdf")
-        PdfDocument().use { document ->
+        val document = PdfDocument()
+        try {
             val page = document.startPage(PdfDocument.PageInfo.Builder(720, 960, 1).create())
             document.finishPage(page)
             blank.outputStream().use(document::writeTo)
-        }
+        } finally { document.close() }
         for (file in listOf(empty, blank)) {
             var rejected = false
             try { parser.parse(uri(file), "synthetic.pdf") }
