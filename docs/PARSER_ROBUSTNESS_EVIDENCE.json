@@ -25,5 +25,6 @@
     "Play submission and closed testing",
     "permissioned real-report validation",
     "device and staging integration validation"
-  ]
+  ],
+  "mutatedReportPdfCases": 24
 }

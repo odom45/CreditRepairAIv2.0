@@ -147,6 +147,8 @@ class SyntheticParserBatchTest {
                     .put("extractionMethod", parsed.report.extractionMethod).put("expectedAccounts", JSONArray(want.map { JSONObject(it) })).put("actualAccounts", JSONArray(got.map { JSONObject(it) }))
                 if (!exact && case.scanned) row.put("syntheticOcrDiagnostic", runCatching { diagnosticOcr(uri) }.getOrDefault("Diagnostic extraction unavailable"))
             } catch(e: Exception) {
+                // Unexpected implementation errors never count as successful rejection.
+                if (e !is java.io.IOException && e !is IllegalArgumentException && e !is SecurityException) throw e
                 row.put("accepted", false).put("exactPass", case.reject != null).put("error", e.javaClass.simpleName + ": " + (e.message ?: "").take(250))
             }
             row.put("elapsedMs", System.currentTimeMillis() - start); results.put(row)

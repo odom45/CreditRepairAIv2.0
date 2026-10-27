@@ -9,7 +9,7 @@ Current review: **October 26, 2026**. Native 2.0.7 source; [PR #16](https://gith
 ## Code follow-up acceptance
 
 - [x] Add seeded text fuzz/property tests: 2,400 mutations plus deterministic, account-boundary, unicode, empty/single-account, and resource-limit properties.
-- [x] Add actual Android malformed/truncated PDF tests (48 mutations), three seeded real image-only OCR imports, and oversized-input rejection.
+- [x] Add actual Android mutated-report PDF tests (24), malformed/truncated PDF tests (48 mutations), three seeded real image-only OCR imports, and oversized-input rejection.
 - [x] Expand synthetic reports: 18 checked-in text fixtures (six layouts per bureau), and 78 generated PDF cases (72 supported plus six safe-rejection cases).
 - [x] Enforce extracted-text/field bounds, retain byte/page/account/OCR limits, and prevent resource-limit errors from falling through to OCR.
 - [x] Update assessment and checklist; add an automated evidence-consistency check.

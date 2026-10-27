@@ -8,7 +8,7 @@ Review date: **October 26, 2026**. Native branch: `android-native-rebuild`; foll
 
 | Follow-up item | Current implementation | Verification requirement |
 |---|---|---|
-| Parser fuzz/property tests | 2,400 seeded text mutations, generated 0/1/2/20/150-account properties, deterministic output and field bounds, extraction-limit boundary tests; 48 malformed/truncated PDF mutations and three seeded image-only/multi-page OCR imports | Native JVM and real Android importer suites must pass in the parser workflow |
+| Parser fuzz/property tests | 2,400 seeded text mutations, generated 0/1/2/20/150-account properties, deterministic output and field bounds, extraction-limit boundary tests; 24 PDFs with mutated report text, 48 malformed/truncated PDF mutations and three seeded image-only/multi-page OCR imports | Native JVM and real Android importer suites must pass in the parser workflow |
 | Synthetic corpus expansion | 18 checked-in text fixtures, six layouts for each bureau, plus 72 generated supported PDFs and six explicit rejection PDFs (78 total) | Independent manifest/core-field expectations, exact PDF-field comparison, bureau and extraction-method checks |
 | Assessment/checklist alignment | This assessment and the release-owner checklist use one versioned evidence record and a CI consistency checker | `python3 scripts/check-parser-evidence.py` and current workflow evidence |
 

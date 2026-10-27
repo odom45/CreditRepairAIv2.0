@@ -23,13 +23,22 @@ class PdfParserFuzzTest {
     private val directory get() = File(context.cacheDir, "fictional-parser-fixtures/fuzz").apply { mkdirs() }
     @After fun cleanup() { directory.deleteRecursively() }
     private fun uri(file: File) = FileProvider.getUriForFile(context, "${context.packageName}.test-fixtures", file)
-    private fun pdf(file: File, scan: Boolean, seed: Int) {
+    private fun pdf(file: File, scan: Boolean, seed: Int, mutateText: Boolean = false) {
         val random = Random(seed)
-        val lines = listOf("EQUIFAX CREDIT REPORT", "SYNTHETIC ONLY - NO CONSUMER DATA",
+        val sourceLines = listOf("EQUIFAX CREDIT REPORT", "SYNTHETIC ONLY - NO CONSUMER DATA",
             "Fictional generated parser property fixture; every identifier is invented.",
             "Offline testing of bounded import and safe resource handling.", "Your Score: 640",
             "Creditor: Fictional Bank", "Account Number: XXXX1234", "Status: Open", "Balance: 1280",
             "Payment Status: Current", "Date Opened: 01/2020", "Date Reported: 09/2026")
+        val lines = if (!mutateText) sourceLines else sourceLines.take(4) + listOf("Repeated synthetic description ensures embedded extraction remains above the OCR threshold for these mutation cases.") + sourceLines.drop(4).map { line ->
+            when (random.nextInt(5)) {
+                0 -> line.take(random.nextInt(line.length + 1))
+                1 -> line.replace(" ", "\u00a0")
+                2 -> line.replace("1280", "9999999999999999999999999999999999")
+                3 -> line + " | " + "Synthetic annotation ".repeat(random.nextInt(5))
+                else -> line
+            }
+        }.shuffled(random)
         PdfDocument().use { document ->
             repeat(1 + random.nextInt(3)) { pageIndex ->
                 val page = document.startPage(PdfDocument.PageInfo.Builder(1000, 1400, pageIndex + 1).create())
@@ -74,6 +83,20 @@ class PdfParserFuzzTest {
                 // Invalid PDF, explicit input/resource bound, or insufficient readable text.
             }
             assertTrue("seed=20261026 mutation=$iteration exceeded 10s", (System.nanoTime() - started) / 1_000_000 < 10_000)
+            file.delete()
+        }
+    }
+
+    @Test(timeout = 180_000) fun mutatedReportTextAlsoRunsThroughTheRealPdfImporter() = runBlocking {
+        for (seed in listOf(7, 42, 20261026)) repeat(8) { iteration ->
+            val file = File(directory, "text-$seed-$iteration.pdf")
+            pdf(file, false, seed + iteration, mutateText = true)
+            val parsed = CreditReportParser(context).parse(uri(file), "synthetic.pdf")
+            assertEquals("Embedded PDF text", parsed.report.extractionMethod)
+            assertTrue(parsed.extractedCharacters in 80..ParserLimits.MAX_TEXT_CHARS)
+            assertEquals(parsed.accounts.size, parsed.report.accountCount)
+            assertTrue(parsed.accounts.size <= 150)
+            assertTrue(parsed.accounts.all { it.accountSuffix.length <= 4 && (it.balance?.let { value -> value >= 0 } != false) })
             file.delete()
         }
     }
