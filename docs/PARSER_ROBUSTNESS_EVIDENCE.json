@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "reviewDate": "2026-10-26",
+  "scope": "The three Muse/Viktor native-parser follow-up items only",
+  "status": "verified",
+  "baseCommit": "302428f1ab977ffa17169b7d3398b3956d44124b",
+  "pullRequest": "https://github.com/odom45/CreditRepairAIv2.0/pull/16",
+  "verificationRun": "https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40434452161",
+  "textMutationSeeds": [
+    7,
+    42,
+    20261026
+  ],
+  "textMutations": 2400,
+  "checkedInTextFixtures": 18,
+  "textLayoutsPerBureau": 6,
+  "supportedPdfCases": 72,
+  "rejectionPdfCases": 6,
+  "totalPdfCases": 78,
+  "mutatedPdfCases": 48,
+  "seededScannedPdfCases": 3,
+  "humanLaunchGates": [
+    "legal review",
+    "penetration test",
+    "Play submission and closed testing",
+    "permissioned real-report validation",
+    "device and staging integration validation"
+  ],
+  "mutatedReportPdfCases": 24,
+  "verificationCommit": "8b3284f91f322a9b9419f6b5e4b736d530cb8ac4",
+  "verificationJob": 121959661869,
+  "androidApi": 35,
+  "androidParserTestsPassed": 8,
+  "supportedPdfExactPass": 72,
+  "pdfGuardsSafelyRejected": 6,
+  "matchedFields": 1950,
+  "totalExpectedFields": 1950,
+  "corpusElapsedMs": 126186,
+  "jvmSuite": "passed"
+}

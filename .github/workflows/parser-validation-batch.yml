@@ -4,10 +4,23 @@ on:
     branches: [android-native-rebuild]
     paths:
       - ".github/workflows/parser-validation-batch.yml"
-      - "native-android/app/src/main/java/com/creditrepairai/v2/analysis/**"
-      - "native-android/app/src/androidTest/java/com/creditrepairai/v2/analysis/**"
+      - "docs/PARSER*"
+      - "docs/PRODUCTION_ASSESSMENT.md"
+      - "RELEASE_OWNER_CHECKLIST.md"
+      - "scripts/check-parser-evidence.py"
+      - "native-android/**"
       - "scripts/run-parser-batch.sh"
       - "scripts/summarize-parser-batch.mjs"
+  pull_request:
+    branches: [android-native-rebuild]
+    paths:
+      - "native-android/**"
+      - "scripts/*parser*"
+      - ".github/workflows/parser-validation-batch.yml"
+      - "docs/PARSER*"
+      - "docs/PRODUCTION_ASSESSMENT.md"
+      - "RELEASE_OWNER_CHECKLIST.md"
+      - "scripts/check-parser-evidence.py"
   workflow_dispatch:
 permissions:
   contents: read
@@ -20,17 +33,21 @@ jobs:
         working-directory: native-android
     steps:
       - uses: actions/checkout@v4
+      - name: Check assessment, checklist and corpus consistency
+        run: python3 ../scripts/check-parser-evidence.py
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "17"
       - uses: gradle/actions/setup-gradle@v4
+      - name: Compile Android tests and run all bounded JVM regressions
+        run: bash ./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest --stacktrace
       - name: Enable emulator acceleration
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
-      - name: Require all 60 synthetic cases after OCR bureau-logo correction
+      - name: Require all 78 synthetic cases plus malformed-PDF fuzz and real OCR
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
         with:
           api-level: 35
@@ -48,5 +65,7 @@ jobs:
           path: |
             native-android/parser-validation-current.json
             native-android/app/build/reports/androidTests/
+            native-android/app/build/reports/tests/
+            native-android/app/build/test-results/
           if-no-files-found: error
           retention-days: 90
