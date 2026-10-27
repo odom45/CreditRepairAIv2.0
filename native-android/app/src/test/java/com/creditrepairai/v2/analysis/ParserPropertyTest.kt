@@ -33,7 +33,7 @@ class ParserPropertyTest {
         val fixtures = listOf("equifax", "experian", "transunion").map { name ->
             javaClass.classLoader!!.getResourceAsStream("parser/$name-fictional.txt")!!.bufferedReader().use { it.readText() }
         }
-        val quirks = listOf("", "\u0000", "\u00a0", "\u202f", "\u200b", "\u202e", "\ud83d\ude80", "\ud800", "\ufffd", "|", "\r\n", "\f", ":", "$", "9".repeat(128))
+        val quirks = listOf("", "\u0000", "\u00a0", "\u202f", "\u200b", "\u202e", "\ud83d\ude80", "\ud800", "\ufffd", "|", "\r\n", "\u000c", ":", "$", "9".repeat(128))
         for (seed in seeds) {
             val random = Random(seed)
             repeat(800) { iteration ->
@@ -80,7 +80,7 @@ class ParserPropertyTest {
             for (seed in seeds) {
                 val random = Random(seed)
                 for (count in listOf(0, 1, 2, 20, 150)) {
-                    val text = bureau.displayName + "\nCredit Score: 640\n" + (0 until count).joinToString("\n\f\n") { i ->
+                    val text = bureau.displayName + "\nCredit Score: 640\n" + (0 until count).joinToString("\n\u000c\n") { i ->
                         val whitespace = listOf(" ", "\t", "\u00a0", "\u202f").random(random)
                         "Creditor: Fictional Bank $i\nAccount Number: XXXX${1000 + i}\nBalance:$whitespace${i * 17}\nStatus: Open"
                     }

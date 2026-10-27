@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "reviewDate": "2026-10-26",
+  "scope": "The three Muse/Viktor native-parser follow-up items only",
+  "status": "implemented-awaiting-ci",
+  "baseCommit": "302428f1ab977ffa17169b7d3398b3956d44124b",
+  "pullRequest": "https://github.com/odom45/CreditRepairAIv2.0/pull/16",
+  "verificationRun": null,
+  "textMutationSeeds": [
+    7,
+    42,
+    20261026
+  ],
+  "textMutations": 2400,
+  "checkedInTextFixtures": 18,
+  "textLayoutsPerBureau": 6,
+  "supportedPdfCases": 72,
+  "rejectionPdfCases": 6,
+  "totalPdfCases": 78,
+  "mutatedPdfCases": 48,
+  "seededScannedPdfCases": 3,
+  "humanLaunchGates": [
+    "legal review",
+    "penetration test",
+    "Play submission and closed testing",
+    "permissioned real-report validation",
+    "device and staging integration validation"
+  ]
+}

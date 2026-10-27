@@ -4,6 +4,10 @@ on:
     branches: [android-native-rebuild]
     paths:
       - ".github/workflows/parser-validation-batch.yml"
+      - "docs/PARSER*"
+      - "docs/PRODUCTION_ASSESSMENT.md"
+      - "RELEASE_OWNER_CHECKLIST.md"
+      - "scripts/check-parser-evidence.py"
       - "native-android/**"
       - "scripts/run-parser-batch.sh"
       - "scripts/summarize-parser-batch.mjs"
@@ -13,6 +17,10 @@ on:
       - "native-android/**"
       - "scripts/*parser*"
       - ".github/workflows/parser-validation-batch.yml"
+      - "docs/PARSER*"
+      - "docs/PRODUCTION_ASSESSMENT.md"
+      - "RELEASE_OWNER_CHECKLIST.md"
+      - "scripts/check-parser-evidence.py"
   workflow_dispatch:
 permissions:
   contents: read
@@ -25,6 +33,8 @@ jobs:
         working-directory: native-android
     steps:
       - uses: actions/checkout@v4
+      - name: Check assessment, checklist and corpus consistency
+        run: python3 ../scripts/check-parser-evidence.py
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
