@@ -7,6 +7,8 @@ Review date: **October 27, 2026**. Native 2.0.8 branch: `android-native-rebuild`
 
 <!-- parser-followup: verified -->
 
+The account/verification, bureau walkthrough, PDF/print mailing and conversation repair is merged in PR #18; the explicit actual-response explanation is merged in PR #19 (`c4fa885572b2eef8234af03f900677006cab1470`). [Final feature CI 40467835812](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40467835812) passed 79 JVM, 38 device and 55 backend tests, with zero failures and zero lint errors (29 warnings). [Parser run 40467835785](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40467835785) also passed. The final additional export-ID guard is source `1e108d61841d630a5f80fb6c6b728e55a9e650e5`; its signed/native evidence is recorded in the repair record. Production deployment and live synthetic AI checks passed. No owner-phone or real-report acceptance is inferred.
+
 Code readiness: **98%** — engineering estimate for the agreed native scope; residual integration and edge-case defects remain possible. This is not a measured percentage or launch approval.
 
 This is an engineering estimate based on the previously implemented native scope, closure of all three stated remaining code gaps, and passing automated checks. It is not an exhaustive new audit, a probability of correctness, or production-launch approval. The separate React web prototype is outside this rating.
@@ -41,3 +43,5 @@ JVM tests run with a 256 MB heap and JUnit timeouts. Android mutation cases have
 No launch gate is marked complete by synthetic parser success. Existing release-mode protections and purchase settings are not changed by this follow-up. The React web prototype remains separate from this native-parser scope.
 
 Historical findings, source-specific counts, and earlier evidence are retained in [the archived assessment](archive/PRODUCTION_ASSESSMENT_2026-10-12.md), [verification results](VERIFICATION_RESULTS.md), and the dated engineering/integration records. Historical present-tense statements, old scores, missing-credit findings, and certificate observations must not be treated as current status.
+
+Final 2.0.8 source `1e108d61841d630a5f80fb6c6b728e55a9e650e5`: [native/backend CI 40469209409](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40469209409), [78-case parser CI 40469209153](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40469209153), and [signed/install/update CI 40469209159](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40469209159) all passed. Code readiness remains **98% (engineering estimate)**; owner-phone acceptance and human launch gates remain open. Exact artifact hashes and scope are in the repair record.

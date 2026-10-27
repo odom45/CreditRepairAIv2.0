@@ -36,7 +36,7 @@ Raw PDF byte mutations now use one generated page, so the unchanged 10-second pe
 
 PR #18 merged at `36e33860768d44863ca237527ba5eabeea8aa5f7`, preserving the tested source `f9fce9d2ee625d4b93092141be8b65c4f9b75266`. [Native/backend run 40465737885](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40465737885) passed compile, JVM tests, lint, all 37 API-35 device tests and backend typecheck/regressions. [Parser run 40465737742](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40465737742) passed all eight parser tests, 72 exact supported PDFs, six safe rejections and 1,950/1,950 fields in 146,489 ms. Malformed-PDF mutations and real bundled OCR also passed.
 
-Code readiness: **98%** — engineering estimate for the agreed native scope, not a measured percentage or exhaustive audit. Residual integration/edge-case defects remain possible; human legal/security/Play/real-report/device/staging gates are tracked separately and are not code-completion deductions. Signed-build and backend deployment results are pending; owner-phone acceptance remains open.
+Code readiness: **98%** — engineering estimate for the agreed native scope, not a measured percentage or exhaustive audit. Residual integration/edge-case defects remain possible; human legal/security/Play/real-report/device/staging gates are tracked separately and are not code-completion deductions. Signed-build and backend deployment evidence is recorded below; owner-phone acceptance remains open.
 
 ## Prior feature-list cross-check
 
@@ -47,3 +47,13 @@ The earlier buyer-brief list also named a pre-send evidence check and an explici
 [Production deployment 40467129591](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40467129591) succeeded using the existing configured production target and protected credentials. [Native/development run 40467129617](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40467129617) passed build, device/lint, backend/admin, preflight, development deployment and real-provider synthetic smoke. The smoke used fictional data and the configured server key, received three HTTP 200 responses, found eight retrieval results and returned a sourced FCRA-referencing answer that passed the outcome guard. It explicitly did not exercise native Firebase authentication. No credentials were created or rotated.
 
 The pending PDF export snapshots its original dispute ID as well as owner; deleting that dispute while the Android save picker is open cancels writing. Final source with this additional guard is checked again by native/release CI.
+
+## Signed APK 2.0.8 / 20261026
+
+[Signed release 40469209159](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40469209159) passed for source `1e108d61841d630a5f80fb6c6b728e55a9e650e5`. APK v2/v3 and AAB signature verification passed with the existing owner certificate. API-36 installation of the prior signed release, in-place update and process launch passed; no actual Firebase account or Play purchase was exercised. Purchases remain disabled for this production-test candidate.
+
+The downloaded APK archive matched its published GitHub artifact digest; extracted APK ZIP integrity passed and its signing-block certificate matched SHA-256 `1ec8aaa5a3b259ac8d0ec16f66b805ddf82e32a73fc5f486dce320844e8d09ad`. APK: `CreditRepairAI-2.0.8-Updated-Signed.apk`, 48210706 bytes, SHA-256 `f13d5d1890a835d069fcd409a609592477380fa26de373867c695368946c3a2c`. [GitHub artifact](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40469209159/artifacts/12718077669). Install over the existing signed app to retain its encrypted local reports; uninstalling or confirming sign-out clears local data.
+
+## Final source regression result
+
+Source `1e108d61841d630a5f80fb6c6b728e55a9e650e5` passed [native/backend run 40469209409](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40469209409): 79 unit tests, all 38 device tests, 55 backend tests, zero failures and zero lint errors (29 warnings). [Parser run 40469209153](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40469209153) passed all eight importer tests, all 78 corpus outcomes and all 1,950 fields; corpus elapsed time 144,226 ms. This includes the final pending-export ID guard. The published evidence update changes documentation only and preserves this tested/signed application source. Owner-phone, actual authenticated account, printer/postal and launch acceptance remain open.

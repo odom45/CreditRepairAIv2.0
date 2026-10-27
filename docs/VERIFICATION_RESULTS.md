@@ -1,4 +1,4 @@
-# Current native verification — October 26, 2026
+# Current native verification — October 27, 2026
 
 > **Current update — October 27, 2026:** [PR #18](https://github.com/odom45/CreditRepairAIv2.0/pull/18) merged at `36e33860768d44863ca237527ba5eabeea8aa5f7`. Account/verification, direct bureau walkthroughs, physical PDF/print letters and contextual assistant repairs passed [native/backend CI 40465737885](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40465737885) (37 device tests). [Parser CI 40465737742](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40465737742) passed all 78 outcomes and 1,950 fields. Production deployment and live synthetic AI checks passed. Final signed 2.0.8 results are maintained in the repair record. [Repair details](USER_JOURNEY_REPAIR_2026-10-26.md).
 
@@ -9,7 +9,7 @@ PR #16 merged into `android-native-rebuild` at `ffe4e3750b49ee2db77d5b9cc36cea11
 
 The [measured parser record](PARSER_ROBUSTNESS_EVIDENCE.json) records 72/72 exact supported reports, 6/6 safe rejections and 1,950/1,950 expected fields from [run 40434452161](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40434452161). The final PR run repeated the same full suites successfully. Coverage now includes 18 additional text fixtures, 2,400 seeded text mutations, 24 mutated-report PDFs, 48 malformed/truncated PDF mutations, three seeded scanned PDFs and an oversized-input test.
 
-Read the [current assessment](PRODUCTION_ASSESSMENT.md), [reproduction guide](PARSER_ROBUSTNESS.md) and [owner checklist](../RELEASE_OWNER_CHECKLIST.md). The code rating covers the agreed native implementation backlog, not launch acceptance or the separate legacy web product. Owner/legal/security/real-report/device/staging gates remain open. No new release-artifact verification is established by this documentation update.
+Read the [current assessment](PRODUCTION_ASSESSMENT.md), [reproduction guide](PARSER_ROBUSTNESS.md) and [owner checklist](../RELEASE_OWNER_CHECKLIST.md). The code rating covers the agreed native implementation backlog, not launch acceptance or the separate legacy web product. Owner/legal/security/real-report/device/staging gates remain open. Signed 2.0.8 source `1e108d61841d630a5f80fb6c6b728e55a9e650e5` passed [release run 40469209159](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40469209159): APK/AAB signatures, prior-version install, in-place update and process launch. Exact artifact/hash details and newer journey results are in the repair record.
 
 ## Historical verification records below
 

@@ -7,6 +7,8 @@ Current review: **October 27, 2026**. Native 2.0.8 source; [PR #16](https://gith
 
 <!-- parser-followup: verified -->
 
+The account/verification, bureau walkthrough, PDF/print mailing and conversation repair is merged in PR #18; the explicit actual-response explanation is merged in PR #19 (`c4fa885572b2eef8234af03f900677006cab1470`). [Final feature CI 40467835812](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40467835812) passed 79 JVM, 38 device and 55 backend tests, with zero failures and zero lint errors (29 warnings). [Parser run 40467835785](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40467835785) also passed. The final additional export-ID guard is source `1e108d61841d630a5f80fb6c6b728e55a9e650e5`; its signed/native evidence is recorded in the repair record. Production deployment and live synthetic AI checks passed. No owner-phone or real-report acceptance is inferred.
+
 Code readiness: **98%** — engineering estimate for the agreed native scope; residual integration and edge-case defects remain possible. This is not a measured percentage or launch approval.
 
 This is an engineering estimate based on the previously implemented native scope, closure of all three stated remaining code gaps, and passing automated checks. It is not an exhaustive new audit, a probability of correctness, or production-launch approval. The separate React web prototype is outside this rating.
@@ -26,6 +28,15 @@ This is an engineering estimate based on the previously implemented native scope
 - [x] Passing [CI run 40434452161](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40434452161), source `8b3284f91f322a9b9419f6b5e4b736d530cb8ac4`: JVM suite passed; all eight API 35 Android parser tests passed, including all 78 corpus outcomes (72 exact supported reports, six safe rejections), all 1,950 expected fields, mutated-report PDFs, malformed-PDF fuzz, real OCR and oversized-input rejection. The evidence-record update changes documentation only.
 
 Reproduction and exact corpus coverage: [PARSER_ROBUSTNESS.md](docs/PARSER_ROBUSTNESS.md). Timeouts and a bounded JVM heap detect regressions; a finite green run does not prove all possible PDFs are safe.
+
+## Requested user-journey code acceptance
+
+- [x] Verified-email entry, visible active account and confirmed sign-out.
+- [x] Direct relevant-bureau walkthrough and print/mail actions on each dispute.
+- [x] Separate paginated letter PDFs, printing, evidence/review gate and encrypted mail/delivery/response tracking.
+- [x] Bounded redacted conversation history, follow-up controls and reviewed actual-response explanations.
+- [x] Production backend deployment and a real-provider fictional-case retrieval/answer check.
+- [ ] Owner accepts these flows on the updated APK with their own signed-in account; actual printing/mailing is not established by emulator fixtures.
 
 ## Owner launch acceptance — remains open
 
@@ -48,3 +59,5 @@ These are separate from the three code follow-up items. Attach dated results, bu
 - Detailed older console/configuration instructions are retained in [the archived checklist](docs/archive/RELEASE_OWNER_CHECKLIST_BEFORE_2026-10-26.md) for reference. Its chronological status statements and checkboxes are historical and superseded by this checklist; confirm live settings before acting on old instructions.
 
 Store credentials only in protected configuration. Parser test artifacts contain generated fictional data and test results; no consumer reports or account credentials are required.
+
+Final 2.0.8 source `1e108d61841d630a5f80fb6c6b728e55a9e650e5`: [native/backend CI 40469209409](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40469209409), [78-case parser CI 40469209153](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40469209153), and [signed/install/update CI 40469209159](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40469209159) all passed. Code readiness remains **98% (engineering estimate)**; owner-phone acceptance and human launch gates remain open. Exact artifact hashes and scope are in the repair record.

@@ -5,13 +5,13 @@
 
 Native Android tools for on-device three-bureau report analysis, guided disputes and user-reviewed filing, with an authenticated legal-source AI assistant.
 
-## Current Android status — October 26, 2026
+## Current Android status — October 27, 2026
 
 Code readiness: **98%** — engineering estimate for the agreed native scope; residual integration and edge-case defects remain possible. This is not a measured percentage or launch approval.
 
 This is an engineering estimate based on the previously implemented native scope, closure of all three stated remaining code gaps, and passing automated checks. It is not an exhaustive new audit, a probability of correctness, or production-launch approval. The separate React web prototype is outside this rating.
 
-[PR #16](https://github.com/odom45/CreditRepairAIv2.0/pull/16) is merged into **`android-native-rebuild`** at `ffe4e3750b49ee2db77d5b9cc36cea11a3eb0519`. Source version defaults are **2.0.8 / 20261026**. The three parser follow-up items and the requested account, bureau, letter and conversation implementations are complete. Signed release evidence is recorded separately when the build finishes.
+[PR #16](https://github.com/odom45/CreditRepairAIv2.0/pull/16) is merged into **`android-native-rebuild`** at `ffe4e3750b49ee2db77d5b9cc36cea11a3eb0519`. Source version defaults are **2.0.8 / 20261026**. The three parser follow-up items and the requested account, bureau, letter and conversation implementations are complete. Signed 2.0.8 passed [release verification](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40469209159); exact APK evidence is in the repair record.
 
 | Current evidence | Result |
 |---|---|
@@ -26,10 +26,12 @@ Detailed status: [current code assessment](docs/PRODUCTION_ASSESSMENT.md), [rele
 
 ## Native implementation
 
-- Kotlin/Jetpack Compose app with Firebase email/Google sign-in integration and authenticated Convex access.
+- Kotlin/Jetpack Compose app with Firebase email/Google sign-in, upfront email-verification handling, visible account/sign-out and authenticated Convex access.
 - On-device PDFBox extraction and bundled ML Kit OCR, structured account/score parsing, and three-bureau comparisons.
 - High-risk identifier redaction before AI calls; Keystore AES-GCM case storage, FLAG_SECURE and backups disabled.
-- Tool-enabled legal-source AI, editable dispute/portal answers, filing checklists, official-portal handoff, receipts and responses. Users review, copy and submit themselves.
+- Tool-enabled legal-source AI with bounded redacted conversation context, follow-up questions and an explicit bureau-response explanation flow.
+- Direct per-bureau walkthroughs, editable portal answers, evidence review, official-portal handoff, receipts and responses. Users review, copy and submit themselves.
+- Separate Equifax, Experian and TransUnion physical letters with private sender fields, multi-page PDF export, Android printing, mailing guidance and encrypted mailing/delivery/response tracking. Users print, sign and mail; no postage or mailing-service integration is implied.
 - Goals and saved plans, score/action tracking, onboarding, privacy/terms/disclosure and deletion flows.
 - Monthly/yearly subscriptions and case-bound dispute access in source, with server-side ownership/verification and account-generation protections. Release mode and paid access remain controlled by the existing configuration gates.
 
