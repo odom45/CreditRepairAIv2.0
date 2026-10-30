@@ -52,6 +52,7 @@ fun PaperLetterScreen(ui: AppUiState, viewModel: MainViewModel, initialDisputeId
     var pendingOwner by remember { mutableStateOf<String?>(null) }
     var pendingDisputeId by remember { mutableStateOf<String?>(null) }
     var tracking by remember(dispute.id, bureau) { mutableStateOf("") }
+    var mailingConfirmed by remember(dispute.id, bureau) { mutableStateOf(false) }
     val letter = if (bureau != Bureau.UNKNOWN && name.isNotBlank() && address.isNotBlank() && facts.isNotBlank() && evidence.isNotBlank() && resolution.isNotBlank() && date.isNotBlank())
         PaperDisputeLetter.compose(dispute, bureau, name, address, date, facts, evidence, resolution) else null
     val notifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
@@ -102,7 +103,8 @@ fun PaperLetterScreen(ui: AppUiState, viewModel: MainViewModel, initialDisputeId
         val mailed = ui.data.mailings.firstOrNull { it.disputeId == dispute.id && it.bureau == bureau }
         if (mailed == null) {
             OutlinedTextField(tracking, { tracking = it.take(120) }, label = { Text("Mail tracking number (optional, encrypted on device)") }, modifier = Modifier.fillMaxWidth())
-            Button(onClick = { viewModel.recordMailing(dispute.id, bureau, tracking) }, enabled = reviewed, modifier = Modifier.fillMaxWidth()) { Text("I mailed this ${bureau.displayName} letter") }
+            FilterChip(mailingConfirmed, { mailingConfirmed = !mailingConfirmed }, label = { Text("I confirmed this letter was actually mailed, by me or the provider") })
+            Button(onClick = { viewModel.recordMailing(dispute.id, bureau, tracking) }, enabled = mailingConfirmed, modifier = Modifier.fillMaxWidth()) { Text("I mailed this ${bureau.displayName} letter") }
         } else {
             Text("Mailed: ${DateFormat.getDateInstance().format(Date(mailed.mailedAt))}\nTracking: ${mailed.trackingNumber.ifBlank { "Not entered" }}")
             if (mailed.deliveredAt == null) OutlinedButton(onClick = {

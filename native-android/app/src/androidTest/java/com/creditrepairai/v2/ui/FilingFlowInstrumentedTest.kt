@@ -205,4 +205,21 @@ class FilingFlowInstrumentedTest {
         compose.onNodeWithText("I verified every statement and the mailing requirements").performScrollTo().performClick()
         compose.onNodeWithText("Save ${bureau.displayName} letter PDF").performScrollTo().assertIsEnabled()
     }
+    @Test fun confirmedMailingCanBeRecordedAfterReopeningWithoutSenderDetails() {
+        lateinit var journeyModel: MainViewModel
+        lateinit var bureau: com.creditrepairai.v2.model.Bureau
+        compose.runOnIdle {
+            journeyModel = model(); journeyModel.acceptPolicies(true, true); journeyModel.completeOnboarding(); journeyModel.loadDemo()
+            journeyModel.createDispute(journeyModel.uiState.value.data.findings.first())
+            bureau = journeyModel.uiState.value.data.disputes.first().bureaus.first { it != com.creditrepairai.v2.model.Bureau.UNKNOWN }
+        }
+        compose.setContent { CreditRepairTheme { CreditRepairApp(journeyModel) } }
+        compose.onNodeWithText("Disputes", substring = false).performClick()
+        compose.onNodeWithText("${bureau.displayName} print / mail letter").performScrollTo().performClick()
+        compose.onNodeWithText("I mailed this ${bureau.displayName} letter").performScrollTo().assertIsNotEnabled()
+        compose.onNodeWithText("I confirmed this letter was actually mailed, by me or the provider").performScrollTo().performClick()
+        compose.onNodeWithText("I mailed this ${bureau.displayName} letter").performScrollTo().assertIsEnabled().performClick()
+        compose.runOnIdle { org.junit.Assert.assertEquals(bureau, journeyModel.uiState.value.data.mailings.single().bureau) }
+    }
+
 }
