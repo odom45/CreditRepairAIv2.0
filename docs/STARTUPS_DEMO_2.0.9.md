@@ -1,4 +1,4 @@
-# Startups.com presentation candidate — October 30, 2026, 7 a.m. Pacific
+# CreditRepairAI 2.0.9 — Startups.com demo brief
 
 CreditRepairAI is an Android tool for reviewing imported three-bureau credit data, preparing factual disputes, and guiding users through bureau and CFPB workflows. It keeps original report parsing on the phone and redacts high-risk identifiers before AI requests.
 
@@ -30,3 +30,5 @@ These are the earlier pricing decisions, not proof that live Play purchases are 
 ## Evidence and limits
 
 CI, signed artifact, actual authenticated phone behavior and real-provider AI checks must be recorded before claiming verified behavior. A generated answer, PDF export or checkout visit is not proof of bureau submission, physical mailing, deletion, a score increase or a legal outcome. Do not present live billing, a paid CreditRepairAI mail API, owner-phone acceptance, external review or store-release approval as complete without evidence.
+
+Current measured results and signed-build status: [2.0.9 verification record](RELEASE_2.0.9.md).

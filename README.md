@@ -1,11 +1,11 @@
 # CreditRepairAI v2.0
 
-> **Current update — October 27, 2026:** [PR #18](https://github.com/odom45/CreditRepairAIv2.0/pull/18) merged at `36e33860768d44863ca237527ba5eabeea8aa5f7`. Account/verification, direct bureau walkthroughs, physical PDF/print letters and contextual assistant repairs passed [native/backend CI 40465737885](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40465737885) (37 device tests). [Parser CI 40465737742](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40465737742) passed all 78 outcomes and 1,950 fields. Production deployment and live synthetic AI checks passed. Final signed 2.0.8 results are maintained in the repair record. [Repair details](docs/USER_JOURNEY_REPAIR_2026-10-26.md).
+> **Current update — October 29, 2026:** Native **2.0.9 / 20261029** adds fresh sign-in on reopen, expanded interactive case coaching and an optional paid LetterStream handoff. See the [2.0.9 evidence and scope](docs/RELEASE_2.0.9.md) and [demo brief](docs/STARTUPS_DEMO_2.0.9.md). Mailing checkout is with the provider; app purchases remain disabled in this test candidate.
 
 
 Native Android tools for on-device three-bureau report analysis, guided disputes and user-reviewed filing, with an authenticated legal-source AI assistant.
 
-## Current Android status — October 27, 2026
+## Previous Android status — October 27, 2026 (2.0.8)
 
 Code readiness: **98%** — engineering estimate for the agreed native scope; residual integration and edge-case defects remain possible. This is not a measured percentage or launch approval.
 
@@ -13,7 +13,7 @@ This is an engineering estimate based on the previously implemented native scope
 
 [PR #16](https://github.com/odom45/CreditRepairAIv2.0/pull/16) is merged into **`android-native-rebuild`** at `ffe4e3750b49ee2db77d5b9cc36cea11a3eb0519`. Source version defaults are **2.0.8 / 20261026**. The three parser follow-up items and the requested account, bureau, letter and conversation implementations are complete. Signed 2.0.8 passed [release verification](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40469209159); exact APK evidence is in the repair record.
 
-| Current evidence | Result |
+| Previous 2.0.8 evidence | Result |
 |---|---|
 | Final PR CI | [Run 40435571642](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40435571642) passed on `c6eb63f85a18a6ab6ecc6c57b94eaa955b87469d` |
 | Native JVM regression suite | Passed, including 2,400 seeded text mutations, account-boundary properties and limit tests |
@@ -26,12 +26,12 @@ Detailed status: [current code assessment](docs/PRODUCTION_ASSESSMENT.md), [rele
 
 ## Native implementation
 
-- Kotlin/Jetpack Compose app with Firebase email/Google sign-in, upfront email-verification handling, visible account/sign-out and authenticated Convex access.
+- Kotlin/Jetpack Compose app with Firebase email/Google sign-in, fresh sign-in on reopen, upfront email-verification handling, visible account/sign-out and authenticated Convex access.
 - On-device PDFBox extraction and bundled ML Kit OCR, structured account/score parsing, and three-bureau comparisons.
 - High-risk identifier redaction before AI calls; Keystore AES-GCM case storage, FLAG_SECURE and backups disabled.
 - Tool-enabled legal-source AI with bounded redacted conversation context, follow-up questions and an explicit bureau-response explanation flow.
 - Direct per-bureau walkthroughs, editable portal answers, evidence review, official-portal handoff, receipts and responses. Users review, copy and submit themselves.
-- Separate Equifax, Experian and TransUnion physical letters with private sender fields, multi-page PDF export, Android printing, mailing guidance and encrypted mailing/delivery/response tracking. Users print, sign and mail; no postage or mailing-service integration is implied.
+- Separate Equifax, Experian and TransUnion physical letters with private sender fields, multi-page PDF export, Android printing, mailing guidance and encrypted mailing/delivery/response tracking. Users can self-mail or use the optional paid LetterStream website handoff, uploading and paying the provider themselves. No app-collected mail fee or API mail order is implied.
 - Goals and saved plans, score/action tracking, onboarding, privacy/terms/disclosure and deletion flows.
 - Monthly/yearly subscriptions and case-bound dispute access in source, with server-side ownership/verification and account-generation protections. Release mode and paid access remain controlled by the existing configuration gates.
 

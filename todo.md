@@ -1,14 +1,14 @@
-# Current native work — October 27, 2026
+# Current native work — October 29, 2026
 
-Current native code readiness is a 98% engineering estimate. The agreed code additions are implemented and merged; acceptance on the owner's phone remains separate.
+- [x] Require explicit sign-in on fresh launch and ordinary background/reopen; retain the encrypted same-account case.
+- [x] Fence pending authentication/work and secure service tokens while locked; test browser/picker continuations.
+- [x] Expand interactive AI coaching, case follow-ups, simpler explanations and copying.
+- [x] Fix account-terminology/blank-label corruption found by reviewing real-provider fictional dialogue.
+- [x] Add optional paid LetterStream handoff with current-PDF save, review and separate-purchase acknowledgment.
+- [x] Allow actual mailing confirmation/tracking after reopening without re-entering sender details.
+- [x] Pass 84 JVM, 43 device, 57 backend and 78 parser outcomes; pass real-provider two-turn checks.
+- [x] Merge PR #20 and deploy the production AI update.
+- [x] Build/sign 2.0.9, verify signatures and in-place update, and make the verified APK available.
+- [ ] Owner accepts actual phone sign-in/AI/mailing-handoff flows.
 
-- [x] Implement a front-door verified-email flow, visible signed-in identity/account control and confirmed sign-out.
-- [x] Implement direct per-bureau walkthrough entry from generated/saved disputes.
-- [x] Implement separate physical letters with private local sender fields, paginated PDF export, Android printing, official mail instructions and encrypted mailing/receipt tracking.
-- [x] Implement bounded, redacted recent chat context scoped by dispute, follow-up suggestions, auto-scroll and stop control.
-- [x] Pass all native unit, device journey and PDF regressions plus lint.
-- [x] Merge the verified repair and build/sign version 2.0.8 / 20261026.
-- [x] Make the verified signed 2.0.8 APK available.
-- [ ] Owner confirms sign-in/verification, bureau walkthroughs, physical printing/mailing and contextual AI on the phone.
-
-Details: [user-journey repair](docs/USER_JOURNEY_REPAIR_2026-10-26.md). Remaining human launch acceptance: [owner checklist](RELEASE_OWNER_CHECKLIST.md).
+Physical mail API ordering, CreditRepairAI-collected mailing markup and live app-purchase activation are not implied. Provider checkout is user-controlled. See [2.0.9 evidence](docs/RELEASE_2.0.9.md) and [owner checklist](RELEASE_OWNER_CHECKLIST.md).

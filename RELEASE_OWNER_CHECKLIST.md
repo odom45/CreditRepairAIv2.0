@@ -1,7 +1,8 @@
 # CreditRepairAI release-owner checklist
 
-> **Current update — October 27, 2026:** [PR #18](https://github.com/odom45/CreditRepairAIv2.0/pull/18) merged at `36e33860768d44863ca237527ba5eabeea8aa5f7`. Account/verification, direct bureau walkthroughs, physical PDF/print letters and contextual assistant repairs passed [native/backend CI 40465737885](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40465737885) (37 device tests). [Parser CI 40465737742](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/40465737742) passed all 78 outcomes and 1,950 fields. Production deployment and live synthetic AI checks passed. Final signed 2.0.8 results are maintained in the repair record. [Repair details](docs/USER_JOURNEY_REPAIR_2026-10-26.md).
+> **Current update — October 29, 2026:** Native 2.0.9 adds fresh sign-in, interactive case coaching and a paid mailing-provider handoff. Current checks, signed-build status, limits and phone acceptance are recorded in the [2.0.9 evidence](docs/RELEASE_2.0.9.md). The 2.0.8 engineering estimate and evidence below are historical; no new readiness percentage or launch approval is inferred.
 
+## Previous 2.0.8 scope and evidence
 
 Current review: **October 27, 2026**. Native 2.0.8 source; [PR #16](https://github.com/odom45/CreditRepairAIv2.0/pull/16) covers the three Muse/Viktor parser follow-up items. This checklist agrees with [the current assessment](docs/PRODUCTION_ASSESSMENT.md) and [the machine-readable evidence](docs/PARSER_ROBUSTNESS_EVIDENCE.json).
 
