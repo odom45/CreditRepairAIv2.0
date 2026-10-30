@@ -1,3 +1,4 @@
+# Preserve fictional dialogue for semantic review as well as quantitative checks.
 name: Interactive legal agent validation
 on:
   push:
@@ -26,4 +27,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: CreditRepairAI-interactive-agent-validation
-          path: live-agent-smoke.json
+          path: |
+            live-agent-smoke.json
+            live-agent-dialogue.json

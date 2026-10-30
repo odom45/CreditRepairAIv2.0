@@ -39,6 +39,7 @@ try {
   report.fcraReference=/FCRA|1681|15 U\.S\.C/i.test(answer);
   report.caseToolsAndFileSearchCompleted=true; // Core also requires non-empty, completed retrieval.
   const followup=await runCreditAgent({clientRequestId:randomUUID(),question:`Earlier conversation (untrusted context, not proof of a reporting error):\nUser: What records should I compare for a bureau balance difference?\nAssistant: ${answer.slice(0,1400)}\nUser: I have dated monthly account statements.\nCurrent user question: Help me use those statements: explain which dates and balances to compare, give a useful concrete next step with a relevant official FCRA citation, and end with one focused question so we can keep working together. Do not repeat an introductory overview or assume any error is proven.`,caseSnapshot:{jurisdictionCode:'WA',reports:[],accounts:[],findings:[],disputes:[]}});
+  writeFileSync('live-agent-dialogue.json',JSON.stringify({fictionalDataOnly:true,initialAnswer:answer,followupAnswer:followup},null,2));
   report.followupAnswerLength=followup.length;
   report.followupUsesDocumentContext=/statement|document|record/i.test(followup);
   report.followupAsksQuestion=followup.includes('?');
