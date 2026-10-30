@@ -33,13 +33,19 @@ class AuthenticationInstrumentedTest {
         override val email get() = if (signedIn) "fictional@example.invalid" else null
         override val uid get() = if (signedIn) "fictional-auth-owner" else null
         override var isEmailVerified = false
+        var allowSignIn = false
+        var loginGate: CompletableDeferred<Unit>? = null
         var resetRequests = 0
         var resendRequests = 0
         var refreshRequests = 0
         var refreshGate: CompletableDeferred<Unit>? = null
         override fun observeSession(onChange: (String?) -> Unit): () -> Unit = {}
         override suspend fun bearerToken(expectedSubject: String): String? = null
-        override suspend fun signInWithEmail(email: String, password: String) { throw AuthFailure("ERROR_OPERATION_NOT_ALLOWED") }
+        override suspend fun signInWithEmail(email: String, password: String) {
+            if (!allowSignIn) throw AuthFailure("ERROR_OPERATION_NOT_ALLOWED")
+            loginGate?.await()
+            signedIn = true
+        }
         override suspend fun createAccount(email: String, password: String) { error("Offline fixture only") }
         override suspend fun sendPasswordReset(email: String) { resetRequests++ }
         override suspend fun resendVerification() { resendRequests++ }
@@ -48,14 +54,60 @@ class AuthenticationInstrumentedTest {
         override suspend fun deleteAccount() { error("Offline fixture only") }
         override suspend fun signOut(context: Context) { signedIn = false }
     }
-    private fun model(session: Session): MainViewModel {
+    private fun model(session: Session, freshSignIn: Boolean = false): MainViewModel {
         val factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
-            override fun <T : ViewModel> create(modelClass: Class<T>): T = MainViewModel(AppRepository(context), CreditReportParser(context), CreditAgentGateway("", session), session, context) as T
+            override fun <T : ViewModel> create(modelClass: Class<T>): T = MainViewModel(AppRepository(context), CreditReportParser(context), CreditAgentGateway("", session), session, context, requireFreshSignInOnStart = freshSignIn) as T
         }
         return ViewModelProvider(store, factory)[MainViewModel::class.java]
     }
     @After fun cleanup() { compose.runOnIdle { store.clear(); AppRepository(context).clear(preserveOwner = false) } }
+
+
+    @Test fun cachedIdentityCannotOpenCaseUntilFreshLoginAndLockPreservesEncryptedData() {
+        val session = Session(true).apply { isEmailVerified = true; allowSignIn = true }
+        lateinit var vm: MainViewModel
+        compose.runOnIdle {
+            val repository = AppRepository(context)
+            repository.selectOwner(session.uid)
+            repository.save(com.creditrepairai.v2.model.AppState(onboardingComplete = true))
+            vm = model(session, freshSignIn = true)
+            assertTrue(vm.isSessionLocked)
+            assertNull(vm.uiState.value.signedInEmail)
+            assertNull(vm.signedInSubject)
+            assertFalse(vm.uiState.value.data.onboardingComplete)
+            assertFalse(vm.askAssistant("Review my case"))
+            assertTrue(repository.load().onboardingComplete)
+            vm.signInWithEmail("fictional@example.invalid", "fictional-password", false)
+        }
+        compose.waitUntil { vm.uiState.value.signedInEmail != null }
+        compose.runOnIdle {
+            assertFalse(vm.isSessionLocked)
+            assertTrue(vm.uiState.value.data.onboardingComplete)
+            vm.lockSession()
+            assertTrue(vm.isSessionLocked)
+            assertNull(vm.signedInSubject)
+            assertFalse(vm.uiState.value.data.onboardingComplete)
+            assertTrue(AppRepository(context).load().onboardingComplete)
+        }
+    }
+
+    @Test fun lateLoginAndVerificationCannotUnlockABackgroundedCase() {
+        val gate = CompletableDeferred<Unit>()
+        val session = Session(true).apply { isEmailVerified = true; allowSignIn = true; loginGate = gate }
+        lateinit var vm: MainViewModel
+        compose.runOnIdle { vm = model(session, freshSignIn = true); vm.signInWithEmail("fictional@example.invalid", "fictional-password", false) }
+        compose.waitUntil { vm.uiState.value.isAuthenticating }
+        compose.runOnIdle { vm.lockSession(); gate.complete(Unit) }
+        compose.waitForIdle()
+        compose.runOnIdle {
+            assertTrue(vm.isSessionLocked)
+            assertNull(vm.uiState.value.signedInEmail)
+            vm.checkEmailVerification(quiet = true)
+            assertEquals(0, session.refreshRequests)
+            assertNull(vm.signedInSubject)
+        }
+    }
 
     @Test fun emailLoginDisplaysAnActionableProviderError() {
         val session = Session()

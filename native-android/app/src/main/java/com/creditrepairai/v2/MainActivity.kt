@@ -18,6 +18,7 @@ class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels { MainViewModel.factory(applicationContext) }
     private var pendingPdf: Uri? = null
     private var pdfIntentConsumed = false
+    private val externalResults = mutableSetOf<Int>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,12 +38,34 @@ class MainActivity : ComponentActivity() {
         lifecycleScope.launch { viewModel.uiState.collect { importPendingPdf() } }
         lifecycle.addObserver(object : androidx.lifecycle.DefaultLifecycleObserver {
             override fun onResume(owner: androidx.lifecycle.LifecycleOwner) {
+                if (viewModel.isSessionLocked) return
                 viewModel.checkEmailVerification(quiet = true)
                 viewModel.billing.refresh()
                 viewModel.rescheduleCheckins()
                 importPendingPdf()
             }
         })
+    }
+    override fun onStop() {
+        super.onStop()
+        // Android document/permission pickers and explicit Google authentication are continuations,
+        // not a closed app. Their results must reach the original reviewed workflow.
+        if (!isChangingConfigurations && externalResults.isEmpty() && !viewModel.isGoogleSignInInProgress) viewModel.lockSession()
+    }
+    override fun onDestroy() {
+        if (isFinishing) viewModel.lockSession()
+        super.onDestroy()
+    }
+    @Suppress("DEPRECATION")
+    override fun startActivityForResult(intent: Intent, requestCode: Int, options: Bundle?) {
+        externalResults.add(requestCode)
+        try { super.startActivityForResult(intent, requestCode, options) }
+        catch (error: Exception) { externalResults.remove(requestCode); throw error }
+    }
+    @Deprecated("Android activity result callback")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        try { super.onActivityResult(requestCode, resultCode, data) }
+        finally { externalResults.remove(requestCode) }
     }
     override fun onNewIntent(intent: Intent) { super.onNewIntent(intent); setIntent(intent); acceptPdf(intent) }
     override fun onSaveInstanceState(outState: Bundle) {

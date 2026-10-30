@@ -47,6 +47,7 @@ fun PaperLetterScreen(ui: AppUiState, viewModel: MainViewModel, initialDisputeId
     var date by remember { mutableStateOf(DateFormat.getDateInstance(DateFormat.LONG).format(Date())) }
     var reviewed by remember(dispute.id, bureau, name, address, facts, evidence, resolution, date) { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
+    var savedLetter by remember(dispute.id, bureau) { mutableStateOf<String?>(null) }
     var pendingText by remember { mutableStateOf<String?>(null) }
     var pendingOwner by remember { mutableStateOf<String?>(null) }
     var pendingDisputeId by remember { mutableStateOf<String?>(null) }
@@ -61,12 +62,13 @@ fun PaperLetterScreen(ui: AppUiState, viewModel: MainViewModel, initialDisputeId
         if (uri != null && text != null && owner == viewModel.signedInSubject && viewModel.uiState.value.data.disputes.any { it.id == exportingDisputeId }) {
             message = runCatching {
                 context.contentResolver.openOutputStream(uri)?.use { LetterPdfRenderer.write(it, text) } ?: error("Could not open the selected destination")
-                "PDF saved. Print, sign, and mail it yourself; saving does not send a dispute."
+                savedLetter = text
+                "PDF saved. Print and mail it yourself, or use the optional paid mailing service below. Saving does not send a dispute."
             }.getOrElse { "Could not save the PDF. Retry with another destination." }
         }
     }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("Print and mail a dispute", style = MaterialTheme.typography.headlineMedium)
+        Text("Print or send a dispute letter", style = MaterialTheme.typography.headlineMedium)
         Text(dispute.creditor)
         Text("Prepare a separate letter for each bureau that reports this item. Review the original report and edit the facts below.")
         bureaus.forEach { item -> FilterChip(bureau == item, { bureau = item }, label = { Text(item.displayName) }) }
@@ -91,6 +93,11 @@ fun PaperLetterScreen(ui: AppUiState, viewModel: MainViewModel, initialDisputeId
                 "Choose your printer or Save as PDF. Printing does not mail the letter."
             }.getOrElse { "Printing is unavailable. Save the PDF instead." }
         }, enabled = reviewed && letter != null && context is Activity, modifier = Modifier.fillMaxWidth()) { Text("Print ${bureau.displayName} letter") }
+        PaidMailServiceCard(letter, reviewed, letter != null && savedLetter == letter) {
+            message = if (PortalBrowser.open(context, PAID_MAIL_SERVICE_URL))
+                "LetterStream opened. Upload your final packet, review the total and complete payment there. Nothing has been uploaded, purchased or mailed by CreditRepairAI."
+            else "Could not open LetterStream. Check that a browser is installed and try again. Your saved PDF is still available."
+        }
         Text("Mailing checklist: print and sign; add the bureau's required form/identity documents and supporting copies; keep originals and a complete copy; mail to the verified address; keep mailing and delivery proof. Standard or trackable mail is your choice.")
         val mailed = ui.data.mailings.firstOrNull { it.disputeId == dispute.id && it.bureau == bureau }
         if (mailed == null) {
