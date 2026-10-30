@@ -113,18 +113,18 @@ class MainViewModel(
     fun lockSession() {
         freshSignInRequired = true
         authenticationEpoch++
-        invalidateCase(null)
+        invalidateCase(null, cancelReminders = false)
         billing.reset()
         _uiState.value = AppUiState(isAgentEndpointConfigured = agentGateway.isConfigured, notice = "For your privacy, sign in again to reopen your encrypted case.")
     }
 
-    private fun invalidateCase(owner: String? = session.uid) {
+    private fun invalidateCase(owner: String? = session.uid, cancelReminders: Boolean = true) {
         caseFence.invalidate(owner)
         aiJob?.cancel()
         filingHelpJob?.cancel()
         _uiState.update { it.copy(filingHelp = FilingHelpStatus(), showAiDisclosure = false, pendingAiRequest = null, isAuthenticating = false) }
         activeImportJob?.cancel()
-        FollowUpWorker.cancelAll(context)
+        if (cancelReminders) FollowUpWorker.cancelAll(context)
     }
 
     fun signInWithEmail(email: String, password: String, createAccount: Boolean) {
@@ -149,6 +149,7 @@ class MainViewModel(
                     )
                 }
                 billing.refresh()
+                rescheduleCheckins()
             }.onFailure { error ->
                 if (error is CancellationException) throw error
                 if (epoch != authenticationEpoch) return@onFailure
@@ -174,6 +175,7 @@ class MainViewModel(
                     repository.selectOwner(session.uid)
                     _uiState.update { it.copy(data = repository.load(), signedInEmail = session.email, emailVerified = session.isEmailVerified, isAuthenticating = false, notice = "Signed in with Google.") }
                     billing.refresh()
+                    rescheduleCheckins()
                 }
                 .onFailure { error ->
                     if (error is CancellationException) throw error
