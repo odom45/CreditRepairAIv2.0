@@ -1,0 +1,29 @@
+name: Interactive legal agent validation
+on:
+  push:
+    branches: [feature/paid-mail-handoff, android-native-rebuild]
+    paths: [".github/workflows/interactive-agent-validation.yml"]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  fictional-multiturn-ai:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Verify sourced AI answer and contextual coaching follow-up with fictional data
+        env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: node scripts/live-agent-smoke.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: CreditRepairAI-interactive-agent-validation
+          path: live-agent-smoke.json
