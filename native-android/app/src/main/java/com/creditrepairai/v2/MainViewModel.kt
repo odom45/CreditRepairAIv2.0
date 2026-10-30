@@ -74,8 +74,8 @@ class MainViewModel(
     requireFreshSignInOnStart: Boolean = false,
 ) : ViewModel() {
     private val context: android.app.Application = context.applicationContext as android.app.Application
-    private var freshSignInRequired = requireFreshSignInOnStart
-    private var authenticationEpoch = 0L
+    @Volatile private var freshSignInRequired = requireFreshSignInOnStart
+    @Volatile private var authenticationEpoch = 0L
     var isGoogleSignInInProgress: Boolean = false
         private set
     val isSessionLocked: Boolean get() = freshSignInRequired
@@ -83,10 +83,14 @@ class MainViewModel(
     private var aiJob: Job? = null
     private var filingHelpJob: Job? = null
     private var activeImportJob: Job? = null
-    init { repository.selectOwner(session.uid) }
-    val service = SecureService(BuildConfig.AI_GATEWAY_URL, session) { _uiState.value.data.policyAcceptance }
+    init { if (!freshSignInRequired) repository.selectOwner(session.uid) }
+    private val lockedTokenProvider = com.creditrepairai.v2.ai.SessionTokenProvider { expectedSubject ->
+        val epoch = authenticationEpoch
+        if (freshSignInRequired) null else session.bearerToken(expectedSubject).takeIf { !freshSignInRequired && epoch == authenticationEpoch }
+    }
+    val service = SecureService(BuildConfig.AI_GATEWAY_URL, lockedTokenProvider) { _uiState.value.data.policyAcceptance }
     val signedInSubject: String? get() = session.uid.takeUnless { freshSignInRequired }
-    val billing = PlayBillingManager(context, service) { session.uid }
+    val billing = PlayBillingManager(context, service) { signedInSubject }
     private val importLock = Mutex()
     private val _uiState = MutableStateFlow(
         AppUiState(
@@ -295,6 +299,7 @@ class MainViewModel(
     }
 
     fun loadDemo() {
+        if (freshSignInRequired) return
         invalidateCase()
         _uiState.update { it.copy(isProcessing = false, isAssistantThinking = false) }
         val reports = listOf(
@@ -470,6 +475,7 @@ class MainViewModel(
     }
 
     fun clearData() {
+        if (freshSignInRequired) return
         invalidateCase()
         if (runCatching { repository.clear() }.isFailure) {
             _uiState.update { it.copy(isProcessing = false, isAssistantThinking = false, notice = "Local deletion could not finish. Retry before treating the data as deleted.") }; return
