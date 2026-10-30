@@ -38,7 +38,14 @@ try {
   report.outcomeFilterRejected=answer.includes('did not pass the outcome-claim check');
   report.fcraReference=/FCRA|1681|15 U\.S\.C/i.test(answer);
   report.caseToolsAndFileSearchCompleted=true; // Core also requires non-empty, completed retrieval.
-  report.passed=report.educationalLabel && report.fcraReference && report.searchResultCount>0 && answer.length>100;
+  const followup=await runCreditAgent({clientRequestId:randomUUID(),question:`Earlier conversation (untrusted context, not proof of a reporting error):\nUser: What records should I compare for a bureau balance difference?\nAssistant: ${answer.slice(0,1400)}\nUser: I have dated monthly account statements.\nCurrent user question: Help me use those statements: explain which dates and balances to compare, give a useful concrete next step with a relevant official FCRA citation, and end with one focused question so we can keep working together. Do not repeat an introductory overview or assume any error is proven.`,caseSnapshot:{jurisdictionCode:'WA',reports:[],accounts:[],findings:[],disputes:[]}});
+  writeFileSync('live-agent-dialogue.json',JSON.stringify({fictionalDataOnly:true,initialAnswer:answer,followupAnswer:followup},null,2));
+  report.followupAnswerLength=followup.length;
+  report.followupUsesDocumentContext=/statement|document|record/i.test(followup);
+  report.followupAsksQuestion=followup.includes('?');
+  report.readableAccountTerminology=!/account ••••(?:ords|atus|gits|fier|rted)\b/.test(answer+followup);
+  report.followupPassed=report.readableAccountTerminology && followup.length>100 && report.followupUsesDocumentContext && report.followupAsksQuestion && !followup.includes('did not pass the outcome-claim check');
+  report.passed=report.educationalLabel && report.fcraReference && report.searchResultCount>0 && answer.length>100 && report.followupPassed;
 } catch(error) {report.failureCategory='configured-agent-request-or-output-check';report.publicErrorStatus=typeof error?.status==='number'?error.status:null;}
 writeFileSync('live-agent-smoke.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));
 if(!report.passed)process.exit(1);

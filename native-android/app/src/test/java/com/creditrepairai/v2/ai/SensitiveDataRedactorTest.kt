@@ -24,4 +24,16 @@ class SensitiveDataRedactorTest {
         val input = "Why do Experian and Equifax show different balances for account 1234?"
         assertEquals(input, SensitiveDataRedactor.redact(input))
     }
+    @Test fun preservesOrdinaryAccountLanguageAndExplicitEndingLabels() {
+        val input = "Compare account records, account status, masked account identifier and account digits. Use account number ending in 1234."
+        assertEquals(input, SensitiveDataRedactor.redact(input))
+    }
+    @Test fun masksNumericAlphanumericAndExplicitAlphabeticIdentifiers() {
+        for (value in listOf("account AB12CD3456", "acctAB123456", "acct#abcdefgh", "account number qwertyui", "acct no. AB123456")) {
+            val result = SensitiveDataRedactor.redact(value)
+            assertTrue(result.contains("••••"))
+            assertFalse(result == value)
+        }
+    }
+
 }

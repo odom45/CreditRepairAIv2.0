@@ -1,4 +1,4 @@
-# Owner-authorized 2.0.8 deployment: conversation, postal context and bounded answer revision.
+# Owner-authorized 2.0.9 deployment: interactive case coaching and honest paid-mail handoff.
 name: Deploy configured production legal agent
 
 on:

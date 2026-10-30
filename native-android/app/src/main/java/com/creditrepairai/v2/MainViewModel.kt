@@ -71,27 +71,38 @@ class MainViewModel(
     private val agentGateway: CreditAgentGateway,
     private val session: NativeSession,
     context: Context,
+    requireFreshSignInOnStart: Boolean = false,
 ) : ViewModel() {
     private val context: android.app.Application = context.applicationContext as android.app.Application
-    private val caseFence = SessionFence(session.uid)
+    @Volatile private var freshSignInRequired = requireFreshSignInOnStart
+    @Volatile private var authenticationEpoch = 0L
+    var isGoogleSignInInProgress: Boolean = false
+        private set
+    val isSessionLocked: Boolean get() = freshSignInRequired
+    private val caseFence = SessionFence(if (freshSignInRequired) null else session.uid)
     private var aiJob: Job? = null
     private var filingHelpJob: Job? = null
     private var activeImportJob: Job? = null
-    init { repository.selectOwner(session.uid) }
-    val service = SecureService(BuildConfig.AI_GATEWAY_URL, session) { _uiState.value.data.policyAcceptance }
-    val signedInSubject: String? get() = session.uid
-    val billing = PlayBillingManager(context, service) { session.uid }
+    init { if (!freshSignInRequired) repository.selectOwner(session.uid) }
+    private val lockedTokenProvider = com.creditrepairai.v2.ai.SessionTokenProvider { expectedSubject ->
+        val epoch = authenticationEpoch
+        if (freshSignInRequired) null else session.bearerToken(expectedSubject).takeIf { !freshSignInRequired && epoch == authenticationEpoch }
+    }
+    val service = SecureService(BuildConfig.AI_GATEWAY_URL, lockedTokenProvider) { _uiState.value.data.policyAcceptance }
+    val signedInSubject: String? get() = session.uid.takeUnless { freshSignInRequired }
+    val billing = PlayBillingManager(context, service) { signedInSubject }
     private val importLock = Mutex()
     private val _uiState = MutableStateFlow(
         AppUiState(
-            data = repository.load(),
+            data = if (freshSignInRequired) AppState() else repository.load(),
             isAgentEndpointConfigured = agentGateway.isConfigured,
-            signedInEmail = session.email,
-            emailVerified = session.isEmailVerified,
+            signedInEmail = session.email.takeUnless { freshSignInRequired },
+            emailVerified = !freshSignInRequired && session.isEmailVerified,
         ),
     )
     val uiState: StateFlow<AppUiState> = _uiState.asStateFlow()
     private val stopObservingSession = session.observeSession { owner ->
+        if (freshSignInRequired) return@observeSession
         if (caseFence.ticket().owner != owner) {
             invalidateCase(owner)
             repository.selectOwner(owner)
@@ -102,22 +113,35 @@ class MainViewModel(
         }
     }
 
-    private fun invalidateCase(owner: String? = session.uid) {
+    /** Lock access without deleting the encrypted case or treating a cached Firebase token as fresh login. */
+    fun lockSession() {
+        freshSignInRequired = true
+        authenticationEpoch++
+        invalidateCase(null, cancelReminders = false)
+        billing.reset()
+        _uiState.value = AppUiState(isAgentEndpointConfigured = agentGateway.isConfigured, notice = "For your privacy, sign in again to reopen your encrypted case.")
+    }
+
+    private fun invalidateCase(owner: String? = session.uid, cancelReminders: Boolean = true) {
         caseFence.invalidate(owner)
         aiJob?.cancel()
         filingHelpJob?.cancel()
         _uiState.update { it.copy(filingHelp = FilingHelpStatus(), showAiDisclosure = false, pendingAiRequest = null, isAuthenticating = false) }
         activeImportJob?.cancel()
-        FollowUpWorker.cancelAll(context)
+        if (cancelReminders) FollowUpWorker.cancelAll(context)
     }
 
     fun signInWithEmail(email: String, password: String, createAccount: Boolean) {
         if (email.isBlank() || password.isEmpty() || (createAccount && password.length < 6) || _uiState.value.isAuthenticating) return
+        val epoch = authenticationEpoch
         viewModelScope.launch {
             _uiState.update { it.copy(isAuthenticating = true, notice = null) }
             runCatching {
                 if (createAccount) session.createAccount(email, password) else session.signInWithEmail(email, password)
             }.onSuccess {
+                if (epoch != authenticationEpoch) return@onSuccess
+                freshSignInRequired = false
+                caseFence.invalidate(session.uid)
                 repository.selectOwner(session.uid)
                 _uiState.update {
                     it.copy(
@@ -129,10 +153,12 @@ class MainViewModel(
                     )
                 }
                 billing.refresh()
+                rescheduleCheckins()
             }.onFailure { error ->
                 if (error is CancellationException) throw error
+                if (epoch != authenticationEpoch) return@onFailure
                 _uiState.update { state ->
-                    state.copy(isAuthenticating = false, signedInEmail = session.email, emailVerified = session.isEmailVerified, notice = AuthFeedback.failureMessage(error))
+                    state.copy(isAuthenticating = false, signedInEmail = session.email.takeUnless { freshSignInRequired }, emailVerified = !freshSignInRequired && session.isEmailVerified, notice = AuthFeedback.failureMessage(error))
                 }
             }
         }
@@ -140,18 +166,26 @@ class MainViewModel(
 
     fun signInWithGoogle(activity: Activity) {
         if (_uiState.value.isAuthenticating) return
+        val epoch = authenticationEpoch
         viewModelScope.launch {
             _uiState.update { it.copy(isAuthenticating = true, notice = null) }
+            isGoogleSignInInProgress = true
+            try {
             runCatching { session.signInWithGoogle(activity) }
                 .onSuccess {
+                    if (epoch != authenticationEpoch) return@onSuccess
+                    freshSignInRequired = false
+                    caseFence.invalidate(session.uid)
                     repository.selectOwner(session.uid)
                     _uiState.update { it.copy(data = repository.load(), signedInEmail = session.email, emailVerified = session.isEmailVerified, isAuthenticating = false, notice = "Signed in with Google.") }
                     billing.refresh()
+                    rescheduleCheckins()
                 }
                 .onFailure { error ->
                     if (error is CancellationException) throw error
-                    _uiState.update { it.copy(isAuthenticating = false, notice = AuthFeedback.failureMessage(error)) }
+                    if (epoch == authenticationEpoch) _uiState.update { it.copy(isAuthenticating = false, notice = AuthFeedback.failureMessage(error)) }
                 }
+            } finally { isGoogleSignInInProgress = false }
         }
     }
 
@@ -170,7 +204,7 @@ class MainViewModel(
     }
 
     fun checkEmailVerification(resend: Boolean = false, quiet: Boolean = false) {
-        if (session.uid == null || _uiState.value.isAuthenticating) return
+        if (freshSignInRequired || session.uid == null || _uiState.value.isAuthenticating) return
         val ticket = caseFence.ticket()
         viewModelScope.launch {
             _uiState.update { it.copy(isAuthenticating = true, notice = null) }
@@ -194,6 +228,8 @@ class MainViewModel(
     }
 
     fun signOut(context: Context) {
+        freshSignInRequired = true
+        authenticationEpoch++
         invalidateCase(null)
         billing.reset()
         repository.clear(preserveOwner = false)
@@ -210,6 +246,7 @@ class MainViewModel(
     }
 
     fun importPdf(uri: Uri, displayName: String) {
+        if (freshSignInRequired) return
         if (!session.isEmailVerified) {
             _uiState.update { it.copy(notice = "Verify the signed-in email before importing reports. Your existing local reports have not been deleted.") }
             return
@@ -264,6 +301,7 @@ class MainViewModel(
     }
 
     fun loadDemo() {
+        if (freshSignInRequired) return
         invalidateCase()
         _uiState.update { it.copy(isProcessing = false, isAssistantThinking = false) }
         val reports = listOf(
@@ -364,7 +402,7 @@ class MainViewModel(
     }
 
     fun askAssistant(prompt: String, saveAsPlan: Boolean = false, caseScopeId: String? = null): Boolean {
-        val owner = session.uid ?: return false
+        val owner = signedInSubject ?: return false
         val ticket = caseFence.ticket()
         if (!caseFence.accepts(ticket, owner)) return false
         val cleaned = SensitiveDataRedactor.redact(prompt.trim())
@@ -439,6 +477,7 @@ class MainViewModel(
     }
 
     fun clearData() {
+        if (freshSignInRequired) return
         invalidateCase()
         if (runCatching { repository.clear() }.isFailure) {
             _uiState.update { it.copy(isProcessing = false, isAssistantThinking = false, notice = "Local deletion could not finish. Retry before treating the data as deleted.") }; return
@@ -636,6 +675,7 @@ class MainViewModel(
     }
 
     private fun mutate(notice: String?, transform: (AppState) -> AppState) {
+        if (freshSignInRequired || session.uid == null) return
         val updated = transform(_uiState.value.data)
         if (runCatching { repository.save(updated) }.isFailure) {
             _uiState.update { it.copy(notice = "Encrypted storage could not save this change. Check device storage and retry.") }; return
@@ -661,6 +701,7 @@ class MainViewModel(
                     ),
                     session = session,
                     context = context.applicationContext,
+                    requireFreshSignInOnStart = true,
                 ) as T
             }
         }

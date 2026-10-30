@@ -835,7 +835,8 @@ private fun CfpbScreen(data: AppState) {
 private fun AssistantScreen(ui: AppUiState, viewModel: MainViewModel) {
     val data = ui.data
     var caseScopeId by rememberSaveable { mutableStateOf<String?>(null) }
-    var input by rememberSaveable { mutableStateOf("") }
+    var input by remember(caseScopeId) { mutableStateOf("") }
+    val context = LocalContext.current
     val messages = data.chat.filter { it.caseScopeId == caseScopeId }
     val listState = rememberLazyListState()
     LaunchedEffect(messages.size, ui.isAssistantThinking, caseScopeId) {
@@ -844,6 +845,7 @@ private fun AssistantScreen(ui: AppUiState, viewModel: MainViewModel) {
     Column(Modifier.fillMaxSize()) {
         EducationLabel()
         Text("Ask about your reports, a dispute, a letter, or your next step. Follow-up questions keep the recent conversation for the selected case.", modifier = Modifier.padding(16.dp))
+        Text("Using ${data.reports.size} imported reports and ${if (caseScopeId == null) data.disputes.size else 1} saved dispute(s). Choose a case to keep its conversation focused.", modifier = Modifier.padding(horizontal = 16.dp), style = MaterialTheme.typography.bodySmall)
         if (!ui.isAgentEndpointConfigured) Text("AI connection is unavailable in this build. Your local reports and drafts are still available.", modifier = Modifier.padding(horizontal = 16.dp))
         Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             FilterChip(selected = caseScopeId == null, onClick = { caseScopeId = null }, label = { Text("All items") })
@@ -865,7 +867,15 @@ private fun AssistantScreen(ui: AppUiState, viewModel: MainViewModel) {
                         shape = RoundedCornerShape(16.dp),
                         modifier = Modifier.fillMaxWidth(.86f),
                     ) {
-                        Text(message.text, modifier = Modifier.padding(13.dp), color = if (message.fromUser) Color.White else Slate300, lineHeight = 20.sp)
+                        Column(Modifier.padding(13.dp)) {
+                            Text(if (message.fromUser) message.text else message.text.removePrefix("Educational information only — not legal or financial advice.\n"), color = if (message.fromUser) Color.White else Slate300, lineHeight = 20.sp)
+                            if (!message.fromUser) {
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    TextButton(onClick = { context.copyText("CreditRepairAI answer", message.text) }) { Text("Copy") }
+                                    TextButton(onClick = { viewModel.askAssistant("Explain your last answer in simpler words and give me one practical next step.", caseScopeId = caseScopeId) }, enabled = !ui.isAssistantThinking) { Text("Explain simply") }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -874,8 +884,15 @@ private fun AssistantScreen(ui: AppUiState, viewModel: MainViewModel) {
             Text("Working on your answer…", modifier = Modifier.weight(1f))
             TextButton(onClick = viewModel::cancelAssistant) { Text("Stop") }
         } else Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf("What should I do next?", "Explain that more simply", "Help me prepare a mailed letter").forEach { question ->
-                AssistChip(onClick = { viewModel.askAssistant(question, caseScopeId = caseScopeId) }, label = { Text(question) })
+            listOf(
+                "Review my reports" to "Review the available imported report data for this case. Explain the strongest potential inconsistency, what is only an inference, and one useful next action. Ask one focused question if a fact is missing.",
+                "Choose my next step" to "Help me choose what to do next for this case using the imported findings and saved dispute status. Explain why, give a short ordered checklist, and ask me one question needed to continue.",
+                "Check my evidence" to "Help me check the evidence for this dispute before sending anything. Say which facts need a dated supporting document, what can be verified from the imported data, and ask what non-sensitive evidence I have. Do not assume evidence exists.",
+                "Review my letter" to "Walk me through reviewing this dispute letter. Start with the saved reason and the facts that need verification, suggest clearer factual wording, then ask one missing-evidence question. Do not claim you can see a PDF I have not provided.",
+                "Explain a bureau reply" to "Help me understand a bureau response step by step. First ask me to paste only its relevant wording with identifiers removed. Do not assume a response has arrived or that you have read it.",
+                "Mailing choices" to "Explain my physical mailing choices: included PDF for self-mailing, or a separate paid LetterStream purchase for print-and-mail with First-Class, Certified Mail, or optional electronic return receipt. Explain the user reviews and uploads the final packet and pays the provider; opening its website does not send a letter. Do not invent a price.",
+            ).forEach { (label, question) ->
+                AssistChip(onClick = { viewModel.askAssistant(question, caseScopeId = caseScopeId) }, label = { Text(label) })
             }
         }
         Row(
