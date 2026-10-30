@@ -1,4 +1,4 @@
-# Preserve fictional dialogue for semantic review as well as quantitative checks.
+# Validate readable fictional dialogue after the account-terminology redaction repair.
 name: Interactive legal agent validation
 on:
   push:

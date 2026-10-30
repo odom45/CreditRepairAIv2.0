@@ -868,7 +868,7 @@ private fun AssistantScreen(ui: AppUiState, viewModel: MainViewModel) {
                         modifier = Modifier.fillMaxWidth(.86f),
                     ) {
                         Column(Modifier.padding(13.dp)) {
-                            Text(message.text, color = if (message.fromUser) Color.White else Slate300, lineHeight = 20.sp)
+                            Text(if (message.fromUser) message.text else message.text.removePrefix("Educational information only — not legal or financial advice.\n"), color = if (message.fromUser) Color.White else Slate300, lineHeight = 20.sp)
                             if (!message.fromUser) {
                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     TextButton(onClick = { context.copyText("CreditRepairAI answer", message.text) }) { Text("Copy") }

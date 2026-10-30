@@ -1,10 +1,13 @@
 export const EDUCATIONAL_LABEL = "Educational information only — not legal or financial advice.";
+const accountPlaceholders = new Set(["ending", "masked", "redacted", "unknown", "suffix", "digits", "optional", "required", "provided", "should", "available", "displayed", "hidden"]);
+const maskAccount = (raw: string) => `account ••••${raw.replace(/[^A-Z0-9]/gi, "").slice(-4)}`;
 export function redactText(text: string, maxLength = 4000): string {
   return text.replace(/\b\d{3}[- ]?\d{2}[- ]?\d{4}\b/g, "[SSN REDACTED]")
     .replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, "[EMAIL REDACTED]")
     .replace(/(?<!\d)(?:\+?1[-. ]?)?(?:\(\d{3}\)|\d{3})[-. ]?\d{3}[-. ]?\d{4}(?!\d)/g, "[PHONE REDACTED]")
     .replace(/\b(?:dob|date of birth|born)\s*[:#-]?\s*(?:\d{1,2}[/-]){2}\d{2,4}\b/gi, "DOB: [REDACTED]")
-    .replace(/\b(?:account|acct)\s*(?:number|no\.?|#)?\s*[:#-]?\s*([A-Z0-9-]{6,})/gi, (_, raw: string) => `account ••••${raw.replace(/[^A-Z0-9]/gi, "").slice(-4)}`)
+    .replace(/\b(?:account|acct)\b\s*(?:(?:number\b|no\b\.?)\s*[:#-]?\s*|[:#]\s*)([A-Z0-9-]{6,})\b/gi, (match, raw: string) => accountPlaceholders.has(raw.toLowerCase()) ? match : maskAccount(raw))
+    .replace(/\b(?:account|acct)\s*(?=[A-Z0-9-]*\d)([A-Z0-9-]{6,})\b/gi, (_, raw: string) => maskAccount(raw))
     .replace(/(?<!\d)\d{9,19}(?!\d)/g, "[LONG NUMBER REDACTED]").slice(0, maxLength);
 }
 export function sanitizeSnapshot(snapshot: Record<string, unknown>): Record<string, unknown> {

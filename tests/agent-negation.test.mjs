@@ -55,3 +55,12 @@ test('mailing history keeps only bureau and dates; no sender or tracking data re
   assert.deepEqual(result.disputes[0].mailingHistory, [{ bureau: 'equifax', mailedAt: 1000, deliveredAt: 2000, responseReceivedAt: null }]);
   assert.ok(!JSON.stringify(result).includes('PRIVATE-'));
 });
+
+test('privacy redaction preserves ordinary account terminology and masks actual identifiers', () => {
+  const readable = 'Compare account records, account status, masked account identifier and account digits. Use account number ending in 1234.';
+  assert.equal(redactText(readable), readable);
+  for (const value of ['account AB12CD3456', 'acctAB123456', 'acct#abcdefgh', 'account number qwertyui', 'acct no. AB123456']) {
+    assert.match(redactText(value), /••••/);
+    assert.notEqual(redactText(value), value);
+  }
+});
