@@ -18,7 +18,7 @@ class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels { MainViewModel.factory(applicationContext) }
     private var pendingPdf: Uri? = null
     private var pdfIntentConsumed = false
-    private val externalResults = mutableSetOf<Int>()
+    private val backgroundLock = com.creditrepairai.v2.auth.BackgroundLockPolicy()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -50,7 +50,7 @@ class MainActivity : ComponentActivity() {
         super.onStop()
         // Android document/permission pickers and explicit Google authentication are continuations,
         // not a closed app. Their results must reach the original reviewed workflow.
-        if (!isChangingConfigurations && externalResults.isEmpty() && !viewModel.isGoogleSignInInProgress) viewModel.lockSession()
+        if (backgroundLock.shouldLock(isChangingConfigurations, viewModel.isGoogleSignInInProgress)) viewModel.lockSession()
     }
     override fun onDestroy() {
         if (isFinishing) viewModel.lockSession()
@@ -58,14 +58,14 @@ class MainActivity : ComponentActivity() {
     }
     @Suppress("DEPRECATION")
     override fun startActivityForResult(intent: Intent, requestCode: Int, options: Bundle?) {
-        externalResults.add(requestCode)
+        backgroundLock.started(requestCode)
         try { super.startActivityForResult(intent, requestCode, options) }
-        catch (error: Exception) { externalResults.remove(requestCode); throw error }
+        catch (error: Exception) { backgroundLock.finished(requestCode); throw error }
     }
     @Deprecated("Android activity result callback")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         try { super.onActivityResult(requestCode, resultCode, data) }
-        finally { externalResults.remove(requestCode) }
+        finally { backgroundLock.finished(requestCode) }
     }
     override fun onNewIntent(intent: Intent) { super.onNewIntent(intent); setIntent(intent); acceptPdf(intent) }
     override fun onSaveInstanceState(outState: Bundle) {
