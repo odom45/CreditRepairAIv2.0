@@ -45,4 +45,3 @@ Install the signed update over the existing signed app to retain encrypted local
 - [Build artifact](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/41002516889/artifacts/12954661087).
 
 The downloaded archive matched its published digest; APK ZIP integrity and the packaged new-feature strings were checked. The signed test APK was made available. This does not establish actual owner-phone authentication, a real postal purchase, live app purchases or a public store release.
-
