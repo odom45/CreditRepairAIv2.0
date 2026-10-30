@@ -43,7 +43,7 @@ try {
   report.followupAnswerLength=followup.length;
   report.followupUsesDocumentContext=/statement|document|record/i.test(followup);
   report.followupAsksQuestion=followup.includes('?');
-  report.readableAccountTerminology=!/account ••••(?:ords|atus|gits|fier)\b/.test(answer+followup);
+  report.readableAccountTerminology=!/account ••••(?:ords|atus|gits|fier|rted)\b/.test(answer+followup);
   report.followupPassed=report.readableAccountTerminology && followup.length>100 && report.followupUsesDocumentContext && report.followupAsksQuestion && !followup.includes('did not pass the outcome-claim check');
   report.passed=report.educationalLabel && report.fcraReference && report.searchResultCount>0 && answer.length>100 && report.followupPassed;
 } catch(error) {report.failureCategory='configured-agent-request-or-output-check';report.publicErrorStatus=typeof error?.status==='number'?error.status:null;}

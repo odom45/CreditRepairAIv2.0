@@ -64,3 +64,11 @@ test('privacy redaction preserves ordinary account terminology and masks actual 
     assert.notEqual(redactText(value), value);
   }
 });
+
+test('generated blank account labels do not consume the next prose line while request identifiers remain masked', () => {
+  const prose = 'Use a masked account number\n- Reported current balance\n- Statement date';
+  assert.ok(educationalAnswer(prose).includes(prose));
+  const opaque = 'account number\nabcdefgh';
+  assert.ok(!redactText(opaque).includes('abcdefgh'));
+  assert.ok(!educationalAnswer('account number\nAB123456').includes('AB123456'));
+});

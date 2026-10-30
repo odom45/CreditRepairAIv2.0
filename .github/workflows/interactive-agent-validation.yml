@@ -1,4 +1,4 @@
-# Validate readable fictional dialogue after the account-terminology redaction repair.
+# Verify readable dialogue including blank account labels while request redaction remains conservative.
 name: Interactive legal agent validation
 on:
   push:
