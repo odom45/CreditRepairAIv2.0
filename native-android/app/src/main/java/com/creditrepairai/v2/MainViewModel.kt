@@ -228,6 +228,8 @@ class MainViewModel(
     }
 
     fun signOut(context: Context) {
+        freshSignInRequired = true
+        authenticationEpoch++
         invalidateCase(null)
         billing.reset()
         repository.clear(preserveOwner = false)
