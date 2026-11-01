@@ -35,3 +35,8 @@ twa-project/
 
 # Generated self-hosted OCR assets
 public/ocr/
+# Apple generated project/build and local registered Firebase app files
+native-apple/*.xcodeproj/
+native-apple/Generated/
+native-apple/build/
+native-apple/Config/**/GoogleService-Info.plist

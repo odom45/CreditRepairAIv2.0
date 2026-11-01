@@ -11,3 +11,8 @@ test('AES-GCM vault roundtrip, wrong key/owner and tampering protections',async(
  await assert.rejects(unseal(a,'wrong password here','fictional-owner'));await assert.rejects(unseal(a,'synthetic passphrase only','different-owner'));
  await assert.rejects(unseal({...a,ciphertext:(a.ciphertext[0]==='A'?'B':'A')+a.ciphertext.slice(1)},'synthetic passphrase only','fictional-owner'));
 });
+test('invalid in-memory records cannot overwrite a recoverable encrypted vault',async()=> {
+ const state=emptyCase();state.scores=[{bureau:'equifax',score:900,recordedAt:1}];
+ const salt=crypto.getRandomValues(new Uint8Array(16)),key=await deriveKey('synthetic test passphrase',salt);
+ await assert.rejects(seal(state,key,salt,'owner'));
+});
