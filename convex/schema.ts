@@ -4,6 +4,17 @@ import { v } from "convex/values";
 
 const schema = defineSchema({
   ...authTables,
+  playSubscriptions: defineTable({
+    owner: v.string(), token: v.string(), productId: v.string(), state: v.string(),
+    expiresAt: v.number(), active: v.boolean(), checkedAt: v.number(),
+  }).index("by_owner", ["owner"]).index("by_token", ["token"]),
+  playCasePurchases: defineTable({
+    owner: v.string(), token: v.string(), caseHash: v.string(), state: v.string(), active: v.boolean(), checkedAt: v.number(),
+  }).index("by_owner", ["owner"]).index("by_token", ["token"]),
+  billingAudit: defineTable({ actor: v.string(), subscriptionId: v.string(), action: v.string(), at: v.number(), result: v.string() }).index("by_actor", ["actor"]).index("by_subscription", ["subscriptionId"]),
+  agentRateLimits: defineTable({ owner: v.string(), windowStart: v.number(), count: v.number() }).index("by_owner", ["owner"]),
+  billingDeletionMarkers: defineTable({ ownerHash: v.string() }).index("by_owner_hash", ["ownerHash"]),
+  policyAcceptances: defineTable({ ownerHash: v.string(), version: v.string(), digest: v.string(), aiSharing: v.boolean(), acceptedAt: v.number(), choiceAt: v.number() }).index("by_owner_hash", ["ownerHash"]),
   users: defineTable({
     name: v.optional(v.string()),
     email: v.optional(v.string()),

@@ -5,6 +5,7 @@ import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
+  server: { allowedHosts: ["terminal.local"] },
   plugins: [
     react(),
     tailwindcss(),
@@ -33,7 +34,8 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+        globPatterns: ["**/*.{js,mjs,css,html,ico,png,svg,woff2}"],
+        globIgnores: ["**/ocr/**"],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,

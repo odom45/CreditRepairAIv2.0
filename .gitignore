@@ -32,3 +32,6 @@ playwright-report/node_modules/
 dist/
 android-build/
 twa-project/
+
+# Generated self-hosted OCR assets
+public/ocr/

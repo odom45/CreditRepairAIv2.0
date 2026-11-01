@@ -1,0 +1,12 @@
+TransUnion SYNTHETIC CREDIT REPORT
+Invented test records only; not a consumer report.
+Credit Score: 640
+Creditor: Fictional Cedar Bank
+Account Number:
+XXXX1234
+Status:
+Open
+Balance:
+1280
+Date Opened:
+01/2020

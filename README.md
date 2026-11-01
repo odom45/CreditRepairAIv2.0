@@ -1,46 +1,22 @@
-# 🤖 CreditRepairAI v2.0
+# CreditRepairAI v2.0 — shared web workspace
 
-AI-powered 3-bureau credit report analysis and legal dispute generation.
+The `main` web client is being brought to parity with the pinned native Android 2.0.9 baseline. The current implementation and exact test/acceptance boundaries are recorded in [cross-platform parity](docs/CROSS_PLATFORM_PARITY.md). Live integration and Apple acceptance remain HOLD until verified.
 
-## 🚀 Features
+The web client uses Firebase identity and the same authenticated Convex legal-agent, policy, and billing contracts as Android. Reports parse on-device; only explicitly consented, redacted snapshots go to AI. Original PDFs and private letter sender fields are excluded. Cases are saved in a passphrase-encrypted local vault with explicit encrypted export/import.
 
-- **AI 3-Bureau Analysis**: Automatically detect mismatches, errors, and missing accounts across TransUnion, Experian, and Equifax.
-- **Legal USC Code Integration**: Every dispute is backed by specific U.S. Code violations (e.g., 15 U.S.C. § 1681) to ensure maximum deletion rates.
-- **CFPB Assistant**: Step-by-step guidance for filing formal complaints with the Consumer Financial Protection Bureau.
-- **Secondary Bureau Freezes**: One-click access to freeze SageStream, CoreLogic, Innovis, and more.
-- **Modern Dashboard**: Sleek, professional UI designed for clarity and ease of use.
-- **Admin Panel**: Full control over users and system health (for administrators).
+```sh
+npm ci --ignore-scripts
+npm run typecheck
+npm run test:web
+npm run test:agent
+npm run build
+npm run dev
+```
 
-## 🛠️ Tech Stack
+Copy `.env.example` for build configuration. `VITE_CREDIT_AGENT_ENDPOINT` must resolve to the Android production gateway. The browser's exact HTTPS origin must be authorized in the backend `CREDIT_WEB_ORIGINS` environment value, and in Firebase's authorized domains. Never place an OpenAI key in a `VITE_*` variable. Firebase project identifiers in `config/firebase-web-public.json` are public client configuration, reused from the Android project; they do not grant server access.
 
-- **Frontend**: React, Tailwind CSS, Lucide Icons, Shadcn UI.
-- **Backend**: Convex (Real-time database & Auth).
-- **AI Engine**: Custom logic for credit report parsing and legal code mapping.
+`npm run dev` and `npm run build` bundle the OCR worker, WASM and English language model from installed packages. These are served locally to the client. In development only, `/__qa__/parser` runs invented embedded/scanned PDF checks through the real importer. That harness is excluded from production builds and is not an authentication bypass.
 
-## 📦 Installation (Local Development)
+The Android standard remains on `android-native-rebuild`. Apple clients are maintained on individual `ios-native`, `ipados-native`, and `macos-native` branches, with shared contracts and explicit platform acceptance gates. This repository is proprietary; see LICENSE and EULA.
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/odom45/CreditRepairAIv2.0.git
-   ```
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Start the development server:
-   ```bash
-   npm run dev
-   ```
-
-## 📱 Play Store Submission
-
-This app is ready for production. Once the UI is approved by @Benjamin Odom, it will be submitted to the Google Play Store.
-
-## 👤 Author
-
-**Benjamin Odom**
-- Email: benjaminjodom45@gmail.com
-- GitHub: [@odom45](https://github.com/odom45)
-
----
-*Built with 🤖 by Viktor AI*
+Author: Benjamin Odom · 3six0 Studios

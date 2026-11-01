@@ -1,0 +1,7 @@
+TransUnion SYNTHETIC CREDIT REPORT
+Invented test records only; not a consumer report.
+Credit Score: 640
+Creditor: Fictional Cedar Bank
+Acct: XXXX1234
+Current Balance: 1280
+Pay Status: Current
