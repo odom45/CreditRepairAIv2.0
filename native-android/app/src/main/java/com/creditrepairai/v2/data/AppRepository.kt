@@ -73,6 +73,37 @@ class AppRepository(context: Context) {
         }
     }
 
+    fun exportPortableState(state: AppState): String {
+        val json = encode(state).put("version", 1)
+        fun normalize(value: Any?) {
+            when (value) {
+                is JSONObject -> value.keys().asSequence().toList().forEach { key ->
+                    val item = value.opt(key)
+                    if (key in listOf("bureau", "portal") && item is String) value.put(key, item.lowercase(java.util.Locale.US))
+                    else if (key == "bureaus" && item is JSONArray) (0 until item.length()).forEach { i -> item.put(i, item.getString(i).lowercase(java.util.Locale.US)) }
+                    else normalize(item)
+                }
+                is JSONArray -> (0 until value.length()).forEach { normalize(value.opt(it)) }
+            }
+        }
+        normalize(json)
+        return json.toString().also { require(it.toByteArray(Charsets.UTF_8).size <= 20_000_000) { "Case exceeds the transfer limit." } }
+    }
+
+    fun importPortableState(raw: String): AppState {
+        require(raw.length <= 20_000_000) { "Case exceeds the transfer limit." }
+        val json = JSONObject(raw)
+        require(json.optInt("version") == 1) { "Unsupported portable case." }
+        for (name in listOf("reports", "accounts", "findings", "disputes", "filings", "mailings", "scores", "chat", "frozenBureaus")) {
+            val values = requireNotNull(json.optJSONArray(name)) { "Invalid portable case." }
+            require(values.length() <= 10_000) { "Too many case records." }
+        }
+        json.getJSONArray("accounts").let { values -> (0 until values.length()).forEach { index ->
+            require(values.getJSONObject(index).getString("accountSuffix").length <= 4) { "Full account identifiers are not accepted." }
+        } }
+        return decode(json)
+    }
+
     private fun encode(state: AppState) = JSONObject().apply {
         put("onboardingComplete", state.onboardingComplete)
         put("policyAcceptance", state.policyAcceptance?.let { JSONObject().put("version", it.version).put("digest", it.digest).put("acceptedAt", it.acceptedAt).put("aiSharing", it.aiSharing).put("choiceAt", it.choiceAt) } ?: JSONObject.NULL)
@@ -190,7 +221,7 @@ class AppRepository(context: Context) {
         id = optString("id"), findingId = optString("findingId"), creditor = optString("creditor"),
         bureaus = array("bureaus").strings().map(Bureau::from), reason = optString("reason"), letter = optString("letter"),
         status = enumValueOrDefault(optString("status"), DisputeStatus.DRAFT),
-        createdAt = optLong("createdAt"), reviewBy = optLong("reviewBy"),
+        createdAt = optLong("createdAt"), reviewBy = optLong("reviewBy", optLong("createdAt") + 35L * 86400000),
         sentAt = optLongOrNull("sentAt"), craResponseDueAt = optLongOrNull("craResponseDueAt"),
     )
 
@@ -249,7 +280,7 @@ class AppRepository(context: Context) {
     private fun keyStore(): KeyStore = KeyStore.getInstance(ANDROID_KEY_STORE).apply { load(null) }
 
     private inline fun <reified T : Enum<T>> enumValueOrDefault(value: String, default: T): T =
-        enumValues<T>().firstOrNull { it.name == value } ?: default
+        enumValues<T>().firstOrNull { it.name.equals(value, true) } ?: default
 
     companion object {
         private const val ANDROID_KEY_STORE = "AndroidKeyStore"
@@ -259,3 +290,4 @@ class AppRepository(context: Context) {
         private const val KEY_LEGACY_STATE = "app_state_v1"
     }
 }
+

@@ -1028,6 +1028,7 @@ private fun SettingsScreen(ui: AppUiState, viewModel: MainViewModel, onSubscript
         item { OutlinedButton(onClick = onAgreements, modifier = Modifier.fillMaxWidth()) { Text("Review agreement choices") } }
         item { OutlinedButton(onClick = viewModel::reviewAiSharing, modifier = Modifier.fillMaxWidth()) { Text("AI data sharing: ${if (ui.data.policyAcceptance?.allowsAi == true) "enabled" else "off"} — change") } }
         item { OutlinedButton(onClick = { confirmAccount = true }, modifier = Modifier.fillMaxWidth()) { Text("Delete account and app-server records") } }
+        item { CaseTransferCard(viewModel) }
         item { NoticeCard(Icons.Default.Check, "Native Android build", "Kotlin + Jetpack Compose. No WebView, Capacitor, or wrapped website is used for the app interface.", Emerald400) }
         item { NoticeCard(Icons.Default.Security, "Protected local storage", "Case state is encrypted with AES-GCM using a non-exportable Android Keystore key. Screenshots are blocked and Android backup is disabled.", Emerald400) }
         item {
@@ -1221,3 +1222,4 @@ private fun Context.shareText(subject: String, text: String) {
 private fun Context.openUrl(url: String) {
     startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
 }
+

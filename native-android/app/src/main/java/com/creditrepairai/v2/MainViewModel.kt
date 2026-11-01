@@ -670,6 +670,16 @@ class MainViewModel(
     }
     override fun onCleared() { stopObservingSession(); billing.close(); super.onCleared() }
 
+    fun exportPortableCase(): String {
+        check(signedInSubject != null) { "Sign in before transferring a case." }
+        return repository.exportPortableState(_uiState.value.data)
+    }
+    fun restorePortableCase(raw: String, expectedOwner: String) {
+        check(signedInSubject == expectedOwner) { "Account changed. No case was imported." }
+        val imported = repository.importPortableState(raw)
+        mutate("Encrypted case restored. Verify imported records before submitting.") { imported }
+    }
+
     fun consumeNotice() {
         _uiState.update { it.copy(notice = null) }
     }
@@ -707,3 +717,4 @@ class MainViewModel(
         }
     }
 }
+
