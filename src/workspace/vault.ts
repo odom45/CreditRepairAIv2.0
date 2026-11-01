@@ -36,6 +36,7 @@ export async function seal(
   salt: Uint8Array,
   owner: string,
 ): Promise<Envelope> {
+  const validated = validateCase(state);
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const ciphertext = await crypto.subtle.encrypt(
     {
@@ -44,7 +45,7 @@ export async function seal(
       additionalData: new TextEncoder().encode("creditrepairai-v1:" + owner),
     },
     key,
-    new TextEncoder().encode(JSON.stringify(state)),
+    new TextEncoder().encode(JSON.stringify(validated)),
   );
   return {
     format: "creditrepairai-vault-v1",
