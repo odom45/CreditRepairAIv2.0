@@ -1,0 +1,8 @@
+Equifax fictional fixture — no real consumer data
+YOUR SCORE: 630
+Account Name: Fictional Cedar Bank
+Account #: XXXX1234
+Status: Open
+Current Balance: $680
+Payment Status: Current
+Date Reported: 2026-08

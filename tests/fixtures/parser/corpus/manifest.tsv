@@ -1,0 +1,19 @@
+# file	bureau	score	suffixes	balances; synthetic only, no consumer data
+equifax-inline.txt	EQUIFAX	640	1234,5678	1280,0
+equifax-split.txt	EQUIFAX	640	1234	1280
+equifax-aliases.txt	EQUIFAX	640	1234	1280
+equifax-unicode.txt	EQUIFAX	640	1234,5678	1280,0
+equifax-multipage.txt	EQUIFAX	640	1234,5678	1280,0
+equifax-empty.txt	EQUIFAX	-	-	-
+experian-inline.txt	EXPERIAN	640	1234,5678	1280,0
+experian-split.txt	EXPERIAN	640	1234	1280
+experian-aliases.txt	EXPERIAN	640	1234	1280
+experian-unicode.txt	EXPERIAN	640	1234,5678	1280,0
+experian-multipage.txt	EXPERIAN	640	1234,5678	1280,0
+experian-empty.txt	EXPERIAN	-	-	-
+transunion-inline.txt	TRANSUNION	640	1234,5678	1280,0
+transunion-split.txt	TRANSUNION	640	1234	1280
+transunion-aliases.txt	TRANSUNION	640	1234	1280
+transunion-unicode.txt	TRANSUNION	640	1234,5678	1280,0
+transunion-multipage.txt	TRANSUNION	640	1234,5678	1280,0
+transunion-empty.txt	TRANSUNION	-	-	-

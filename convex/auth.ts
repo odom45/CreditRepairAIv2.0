@@ -42,7 +42,7 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
       verify: ViktorSpacesEmail,
       reset: ViktorSpacesPasswordReset,
     }),
-    TestCredentials,
+    ...(process.env.CREDIT_ENABLE_TEST_AUTH === "true" ? [TestCredentials] : []),
   ],
 });
 
