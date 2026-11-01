@@ -1,0 +1,42 @@
+name: Validate native Apple parity
+on:
+  push:
+    branches: [ios-native, ipados-native, macos-native]
+  pull_request:
+    branches: [ios-native, ipados-native, macos-native]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  apple:
+    runs-on: macos-15
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run typecheck && npm run test:web && npm run test:agent
+      - run: node scripts/build-apple-domain.mjs
+      - run: brew install xcodegen
+      - run: xcodegen generate --spec native-apple/project.yml
+      - name: Compile iPhone and iPad simulator apps
+        env:
+          CREDIT_AGENT_ENDPOINT: ${{ vars.CREDIT_PRODUCTION_GATEWAY_URL }}
+        run: |
+          xcodebuild -project native-apple/CreditRepairAIApple.xcodeproj -scheme CreditRepairAI-iOS -destination 'generic/platform=iOS Simulator' -derivedDataPath native-apple/build CODE_SIGNING_ALLOWED=NO CREDIT_AGENT_ENDPOINT="$CREDIT_AGENT_ENDPOINT" build > /tmp/iphone-build.log 2>&1 || { tail -100 /tmp/iphone-build.log; exit 1; }
+          xcodebuild -project native-apple/CreditRepairAIApple.xcodeproj -scheme CreditRepairAI-iPadOS -destination 'generic/platform=iOS Simulator' -derivedDataPath native-apple/build CODE_SIGNING_ALLOWED=NO CREDIT_AGENT_ENDPOINT="$CREDIT_AGENT_ENDPOINT" build > /tmp/ipad-build.log 2>&1 || { tail -100 /tmp/ipad-build.log; exit 1; }
+      - name: macOS regression tests
+        env:
+          CREDIT_AGENT_ENDPOINT: ${{ vars.CREDIT_PRODUCTION_GATEWAY_URL }}
+        run: xcodebuild -project native-apple/CreditRepairAIApple.xcodeproj -scheme CreditRepairAI-macOS -destination 'platform=macOS' -derivedDataPath native-apple/build CODE_SIGNING_ALLOWED=NO CREDIT_AGENT_ENDPOINT="$CREDIT_AGENT_ENDPOINT" test > /tmp/mac-tests.log 2>&1 || { tail -120 /tmp/mac-tests.log; exit 1; }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: apple-validation-${{ github.ref_name }}
+          path: |
+            /tmp/*build.log
+            /tmp/mac-tests.log
+            native-apple/build/Logs/Test/*.xcresult
