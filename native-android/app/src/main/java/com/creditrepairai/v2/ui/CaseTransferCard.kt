@@ -33,7 +33,7 @@ fun CaseTransferCard(viewModel: MainViewModel) {
             catch (error: Exception) { if (error is CancellationException) throw error; notice = "Transfer file could not be saved." }
         }
     }
-    val import = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+    val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         val expected = owner
         if (uri != null && expected != null) scope.launch {
             busy = true
@@ -71,7 +71,7 @@ fun CaseTransferCard(viewModel: MainViewModel) {
                     finally { secret.fill('\u0000'); busy = false }
                 }
             }) { Text("Export encrypted case") }
-            OutlinedButton(enabled = !busy && owner != null && password.length >= 12, onClick = { import.launch(arrayOf("application/json")) }) { Text("Import and replace local case") }
+            OutlinedButton(enabled = !busy && owner != null && password.length >= 12, onClick = { importLauncher.launch(arrayOf("application/json")) }) { Text("Import and replace local case") }
             if (notice.isNotBlank()) Text(notice)
         }
     }
