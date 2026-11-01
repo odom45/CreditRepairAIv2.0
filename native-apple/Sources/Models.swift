@@ -11,7 +11,7 @@ struct Goal: Codable { var description=""; var targetMonths=12; var aiPlan="" }
 struct Agreement: Codable { var version:String; var digest:String; var aiSharing:Bool; var acceptedAt:Double }
 struct CaseDocument: Codable { var version=1; var jurisdictionCode=""; var onboardingComplete=false; var reports:[Report]=[]; var accounts:[Account]=[]; var findings:[Finding]=[]; var disputes:[Dispute]=[]; var filings:[Filing]=[]; var mailings:[Mailing]=[]; var scores:[Score]=[]; var chat:[Chat]=[]; var goal=Goal(); var frozenBureaus:[String]=[]; var policyAcceptance:Agreement? }
 struct Parsed: Codable { var report:Report; var accounts:[Account] }
-func now()->Double { Date().timeIntervalSince1970*1000 }
+func now()->Double { (Date().timeIntervalSince1970*1000).rounded(.down) }
 let bureaus=["equifax","experian","transunion"]
 let day:Double=86_400_000
 struct ClientError: LocalizedError { let message:String; var errorDescription:String? {message}; init(_ message:String){self.message=message} }

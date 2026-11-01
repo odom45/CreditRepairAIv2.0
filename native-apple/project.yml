@@ -35,7 +35,7 @@ targetTemplates:
       - package: GoogleSignIn
         product: GoogleSignIn
     info:
-      path: Generated/Info-$(PRODUCT_NAME).plist
+      path: Generated/Info.plist
       properties:
         CFBundleDisplayName: CreditRepairAI
         CreditAgentEndpoint: $(CREDIT_AGENT_ENDPOINT)
@@ -48,7 +48,7 @@ targetTemplates:
         ENABLE_USER_SCRIPT_SANDBOXING: YES
         SUPPORTS_MACCATALYST: NO
     entitlements:
-      path: Generated/$(PRODUCT_NAME).entitlements
+      path: Generated/Client.entitlements
       properties:
         keychain-access-groups: [$(AppIdentifierPrefix)$(PRODUCT_BUNDLE_IDENTIFIER)]
 targets:
