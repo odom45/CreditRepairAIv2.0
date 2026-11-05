@@ -43,6 +43,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Dashboard
@@ -160,6 +161,26 @@ private enum class Destination(val label: String, val icon: ImageVector) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+private fun CreditRepairBrandMark(size: androidx.compose.ui.unit.Dp) {
+    Box(contentAlignment = Alignment.Center) {
+        Surface(color = Amber400, shape = RoundedCornerShape(12.dp), modifier = Modifier.size(size)) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(Icons.Default.CreditCard, contentDescription = "CreditRepairAI gold credit-card logo", tint = Blue500, modifier = Modifier.size(size * 0.68f))
+            }
+        }
+        Surface(
+            color = Emerald400,
+            shape = RoundedCornerShape(5.dp),
+            modifier = Modifier.align(Alignment.TopEnd).size(size * 0.34f),
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(Icons.Default.Check, contentDescription = "Good credit check", tint = Navy950, modifier = Modifier.size(size * 0.27f))
+            }
+        }
+    }
+}
+
+@Composable
 fun CreditRepairApp(viewModel: MainViewModel) {
     val ui by viewModel.uiState.collectAsStateWithLifecycle()
     var showPublicPolicies by rememberSaveable { mutableStateOf(false) }
@@ -213,9 +234,7 @@ fun CreditRepairApp(viewModel: MainViewModel) {
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Navy950),
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Surface(color = Blue500, shape = RoundedCornerShape(10.dp)) {
-                            Text("C", modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp), fontWeight = FontWeight.Black)
-                        }
+                        CreditRepairBrandMark(size = 42.dp)
                         Spacer(Modifier.width(10.dp))
                         Column {
                             Text("CreditRepairAI", fontWeight = FontWeight.Black, fontSize = 18.sp)
@@ -318,9 +337,7 @@ internal fun AuthenticationScreen(ui: AppUiState, viewModel: MainViewModel, onPo
             verticalArrangement = Arrangement.Center,
         ) {
             Spacer(Modifier.height(44.dp))
-            Surface(color = Blue500, shape = RoundedCornerShape(18.dp)) {
-                Text("C", modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp), fontWeight = FontWeight.Black, fontSize = 24.sp)
-            }
+            CreditRepairBrandMark(size = 76.dp)
             Spacer(Modifier.height(18.dp))
             Text("Welcome to CreditRepairAI", fontWeight = FontWeight.Black, fontSize = 28.sp)
             Spacer(Modifier.height(8.dp))
