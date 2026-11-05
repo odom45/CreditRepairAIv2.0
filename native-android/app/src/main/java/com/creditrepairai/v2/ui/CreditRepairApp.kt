@@ -180,6 +180,7 @@ private fun CreditRepairBrandMark(size: androidx.compose.ui.unit.Dp) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreditRepairApp(viewModel: MainViewModel) {
     val ui by viewModel.uiState.collectAsStateWithLifecycle()
