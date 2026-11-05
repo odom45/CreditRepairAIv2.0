@@ -12,20 +12,20 @@ import androidx.core.view.WindowCompat
 val Navy950 = Color(0xFF07101F)
 val Navy900 = Color(0xFF0B172A)
 val Navy800 = Color(0xFF142238)
-val Blue500 = Color(0xFF2563EB)
-val Cyan400 = Color(0xFF22D3EE)
+val Blue500 = Color(0xFF2563EB) // Brand lettering and card mark
+val Cyan400 = Color(0xFF60A5FA)
 val Slate100 = Color(0xFFF1F5F9)
 val Slate300 = Color(0xFFCBD5E1)
 val Slate400 = Color(0xFF94A3B8)
 val Emerald400 = Color(0xFF34D399)
-val Amber400 = Color(0xFFFBBF24)
+val Amber400 = Color(0xFFF4C542) // Brand gold
 val Rose400 = Color(0xFFFB7185)
 
 private val CreditColors = darkColorScheme(
-    primary = Blue500,
-    onPrimary = Color.White,
-    secondary = Cyan400,
-    onSecondary = Navy950,
+    primary = Amber400,
+    onPrimary = Navy950,
+    secondary = Blue500,
+    onSecondary = Color.White,
     tertiary = Emerald400,
     background = Navy950,
     onBackground = Slate100,
