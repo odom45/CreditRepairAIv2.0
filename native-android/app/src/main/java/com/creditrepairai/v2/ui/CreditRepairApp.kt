@@ -1239,3 +1239,4 @@ private fun Context.shareText(subject: String, text: String) {
 private fun Context.openUrl(url: String) {
     startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
 }
+
