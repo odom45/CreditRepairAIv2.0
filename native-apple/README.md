@@ -4,6 +4,8 @@ SwiftUI interfaces for iPhone, iPad and Mac. PDFKit extracts PDF text; Vision re
 
 Individual branches select their platform in `native-apple/platform.json`. All three Xcode schemes remain in each branch so a shared change can be checked across platforms.
 
+The active branch is `ipados-native`. Its primary scheme is `CreditRepairAI-iPadOS` with iPad device family 2. The iPhone and macOS schemes remain available in this branch's regression matrix; they are not evidence of parity or device acceptance. Cross-platform feature parity is intentionally the final coding milestone after each native client is independently implemented and validated.
+
 ```sh
 npm ci --ignore-scripts
 node scripts/build-apple-domain.mjs
