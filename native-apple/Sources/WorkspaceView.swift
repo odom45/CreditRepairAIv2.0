@@ -16,12 +16,36 @@ struct PrivateWorkspace:View {
  @ObservedObject var store:SessionStore
  @Environment(\.openURL) private var openURL
  @State private var panel:String?="Overview"
- @State private var showImport=false,importingVault=false,showExport=false
- @State private var export:ExportDocument?,exportType:UTType = .json,exportName="CreditRepairAI-encrypted-vault"
- @State private var vaultPassword="",terms=false,sharing=false,deleteConfirmation=""
- @State private var disputeID="",portal="equifax",reason="",findingID="",scope="",question="",response="",chunkLimit=1000
- @State private var sender="",address="",letterFacts="",evidence="",resolution="",letterBureau="equifax",tracking="",mailedDate=Date()
- @State private var score="",scoreBureau="equifax",pendingDraft:[String:String]?,draftContext=""
+ @State private var showImport=false
+ @State private var importingVault=false
+ @State private var showExport=false
+ @State private var export:ExportDocument?
+ @State private var exportType:UTType = .json
+ @State private var exportName="CreditRepairAI-encrypted-vault"
+ @State private var vaultPassword=""
+ @State private var terms=false
+ @State private var sharing=false
+ @State private var deleteConfirmation=""
+ @State private var disputeID=""
+ @State private var portal="equifax"
+ @State private var reason=""
+ @State private var findingID=""
+ @State private var scope=""
+ @State private var question=""
+ @State private var response=""
+ @State private var chunkLimit=1000
+ @State private var sender=""
+ @State private var address=""
+ @State private var letterFacts=""
+ @State private var evidence=""
+ @State private var resolution=""
+ @State private var letterBureau="equifax"
+ @State private var tracking=""
+ @State private var mailedDate=Date()
+ @State private var score=""
+ @State private var scoreBureau="equifax"
+ @State private var pendingDraft:[String:String]?
+ @State private var draftContext=""
  private let panels=["Overview","Reports","Analysis","Disputes","Guided filing","AI guide","Goals & scores","Account"]
  private var doc:CaseDocument{store.document ?? CaseDocument()}
  private var dispute:Dispute?{doc.disputes.first{$0.id==disputeID}}
