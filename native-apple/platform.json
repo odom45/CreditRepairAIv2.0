@@ -1,5 +1,6 @@
 {
-  "platform": "iOS",
-  "scheme": "CreditRepairAI-iOS",
-  "status": "native-source-candidate; CI and live acceptance pending"
+  "platform": "iPadOS",
+  "scheme": "CreditRepairAI-iPadOS",
+  "status": "native-source-candidate; automated build and platform acceptance pending",
+  "branchRole": "independent native platform branch; shared Apple source retained for regression coverage"
 }
