@@ -20,7 +20,11 @@ import GoogleSignIn
 }
 struct RootView:View {
  @ObservedObject var store:SessionStore
- var body:some View {VStack(spacing:0){if !store.notice.isEmpty{Text(store.notice).font(.callout).padding().frame(maxWidth:.infinity).background(.orange.opacity(0.15))};if store.user==nil{LoginView(store:store)}else if store.document==nil{UnlockView(store:store)}else{PrivateWorkspace(store:store)}}.privacySensitive()}
+ var body:some View {VStack(spacing:0){if !store.notice.isEmpty{Text(store.notice).font(.callout).padding().frame(maxWidth:.infinity).background(.orange.opacity(0.15))};if store.user==nil{LoginView(store:store)}else if store.user?.isEmailVerified != true{VerificationView(store:store)}else if store.document==nil{UnlockView(store:store)}else{PrivateWorkspace(store:store)}}.privacySensitive()}
+}
+struct VerificationView:View {
+ @ObservedObject var store:SessionStore
+ var body:some View {Form{Section("Verify your email before opening your case"){Text(store.user?.email ?? "");Text("Your encrypted case stays on this device. Verify the signed-in email, then refresh here before unlocking reports or using case tools.");Button("Resend verification email"){store.run{try await store.verify()}}.disabled(store.busy);Button("I verified my email — refresh"){store.run{try await store.refreshVerification()}}.disabled(store.busy);Button("Sign out"){store.lock()}}}.formStyle(.grouped).frame(minWidth:320)}
 }
 struct LoginView:View {
  @ObservedObject var store:SessionStore
