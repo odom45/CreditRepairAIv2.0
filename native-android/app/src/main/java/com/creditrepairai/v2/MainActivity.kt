@@ -7,6 +7,8 @@ import android.provider.OpenableColumns
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import android.view.WindowManager
+import android.os.Handler
+import android.os.Looper
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -19,6 +21,11 @@ class MainActivity : ComponentActivity() {
     private var pendingPdf: Uri? = null
     private var pdfIntentConsumed = false
     private val backgroundLock = com.creditrepairai.v2.auth.BackgroundLockPolicy()
+    private val lockHandler = Handler(Looper.getMainLooper())
+    private val delayedBackgroundLock = Runnable {
+        if (!isChangingConfigurations && !viewModel.isGoogleSignInInProgress) viewModel.lockSession()
+    }
+    private val backgroundLockGraceMs = 5 * 60 * 1000L
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,6 +45,7 @@ class MainActivity : ComponentActivity() {
         lifecycleScope.launch { viewModel.uiState.collect { importPendingPdf() } }
         lifecycle.addObserver(object : androidx.lifecycle.DefaultLifecycleObserver {
             override fun onResume(owner: androidx.lifecycle.LifecycleOwner) {
+                lockHandler.removeCallbacks(delayedBackgroundLock)
                 if (viewModel.isSessionLocked) return
                 viewModel.checkEmailVerification(quiet = true)
                 viewModel.billing.refresh()
@@ -50,9 +58,14 @@ class MainActivity : ComponentActivity() {
         super.onStop()
         // Android document/permission pickers and explicit Google authentication are continuations,
         // not a closed app. Their results must reach the original reviewed workflow.
-        if (backgroundLock.shouldLock(isChangingConfigurations, viewModel.isGoogleSignInInProgress)) viewModel.lockSession()
+        if (backgroundLock.shouldLock(isChangingConfigurations, viewModel.isGoogleSignInInProgress)) {
+            // Backgrounding for a portal or email-verification handoff is not the same as closing the app.
+            // Give the user five minutes to return; process recreation still requires fresh sign-in.
+            lockHandler.postDelayed(delayedBackgroundLock, backgroundLockGraceMs)
+        }
     }
     override fun onDestroy() {
+        lockHandler.removeCallbacks(delayedBackgroundLock)
         if (isFinishing) viewModel.lockSession()
         super.onDestroy()
     }
