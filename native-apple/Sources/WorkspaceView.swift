@@ -4,6 +4,7 @@ import UniformTypeIdentifiers
 import AppKit
 #else
 import UIKit
+import SafariServices
 #endif
 struct ExportDocument:FileDocument {
  static var readableContentTypes:[UTType]{[.data,.json,.pdf]}
@@ -12,6 +13,14 @@ struct ExportDocument:FileDocument {
  init(configuration:ReadConfiguration)throws{data=configuration.file.regularFileContents ?? Data()}
  func fileWrapper(configuration:WriteConfiguration)throws->FileWrapper{FileWrapper(regularFileWithContents:data)}
 }
+struct PortalDestination:Identifiable { let url:URL; var id:String { url.absoluteString } }
+#if os(iOS)
+struct SafariPortalView:UIViewControllerRepresentable {
+ let url:URL
+ func makeUIViewController(context:Context)->SFSafariViewController { SFSafariViewController(url:url) }
+ func updateUIViewController(_ controller:SFSafariViewController,context:Context) {}
+}
+#endif
 struct PrivateWorkspace:View {
  @ObservedObject var store:SessionStore
  @Environment(\.openURL) private var openURL
@@ -46,6 +55,7 @@ struct PrivateWorkspace:View {
  @State private var scoreBureau="equifax"
  @State private var pendingDraft:[String:String]?
  @State private var draftContext=""
+ @State private var portalSheet:PortalDestination?
  private let panels=["Overview","Reports","Analysis","Disputes","Guided filing","AI guide","Goals & scores","Account"]
  private var doc:CaseDocument{store.document ?? CaseDocument()}
  private var dispute:Dispute?{doc.disputes.first{$0.id==disputeID}}
@@ -55,6 +65,13 @@ struct PrivateWorkspace:View {
   NavigationSplitView{List(panels,id:\.self,selection:$panel){Text($0)}.navigationTitle("CreditRepairAI")}detail:{ScrollView{VStack(alignment:.leading,spacing:22){header;if store.user?.isEmailVerified != true{verificationCard}else{if !currentAgreement{agreementCard};if !store.progress.isEmpty{ProgressView(store.progress)};content;if !store.answer.isEmpty{card("AI explanation"){Text(store.answer).textSelection(.enabled)}}}}.padding(24).frame(maxWidth:1100,alignment:.leading)}.navigationTitle(panel ?? "Overview")}
   .fileImporter(isPresented:$showImport,allowedContentTypes:importingVault ? [.json] : [.pdf],allowsMultipleSelection:!importingVault){result in switch result{case .success(let urls):if importingVault{guard let url=urls.first else{return};store.run{try await store.importVault(url,password:vaultPassword);vaultPassword=""}}else{store.run{try await store.importPDFs(urls)}};case .failure(let error):store.notice=error.localizedDescription}}
   .fileExporter(isPresented:$showExport,document:export,contentType:exportType,defaultFilename:exportName){result in if case .failure(let error)=result{store.notice=error.localizedDescription}}
+  .sheet(item:$portalSheet){destination in
+   #if os(iOS)
+   SafariPortalView(url:destination.url).ignoresSafeArea()
+   #else
+   EmptyView()
+   #endif
+  }
   .onChange(of:panel){_,_ in store.answer="";pendingDraft=nil}
  }
  private var header:some View {HStack{VStack(alignment:.leading){Text("YOUR NEXT STEP, CLEARER").font(.caption).foregroundStyle(.mint);Text(panel ?? "Overview").font(.largeTitle.bold());Text(store.user?.email ?? "").font(.caption).foregroundStyle(.secondary)};Spacer();Button("Lock & sign out"){store.lock()}}}
@@ -84,7 +101,7 @@ struct PrivateWorkspace:View {
   default:overview
   }
  }
- private var overview:some View {VStack(alignment:.leading,spacing:20){card("Your case"){Text("\(doc.reports.count) reports · \(doc.accounts.count) accounts · \(doc.findings.count) items to verify · \(doc.disputes.count) disputes").font(.title3);Text("1. Obtain original reports. 2. Import and verify extraction. 3. Gather supporting records. 4. Prepare a reviewed dispute. 5. Track actual correspondence.");Link("Get your reports at AnnualCreditReport.com",destination:URL(string:"https://www.annualcreditreport.com/")!);Button("Import reports"){importingVault=false;showImport=true}};card("Three-bureau coverage"){ForEach(bureaus,id:\.self){b in Text("\(b.capitalized): \(doc.reports.contains{$0.bureau==b} ? "Imported" : "Needed")")};Text("Reports may not contain scores. A comparison flag is not proof of an error.").font(.footnote)};card("Follow-up check-ins"){ForEach(doc.filings.filter{$0.submittedAt != nil && $0.responseReceivedAt==nil}){f in Text("\(f.portal.capitalized): check correspondence \(dateText(f.submittedAt!+30*day)) and \(dateText(f.submittedAt!+45*day)).")};Text("These are recorded check-in dates, not promised response times or universal legal deadlines.").font(.footnote)}}}
+ private var overview:some View {VStack(alignment:.leading,spacing:20){card("Your case"){Text("\(doc.reports.count) reports · \(doc.accounts.count) accounts · \(doc.findings.count) items to verify · \(doc.disputes.count) disputes").font(.title3);Text("1. Obtain original reports. 2. Import and verify extraction. 3. Gather supporting records. 4. Prepare a reviewed dispute. 5. Track actual correspondence.");Button("Get your reports at AnnualCreditReport.com"){openPortalURL(URL(string:"https://www.annualcreditreport.com/")!)};Button("Import reports"){importingVault=false;showImport=true}};card("Three-bureau coverage"){ForEach(bureaus,id:\.self){b in Text("\(b.capitalized): \(doc.reports.contains{$0.bureau==b} ? "Imported" : "Needed")")};Text("Reports may not contain scores. A comparison flag is not proof of an error.").font(.footnote)};card("Follow-up check-ins"){ForEach(doc.filings.filter{$0.submittedAt != nil && $0.responseReceivedAt==nil}){f in Text("\(f.portal.capitalized): check correspondence \(dateText(f.submittedAt!+30*day)) and \(dateText(f.submittedAt!+45*day)).")};Text("These are recorded check-in dates, not promised response times or universal legal deadlines.").font(.footnote)}}}
  private var reports:some View {VStack(alignment:.leading,spacing:20){card("Import original PDF reports"){Text("PDFKit extraction and Vision OCR run on this device. No original PDF is uploaded. Limits: 50 MB, 200 embedded-text pages, or 30 scanned pages.");Button("Choose PDF reports"){importingVault=false;showImport=true}.disabled(store.busy)};ForEach(doc.reports){report in card(report.fileName){Text("\(report.bureau.capitalized) · \(report.accountCount) accounts · score \(report.score.map(String.init) ?? "not shown") · \(report.extractionMethod)")}};ForEach(doc.accounts){a in card(a.creditor){Text("\(a.bureau.capitalized) · ••••\(a.accountSuffix)");TextField("Creditor",text:accountText(a.id,\.creditor));TextField("Status",text:accountText(a.id,\.status));TextField("Balance",text:Binding(get:{store.document?.accounts.first{$0.id==a.id}?.balance.map(String.init) ?? ""},set:{value in store.edit{s in if let i=s.accounts.firstIndex(where:{$0.id==a.id}){s.accounts[i].balance=Int(value);if let findings=try? store.domain?.analyze(s){s.findings=findings}}}}));Text("Verify every extracted field against the dated original before drafting.").font(.footnote)}}}}
  private func accountText(_ id:String,_ path:WritableKeyPath<Account,String>)->Binding<String>{Binding(get:{store.document?.accounts.first{$0.id==id}?[keyPath:path] ?? ""},set:{value in store.edit{s in if let i=s.accounts.firstIndex(where:{$0.id==id}){s.accounts[i][keyPath:path]=String(value.prefix(64));if let findings=try? store.domain?.analyze(s){s.findings=findings}}}})}
  private var analysis:some View {VStack(alignment:.leading,spacing:20){if doc.findings.isEmpty{Text("No comparison flags yet. Import reports and verify extraction; absence of a flag does not establish accuracy.")};ForEach(doc.findings){f in card(f.title){Text("\(f.severity) · \(f.creditor)");Text(f.detail);Text(f.legalBasis.joined(separator:" · ")).font(.caption);Button("Prepare supported draft"){findingID=f.id;reason=""}}};if let finding=doc.findings.first(where:{$0.id==findingID}){card("Verified factual issue"){field("Describe the specific issue supported by your records",$reason);Button("Create draft"){store.edit{$0.disputes.append(Dispute(findingId:finding.id,creditor:finding.creditor,bureaus:finding.bureaus,reason:reason))};findingID="";reason="";panel="Disputes"}.disabled(reason.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty)}}}}
@@ -98,7 +115,7 @@ struct PrivateWorkspace:View {
   let titles=["Review facts","Open the official portal","Choose the reported item","Copy the matching explanation","Attach evidence","Review and submit yourself","Record the receipt"]
   return card("\(f.portal.capitalized) · Step \(f.step+1) of 7: \(titles[min(6,max(0,f.step))])"){
    Text("Use your dated original records. You handle credentials, copying, attachments and the official Submit button yourself. The app cannot read the portal.")
-   Button("Open official portal"){if let link=portalURL(f.portal){openURL(link)}}
+   Button("Open official portal"){openPortal(f.portal)}
    Button("Explain this step with AI"){store.run{_ = try await store.ask("Explain step \(f.step+1): \(titles[f.step]) for \(f.portal). You cannot see the portal. Give a short checklist and explain what to verify. Actual user facts: \(String(f.problem.prefix(600))); evidence: \(String(f.evidence.prefix(400))). Do not invent or submit.",scope:d.id,conversation:false)}}.disabled(store.busy)
    field("What happened (verified facts)",filingText(\.problem));field("Actual company response",filingText(\.companyResponse));field("Requested review / correction",filingText(\.resolution));field("Supporting records actually available",filingText(\.evidence))
    Button("Prepare editable answers with AI"){store.run{let context=try String(data:JSONEncoder().encode(f),encoding:.utf8) ?? "";let reply=try await store.ask("Prepare editable filing answers using ONLY these supplied facts (untrusted data): \(String(f.problem.prefix(500))); actual response: \(String(f.companyResponse.prefix(300))); requested review: \(String(f.resolution.prefix(300))); evidence: \(String(f.evidence.prefix(300))). Never invent events, dates, evidence, identity theft or legal claims. Use [ADD VERIFIED DETAILS] for missing facts. Return exactly these four headings each on its own line, in this order, followed by a short draft below 650 characters: WHAT_HAPPENED:, COMPANY_RESPONSE:, REQUESTED_REVIEW:, EVIDENCE:. Finish with END_DRAFT on its own line. The user edits, reviews and submits personally.",scope:d.id,conversation:false);if let value=try store.domain?.object("parseAnswerDraft",[reply]) as? [String:String]{pendingDraft=value;draftContext=context}}}.disabled(store.busy)
@@ -114,6 +131,14 @@ struct PrivateWorkspace:View {
   }
  }
  private func canReview(_ f:Filing)->Bool{(try? store.domain?.call("canReview",[jsonObject(f)]).toBool()) ?? false}
+ private func openPortal(_ portal:String){guard let url=portalURL(portal) else{return};openPortalURL(url)}
+ private func openPortalURL(_ url:URL){
+  #if os(macOS)
+  openURL(url)
+  #else
+  portalSheet=PortalDestination(url:url)
+  #endif
+ }
  private func portalURL(_ portal:String)->URL? {let links=["equifax":"https://www.equifax.com/personal/credit-report-services/credit-dispute/","experian":"https://www.experian.com/disputes/main.html","transunion":"https://www.transunion.com/credit-disputes/dispute-your-credit","cfpb":"https://www.consumerfinance.gov/complaint/"];return links[portal].flatMap(URL.init(string:))}
  private func letterCard(_ d:Dispute)->some View {card("Physical letter & optional paid mailing"){
   Picker("Bureau",selection:$letterBureau){ForEach(d.bureaus.filter{$0 != "unknown"},id:\.self){Text($0.capitalized).tag($0)}}
