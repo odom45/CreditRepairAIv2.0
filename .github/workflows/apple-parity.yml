@@ -5,6 +5,9 @@ on:
   pull_request:
     branches: [ios-native, ipados-native, macos-native]
   workflow_dispatch:
+concurrency:
+  group: apple-parity-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
