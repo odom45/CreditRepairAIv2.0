@@ -1,6 +1,6 @@
 # CreditRepairAI v2.0
 
-> **Current update — October 29, 2026:** Native **2.0.9 / 20261029** adds fresh sign-in on reopen, expanded interactive case coaching and an optional paid LetterStream handoff. See the [2.0.9 evidence and scope](docs/RELEASE_2.0.9.md) and [demo brief](docs/STARTUPS_DEMO_2.0.9.md). Mailing checkout is with the provider; app purchases remain disabled in this test candidate.
+> **Current update — November 9, 2026:** Native **2.0.9 / 20261029** is at `0b28929` with the encrypted cross-platform case-transfer bridge merged. Post-merge Android device tests, bureau/letter journeys, measured parser, signed APK/AAB, and emulator install/update checks passed: [native build](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/42737792061), [journeys](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/42737792195), [parser](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/42737792155), [signed release](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/42737792243). Backend/admin validation remains HOLD because the federal legal-library review is 55 days old against a 45-day limit. See the [2.0.9 evidence and scope](docs/RELEASE_2.0.9.md) and [cross-platform parity record](docs/CROSS_PLATFORM_PARITY.md). Mailing checkout is with the provider; app purchases remain disabled in this test candidate.
 
 
 Native Android tools for on-device three-bureau report analysis, guided disputes and user-reviewed filing, with an authenticated legal-source AI assistant.
