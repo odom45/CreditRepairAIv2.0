@@ -44,7 +44,7 @@ import UIKit
   let result=create ? try await Auth.auth().createUser(withEmail:email.trimmingCharacters(in:.whitespaces),password:password) : try await Auth.auth().signIn(withEmail:email.trimmingCharacters(in:.whitespaces),password:password)
   guard attempt==loginAttempt else{throw ClientError("Session changed.")}
   user=result.user;busy=false
-  if create {try await result.user.sendEmailVerification()}
+  if create {try await sendVerificationEmail(result.user)}
  }
  func signInGoogle()async throws {
   guard configured,let clientID=FirebaseApp.app()?.options.clientID else{throw ClientError("This Apple app's Google client configuration is missing.")}
@@ -63,8 +63,11 @@ import UIKit
   let firebaseUser=try await Auth.auth().signIn(with:credential).user;guard attempt==loginAttempt else{try? Auth.auth().signOut();throw ClientError("Session locked.")};user=firebaseUser;busy=false
  }
  func reset(_ email:String)async throws {guard configured else{throw ClientError("Firebase is not configured.")};try await Auth.auth().sendPasswordReset(withEmail:email);notice="Password reset requested. Check your inbox."}
- func verify()async throws {guard let user else{return};try await user.sendEmailVerification();notice="Verification email sent."}
- func refreshVerification()async throws {guard let user else{return};try await user.reload();_ = try await user.getIDTokenForcingRefresh(true);objectWillChange.send();notice=user.isEmailVerified ? "Email verified." : "Email is not verified yet."}
+ func verify()async throws {guard let user else{return};try await sendVerificationEmail(user);notice="Verification email sent."}
+ func refreshVerification()async throws {guard let user else{return};try await reloadUser(user);try await refreshIDToken(user);objectWillChange.send();notice=user.isEmailVerified ? "Email verified." : "Email is not verified yet."}
+ private func sendVerificationEmail(_ user:User)async throws {try await withCheckedThrowingContinuation{(continuation:CheckedContinuation<Void,Error>) in user.sendEmailVerification{error in if let error{continuation.resume(throwing:error)}else{continuation.resume(returning:())}}}}
+ private func reloadUser(_ user:User)async throws {try await withCheckedThrowingContinuation{(continuation:CheckedContinuation<Void,Error>) in user.reload{error in if let error{continuation.resume(throwing:error)}else{continuation.resume(returning:())}}}}
+ private func refreshIDToken(_ user:User)async throws {try await withCheckedThrowingContinuation{(continuation:CheckedContinuation<Void,Error>) in user.getIDTokenForcingRefresh(true){_,error in if let error{continuation.resume(throwing:error)}else{continuation.resume(returning:())}}}}
  func unlock(_ password:String)async throws {
   guard let owner=user?.uid else{throw ClientError("Sign in first.")};let ticket=epoch
   let url=try Vault.location(owner),saved=try? Data(contentsOf:url)
