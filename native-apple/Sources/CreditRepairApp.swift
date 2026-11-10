@@ -14,7 +14,7 @@ import GoogleSignIn
    }
   } else if value == .active {
    backgroundLockTask?.cancel();backgroundLockTask=nil
-   if store.user != nil && !store.busy {store.run{try await store.refreshVerification()}}
+   if store.user?.isEmailVerified == false && !store.busy {store.run{try await store.refreshVerification()}}
   }
  }}}
 }
