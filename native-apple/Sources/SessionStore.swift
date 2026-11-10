@@ -81,7 +81,7 @@ import UIKit
  func persist()throws {guard let document,let key=vaultKey,let salt=vaultSalt,let uid=user?.uid else{return};try Vault.save(Vault.seal(document,key:key,salt:salt,owner:uid),owner:uid)}
  func edit(_ transform:(inout CaseDocument)->Void) {guard var copy=document else{return};transform(&copy);do{guard let key=vaultKey,let salt=vaultSalt,let uid=user?.uid else{return};try Vault.save(Vault.seal(copy,key:key,salt:salt,owner:uid),owner:uid);document=copy}catch{notice="Encrypted save failed: "+error.localizedDescription}}
  func importPDFs(_ urls:[URL])async throws {
-  guard let domain,let owner=user?.uid,document != nil else{throw ClientError("Unlock a case first.")};let ticket=epoch;var parsed:[Parsed]=[]
+  guard let original=user else{throw ClientError("Sign in first.")};guard original.isEmailVerified else{throw ClientError("Verify your email before importing reports.")};guard let domain,document != nil else{throw ClientError("Unlock a case first.")};let owner=original.uid;let ticket=epoch;var parsed:[Parsed]=[]
   for url in urls {progress="Reading \(url.lastPathComponent) on this device";let content=try await Task.detached{try PDFImporter.extract(url)}.value;guard ticket==epoch,user?.uid==owner else{return};parsed.append(try domain.parse(content.0,name:url.lastPathComponent,method:content.1))}
   guard ticket==epoch else{return};var copy=document!;copy.reports+=parsed.map{$0.report};copy.accounts+=parsed.flatMap{$0.accounts};copy.findings=try domain.analyze(copy);edit{$0=copy}
  }
@@ -99,7 +99,7 @@ import UIKit
   guard (200..<300).contains(http.statusCode) else{throw ClientError(result["error"] as? String ?? "Secure service could not complete this request.")};return result
  }
  func accept(_ sharing:Bool)async throws {
-  guard let domain else{throw ClientError("Shared domain unavailable.")};let ticket=epoch
+  guard let user,user.isEmailVerified else{throw ClientError("Verify your email before accepting terms and enabling case tools.")};guard let domain else{throw ClientError("Shared domain unavailable.")};let ticket=epoch
   _ = try await post("/policy/accept",body:["termsAccepted":true,"aiSharing":sharing,"version":domain.policyVersion,"digest":domain.policyDigest,"choiceAt":Int(now())]);guard ticket==epoch else{return}
   edit{$0.policyAcceptance=Agreement(version:domain.policyVersion,digest:domain.policyDigest,aiSharing:sharing,acceptedAt:now());$0.onboardingComplete=true}
  }
@@ -116,7 +116,7 @@ import UIKit
  }
  func exportVault()throws->Data {guard let doc=document,let key=vaultKey,let salt=vaultSalt,let uid=user?.uid else{throw ClientError("Unlock the vault first.")};return try JSONEncoder().encode(Vault.seal(doc,key:key,salt:salt,owner:uid))}
  func importVault(_ url:URL,password:String)async throws {
-  guard let owner=user?.uid else{throw ClientError("Sign in first.")};let ticket=epoch;let access=url.startAccessingSecurityScopedResource();defer{if access{url.stopAccessingSecurityScopedResource()}}
+  guard let original=user else{throw ClientError("Sign in first.")};guard original.isEmailVerified else{throw ClientError("Verify your email before importing a case.")};let owner=original.uid;let ticket=epoch;let access=url.startAccessingSecurityScopedResource();defer{if access{url.stopAccessingSecurityScopedResource()}}
   guard (try url.resourceValues(forKeys:[.fileSizeKey]).fileSize ?? 0)<=28000000 else{throw ClientError("Vault exceeds the transfer limit.")}
   let data=try Data(contentsOf:url);let result=try await Task.detached{try Vault.open(JSONDecoder().decode(Envelope.self,from:data),password:password,owner:owner)}.value
   guard ticket==epoch,user?.uid==owner else{throw ClientError("Session changed.")};edit{$0=result.0}
