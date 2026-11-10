@@ -2,7 +2,7 @@
 
 **Private credit-report review, legal-source AI guidance, and user-reviewed dispute preparation.**
 
-CreditRepairAI helps people compare credit reports, understand differences, organize supporting records, prepare factual disputes, and track the responses. The product includes a native Android app and a web workspace, with native iPhone, iPad, and Mac clients in development.
+CreditRepairAI helps people compare credit reports, understand differences, organize supporting records, prepare factual disputes, and track the responses. The product is maintained across five product branches: web, native Android, native iPhone, native iPad, and native Mac. The Apple clients share a SwiftUI codebase and are built independently for their platform targets.
 
 **Created by Benjamin Odom · 3six0 Studios**
 
@@ -21,7 +21,7 @@ CreditRepairAI helps people compare credit reports, understand differences, orga
 | Personal planning and tracking | Save goals and AI plans, record dated scores, track dispute status and correspondence, and keep a freeze-action checklist. |
 | Account and privacy controls | Firebase email/Google sign-in, verification handling, explicit sign-out, fresh-session protections, AI-sharing choices, encrypted local case storage, and account-deletion flows. |
 
-These describe the product's implemented Android/web scope. Apple source targets the same experience; the platform status below identifies what has been verified.
+These are the shared product capabilities. Each client uses platform-native UI and security controls; the platform table below separates simulator/CI evidence from live account and device acceptance.
 
 ## Platforms and branches
 
@@ -31,9 +31,9 @@ Android is the reference implementation for feature-parity work. The default `ma
 | --- | --- | --- |
 | **Web** | [main](https://github.com/odom45/CreditRepairAIv2.0/tree/main) | React/TypeScript workspace with local PDF/OCR import, case review, guided disputes, AI integration, letters, tracking, and an encrypted vault. Merged implementation and automated build/tests pass; live integration acceptance remains pending. |
 | **Android** | [android-native-rebuild](https://github.com/odom45/CreditRepairAIv2.0/tree/android-native-rebuild) | Native Kotlin/Jetpack Compose app, version **2.0.9**. Includes on-device PDFBox/ML Kit parsing, Android Keystore storage, guided filing, interactive AI, physical letters, and provider mailing handoff. This is the benchmark for the other clients. |
-| **iPhone / iOS** | [ios-native](https://github.com/odom45/CreditRepairAIv2.0/tree/ios-native) | Native SwiftUI source with shared iPhone, iPad, and Mac targets. Uses PDFKit/Vision and a bundled shared domain through JavaScriptCore. The latest native Apple validation failed; this is a development candidate. |
-| **iPad / iPadOS** | Planned `ipados-native`; [shared target source](https://github.com/odom45/CreditRepairAIv2.0/blob/ios-native/native-apple/project.yml) | iPad target source is present in `ios-native`. Its individual branch has **not yet been created**, and platform acceptance is pending. |
-| **Mac / macOS** | Planned `macos-native`; [shared target source](https://github.com/odom45/CreditRepairAIv2.0/blob/ios-native/native-apple/project.yml) | Mac target source is present in `ios-native`. Its individual branch has **not yet been created**; build, signing, and platform acceptance remain pending. |
+| **iPhone / iOS** | [ios-native](https://github.com/odom45/CreditRepairAIv2.0/tree/ios-native) | Native SwiftUI iPhone client. PDFKit/Vision parsing, shared JavaScriptCore domain, Firebase sign-in, encrypted local vault, guided disputes, letters, and AI UI. Latest iOS/iPad simulator builds and macOS regression suite passed in [Apple CI run 42736736736](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/42736736736). Live signing and device acceptance remain pending. |
+| **iPad / iPadOS** | [ipados-native](https://github.com/odom45/CreditRepairAIv2.0/tree/ipados-native) | Dedicated native branch and iPad SwiftUI target. iPhone/iPad simulator compilation and macOS regression tests passed in [Apple CI run 42736740789](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/42736740789). Live signing and iPad-device acceptance remain pending. |
+| **Mac / macOS** | [macos-native](https://github.com/odom45/CreditRepairAIv2.0/tree/macos-native) | Dedicated native branch and macOS SwiftUI target. iPhone/iPad simulator compilation and macOS regression tests passed in [Apple CI run 42736744999](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/42736744999). Developer ID signing, notarization, and real-Mac acceptance remain pending. |
 
 Platform guides: [Android implementation and evidence](https://github.com/odom45/CreditRepairAIv2.0/blob/android-native-rebuild/README.md) · [Android build guide](https://github.com/odom45/CreditRepairAIv2.0/blob/android-native-rebuild/native-android/README.md) · [Apple setup and acceptance](https://github.com/odom45/CreditRepairAIv2.0/blob/ios-native/native-apple/README.md)
 
@@ -51,9 +51,9 @@ CFPB preparation uses recorded prior-dispute and response information. Portal na
 
 The clients use the same Firebase project and the shared Convex contracts for legal-source AI, policy acceptance, subscription status, and case-scoped access. Client code does not contain an OpenAI service key.
 
-Case storage remains private to each device. The web client has explicit encrypted vault export/import. A companion Android transfer bridge is in [PR #22](https://github.com/odom45/CreditRepairAIv2.0/pull/22), and the Apple candidate implements the same versioned envelope. Transfer requires the **same Firebase account and transfer passphrase**.
+Case storage remains private to each device. The web, Android, and Apple clients now implement the same versioned AES-GCM/PBKDF2 encrypted-vault envelope with Firebase-UID-bound authenticated data. The Android transfer bridge was merged into `android-native-rebuild` in [PR #22](https://github.com/odom45/CreditRepairAIv2.0/pull/22); web vault safeguards were merged into `main` in [PR #23](https://github.com/odom45/CreditRepairAIv2.0/pull/23). Transfer requires the **same Firebase account and transfer passphrase**.
 
-**Automatic cloud case synchronization is not implemented.** The Android bridge has not yet been merged into the reference branch, and live cross-device transfer acceptance is still pending. Sharing an account alone does not move a case between devices.
+**Automatic cloud case synchronization is not implemented.** Cross-device transfer is explicit and encrypted; live transfer acceptance across real devices is still pending. Sharing an account alone does not move a case between devices.
 
 ### Privacy by platform
 
@@ -69,16 +69,16 @@ Browser protections differ from Android's native protections. Platform-specific 
 
 ## Verification and availability
 
-**Evidence checked November 1, 2026.** Test counts describe specific checks and fixtures, not a guarantee of report accuracy or live cross-platform acceptance.
+**Evidence updated November 9, 2026.** Test counts describe specific checks and fixtures, not a guarantee of report accuracy or live cross-platform acceptance.
 
 | Area | Evidence |
 | --- | --- |
 | Web on `main` | [Successful web validation](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/41348911629): full web/backend TypeScript checks, **28 web regressions + 41 shared agent/billing regressions**, and production build. |
 | Web parser and browser checks | The [verification record](docs/CROSS_PLATFORM_PARITY.md) documents all **18 Android text-corpus variants**, **2,400 seeded mutations**, six exact synthetic PDF checks across embedded text/OCR, and two malformed-input rejections. |
-| Android benchmark | The [Android evidence guide](https://github.com/odom45/CreditRepairAIv2.0/blob/android-native-rebuild/README.md) links the dated parser, JVM, emulator, and release records. Its documented synthetic batch includes **72/72 supported PDFs**, **6/6 rejection guards**, and **1,950/1,950 matched fields**. |
-| Android transfer bridge | [PR #22](https://github.com/odom45/CreditRepairAIv2.0/pull/22) remains a separate review branch. Its [native journey checks](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/41349440802) and [measured parser batch](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/41349440771) passed; the bridge is not yet in the reference branch. |
-| Additional web safeguards | [PR #23](https://github.com/odom45/CreditRepairAIv2.0/pull/23) contains portable-build and vault safeguards. Its [web validation](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/41349486661) passed, including **29 web regressions**; these follow-up changes are not yet merged into `main`. |
-| Apple native clients | [Native Apple validation](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/41349106140) failed. A passing web job on that branch does not establish an Apple build or device result. |
+| Android benchmark | Native device tests, account/dispute/letter journeys, and measured synthetic parser batch passed in [run 42735974920](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/42735974920), [run 42735974600](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/42735974600), and [run 42735974525](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/42735974525). The post-transfer merge validation is running separately. |
+| Android transfer bridge | [PR #22](https://github.com/odom45/CreditRepairAIv2.0/pull/22) was merged into `android-native-rebuild` at `0b28929`. Its original synthetic cross-runtime encryption and native-journey checks passed; the merged branch's full validation is running. |
+| Additional web safeguards | [PR #23](https://github.com/odom45/CreditRepairAIv2.0/pull/23) was merged into `main` at `dd553a6`. The post-merge web validation passed in [run 42737833248](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/42737833248). |
+| Apple native clients | All three branches passed web checks, iPhone/iPad simulator builds, and macOS regression tests: [iOS run 42736736736](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/42736736736), [iPadOS run 42736740789](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/42736740789), and [macOS run 42736744999](https://github.com/odom45/CreditRepairAIv2.0/actions/runs/42736744999). Apple signing, real-device sign-in/OCR, and distribution acceptance remain pending. |
 
 Live same-account sign-in, verification, consent changes, AI, entitlement restoration, deletion, and encrypted case transfer still need accepted integration evidence. Apple registration, signing, simulator/device results, and distribution have separate requirements. App-store availability and production launch approval are not established by these source branches.
 
@@ -119,9 +119,9 @@ cd native-android
 bash ./gradlew testDebugUnitTest assembleDebug
 ```
 
-### Apple development — `ios-native`
+### Apple development — `ios-native`, `ipados-native`, and `macos-native`
 
-Use macOS and Xcode. The [Apple guide](https://github.com/odom45/CreditRepairAIv2.0/blob/ios-native/native-apple/README.md) explains shared-domain generation, XcodeGen, the three schemes, Firebase bundle registration, Google sign-in configuration, signing, and acceptance checks. Apple apps are not ready for installation or distribution based on the current native validation result.
+Use macOS and Xcode. Each branch contains the shared SwiftUI source and the three Xcode schemes; `native-apple/platform.json` selects the branch's platform identity. The [Apple guide](https://github.com/odom45/CreditRepairAIv2.0/blob/ios-native/native-apple/README.md) explains shared-domain generation, XcodeGen, Firebase bundle registration, Google sign-in configuration, signing, and acceptance checks. Simulator compilation and macOS regression tests pass; Apple apps are not yet signed or accepted on live devices.
 
 ## Repository guide
 
@@ -138,8 +138,8 @@ Use macOS and Xcode. The [Apple guide](https://github.com/odom45/CreditRepairAIv
 
 | Branch | Purpose |
 | --- | --- |
-| [android-cross-platform-transfer](https://github.com/odom45/CreditRepairAIv2.0/tree/android-cross-platform-transfer) | Companion encrypted case-transfer work targeting Android; tracked in PR #22. |
-| [web-parity-hardening](https://github.com/odom45/CreditRepairAIv2.0/tree/web-parity-hardening) | Additional web-vault safeguards and host-portable dependency setup; tracked in PR #23. |
+| [android-cross-platform-transfer](https://github.com/odom45/CreditRepairAIv2.0/tree/android-cross-platform-transfer) | Merged into `android-native-rebuild` through PR #22. |
+| [web-parity-hardening](https://github.com/odom45/CreditRepairAIv2.0/tree/web-parity-hardening) | Merged into `main` through PR #23. |
 | [web-android-parity](https://github.com/odom45/CreditRepairAIv2.0/tree/web-android-parity) | Web implementation work merged into `main` through [PR #21](https://github.com/odom45/CreditRepairAIv2.0/pull/21). |
 
 <details>
@@ -163,7 +163,7 @@ Dependency-maintenance branches:
 - [dependabot/npm_and_yarn/multi-d9247b733d](https://github.com/odom45/CreditRepairAIv2.0/tree/dependabot/npm_and_yarn/multi-d9247b733d)
 - [dependabot/npm_and_yarn/npm_and_yarn-1adf47b82b](https://github.com/odom45/CreditRepairAIv2.0/tree/dependabot/npm_and_yarn/npm_and_yarn-1adf47b82b)
 
-These branch names are an inventory checked on November 1, 2026. Use the platform table above to find the product entry points and their documented status.
+These branch names are an inventory checked on November 9, 2026. Use the platform table above to find the product entry points and their documented status.
 
 </details>
 
