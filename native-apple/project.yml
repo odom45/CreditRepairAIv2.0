@@ -103,6 +103,7 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.creditrepairai.v2.macos.tests
+        PRODUCT_MODULE_NAME: CreditRepairAIMacOSTests
 schemes:
   CreditRepairAI-iOS:
     build:
