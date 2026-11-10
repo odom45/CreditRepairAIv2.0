@@ -25,6 +25,7 @@ import {
 } from "./service";
 import {
   BUREAUS,
+  emptyCase,
   DAY,
   id,
   type Bureau,
@@ -856,6 +857,8 @@ export default function Workspace() {
                                   aria-label="Balance"
                                   type="number"
                                   min={0}
+                                  max={2147483647}
+                                  step={1}
                                   value={a.balance ?? ""}
                                   onChange={e =>
                                     update(s => {
@@ -866,7 +869,17 @@ export default function Workspace() {
                                               balance:
                                                 e.target.value === ""
                                                   ? null
-                                                  : Number(e.target.value),
+                                                  : Math.min(
+                                                      2147483647,
+                                                      Math.max(
+                                                        0,
+                                                        Math.floor(
+                                                          Number(
+                                                            e.target.value,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ),
                                             }
                                           : x,
                                       );
@@ -935,6 +948,12 @@ export default function Workspace() {
                             "Describe the specific factual issue you verified against your records.",
                           );
                           if (!reason?.trim()) return;
+                          if (reason.length > 10000) {
+                            setMessage(
+                              "Use at most 10,000 characters for the factual explanation.",
+                            );
+                            return;
+                          }
                           update(s => ({
                             ...s,
                             disputes: [
@@ -1878,6 +1897,32 @@ export default function Workspace() {
                     </button>
                     <p>{billing}</p>
                   </Card>
+                  <Card title="Clear this device's case">
+                    <p>
+                      Remove the imported records, drafts, scores and
+                      conversation from this browser. Your Firebase account
+                      stays available. Export an encrypted copy first if needed.
+                    </p>
+                    <button
+                      className="danger"
+                      disabled={busy}
+                      onClick={() => {
+                        if (
+                          window.confirm(
+                            "Clear this device's entire case? Export first if you need a copy.",
+                          )
+                        ) {
+                          ++saveVersion.current;
+                          update(() => emptyCase());
+                          setAnswer("");
+                          setSelectedDispute("");
+                          setCaseId("");
+                        }
+                      }}
+                    >
+                      Clear local case
+                    </button>
+                  </Card>
                   <Card title="Delete account">
                     <p>
                       Delete server billing and consent records, then the
@@ -1897,6 +1942,7 @@ export default function Workspace() {
                       onClick={() =>
                         void run(async () => {
                           const uid = user.uid;
+                          ++saveVersion.current;
                           await deleteAccount(user);
                           localStorage.removeItem(vaultName(uid));
                           signOut();

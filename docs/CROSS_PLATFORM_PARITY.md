@@ -17,7 +17,7 @@ This is an implementation and verification record, not a production launch appro
 
 ## Verification performed November 1, 2026
 
-- 28 web tests passed: all 18 Android corpus variants, 2,400 seeded mutations, parser limits, identity/comparison, filing/CFPB guards, case size limits, AES roundtrip/wrong owner/wrong passphrase/tampering and CORS.
+- 29 web tests passed: all 18 Android corpus variants, 2,400 seeded mutations, parser limits, identity/comparison, filing/CFPB guards, case size limits, schema validation before save, AES roundtrip/wrong owner/wrong passphrase/tampering and CORS.
 - 41 shared agent and billing regressions passed, using synthetic/mocked provider responses rather than a live OpenAI call.
 - Browser importer harness: six exact synthetic real-PDF checks passed (three bureaus × embedded PDF and image-only OCR); two non-PDF/truncated files rejected. Each supported PDF yielded two accounts, score 640, balances 1280/0 and suffix 1234.
 - Full web/backend TypeScript checks and production build passed before publication of this candidate. Large bundle warnings remain informational; OCR assets are self-hosted and loaded on demand.
@@ -32,3 +32,5 @@ This is an implementation and verification record, not a production launch appro
 - Android encrypted transfer requires the companion bridge change and Android regression acceptance before it can be described as available in an APK.
 
 Keep release status HOLD until these applicable gates have evidence. Platform branch names alone do not establish parity or installed-app availability.
+
+The follow-up portability change removes explicit Linux-only build-package requirements so npm can resolve the correct optional native packages on each host. A local-case clear control and a deletion/save fence prevent accidental stale-vault restoration.
