@@ -1,6 +1,11 @@
 name: Legal library freshness
 
 on:
+  pull_request:
+    paths:
+      - "legal-library/**"
+      - "scripts/check-legal-library.mjs"
+      - ".github/workflows/legal-library-review.yml"
   push:
     paths:
       - "legal-library/**"
@@ -16,11 +21,11 @@ permissions:
 jobs:
   verify-official-sources:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - name: Check review age and official source links
+      - name: Check legal-library structure, review age, and official source links
         run: node scripts/check-legal-library.mjs --check-links
