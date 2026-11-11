@@ -1,21 +1,21 @@
 # Federal consumer-credit reporting core
 
-Reviewed: 2026-09-16. Always verify the linked current text before relying on this summary.
+Reviewed: 2026-11-11. Official federal statutory pages and current CFPB/eCFR guidance were rechecked on this date; this is an engineering source refresh, not attorney approval. Always verify the linked current text before relying on this summary.
 
 ## Accuracy and bureau reinvestigation
 
-- [15 U.S.C. § 1681e](https://uscode.house.gov/view.xhtml?req=granuleid:USC-prelim-title15-section1681e&num=0&edition=prelim) addresses consumer-reporting-agency compliance procedures, including reasonable procedures to assure maximum possible accuracy when preparing a consumer report.
-- [15 U.S.C. § 1681i](https://uscode.house.gov/view.xhtml?req=granuleid:USC-prelim-title15-section1681i&num=0&edition=prelim) governs a consumer-reporting agency's reinvestigation after a consumer directly disputes the completeness or accuracy of an item. The precise statutory timing, notice, deletion/modification, reinsertion, and results provisions must be checked against the current text and the facts.
+- [15 U.S.C. § 1681e](https://uscode.house.gov/us/usc/t15/s1681e/) addresses consumer-reporting-agency compliance procedures, including reasonable procedures to assure maximum possible accuracy when preparing a consumer report.
+- [15 U.S.C. § 1681i](https://uscode.house.gov/us/usc/t15/s1681i/) governs a consumer-reporting agency's reinvestigation after a consumer directly disputes the completeness or accuracy of an item. The precise statutory timing, notice, deletion/modification, reinsertion, and results provisions must be checked against the current text and the facts.
 - A cross-bureau difference is a review signal, not automatic proof that one bureau is wrong. The app must ask the user to compare original records and identify the exact inaccurate or incomplete field.
 
 ## Furnisher duties and direct disputes
 
-- [15 U.S.C. § 1681s-2](https://uscode.house.gov/view.xhtml?req=granuleid:USC-prelim-title15-section1681s-2&num=0&edition=prelim) addresses responsibilities of people furnishing information to consumer reporting agencies, including duties associated with accuracy and disputes. Different subsections have different triggers and enforcement rules; the agent must not imply every subsection creates the same private remedy.
+- [15 U.S.C. § 1681s-2](https://uscode.house.gov/us/usc/t15/s1681s-2/) addresses responsibilities of people furnishing information to consumer reporting agencies, including duties associated with accuracy and disputes. Different subsections have different triggers and enforcement rules; the agent must not imply every subsection creates the same private remedy.
 - [12 C.F.R. § 1022.43](https://www.ecfr.gov/current/title-12/chapter-X/part-1022/subpart-E/section-1022.43) describes covered direct disputes to furnishers, required dispute contents and address rules, investigation/response duties, exceptions, and treatment of frivolous or irrelevant disputes.
 
 ## Identity theft
 
-- [15 U.S.C. § 1681c-2](https://uscode.house.gov/view.xhtml?req=granuleid:USC-prelim-title15-section1681c-2&num=0&edition=prelim) provides a distinct blocking process for information resulting from alleged identity theft. The agent must never characterize an ordinary accuracy disagreement as identity theft. It should suggest this route only when the user reports identity theft and can satisfy the current statutory documentation requirements.
+- [15 U.S.C. § 1681c-2](https://uscode.house.gov/us/usc/t15/s1681c-2/) provides a distinct blocking process for information resulting from alleged identity theft. The agent must never characterize an ordinary accuracy disagreement as identity theft. It should suggest this route only when the user reports identity theft and can satisfy the current statutory documentation requirements.
 
 ## CFPB consumer process
 
