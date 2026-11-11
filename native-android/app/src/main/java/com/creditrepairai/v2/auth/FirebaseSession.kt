@@ -33,7 +33,7 @@ class FirebaseSession(
 
     override suspend fun bearerToken(expectedSubject: String): String? {
         val user = auth.currentUser?.takeIf { it.uid == expectedSubject } ?: return null
-        val token = user.getIdToken(false).await().token
+        // Force-refresh the Firebase ID token before an AI request so the backend receives current email_verified claims.\n        val token = user.getIdToken(true).await().token
         return token.takeIf { auth.currentUser?.uid == expectedSubject }
     }
 
